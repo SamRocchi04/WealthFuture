@@ -214,8 +214,8 @@ export default function App() {
 function Landing({ onLogin, onRegister }) {
   // ── DESIGN TOKENS ────────────────────────────────────────────
 const C = {
-  base:     "#050810",
-  surface:  "#0b1120",
+  base:     "#07091a",
+  surface:  "#0c1023",
   card:     "#111827",
   cardHi:   "#162033",
   border:   "rgba(255,255,255,0.07)",
@@ -459,7 +459,11 @@ const GlobalStyles = () => (
   useEffect(() => { setTimeout(() => setVisible(true), 80); }, []);
 
   return (
-    <div style={{ background: C.base, minHeight: "100vh", color: C.text, fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ background: `
+  radial-gradient(ellipse 80% 60% at 20% 10%, rgba(37,99,235,0.28) 0%, transparent 55%),
+  radial-gradient(ellipse 70% 70% at 80% 15%, rgba(124,58,237,0.22) 0%, transparent 50%),
+  radial-gradient(ellipse 60% 50% at 50% 90%, rgba(16,185,129,0.10) 0%, transparent 55%),
+  #07091a`, minHeight: "100vh", color: C.text, fontFamily: "'Inter', system-ui, sans-serif" }}>
       <GlobalStyles />
 
       {/* ── NAVBAR ── */}
