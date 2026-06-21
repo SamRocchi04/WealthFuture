@@ -455,7 +455,7 @@ const GlobalStyles = () => (
 );
 
 // ── MAIN COMPONENT ────────────────────────────────────────────
-export default function Landing({ onLogin, onRegister }) {
+function Landing({ onLogin, onRegister }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { setTimeout(() => setVisible(true), 80); }, []);
 
