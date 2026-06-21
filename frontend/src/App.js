@@ -10,6 +10,16 @@ import {
   ResponsiveContainer
 } from "recharts";
 
+if (typeof document !== "undefined") {
+  let meta = document.querySelector('meta[name="viewport"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "viewport";
+    document.head.appendChild(meta);
+  }
+  meta.content = "width=device-width, initial-scale=1.0";
+}
+
 function PageTransition({ children }) {
   const [show, setShow] = useState(false);
 
@@ -451,6 +461,11 @@ const GlobalStyles = () => (
     .wf-btn-primary:hover  { filter: brightness(1.14); }
     .wf-btn-secondary:hover { background: rgba(255,255,255,0.08) !important; color: #f8fafc !important; }
     .wf-link:hover { color: rgba(248,250,252,0.7) !important; }
+    
+    @media (max-width: 640px) {
+  section { padding-left: 16px !important; padding-right: 16px !important; }
+  nav > div { padding-left: 16px !important; padding-right: 16px !important; }
+}
   `}</style>
 );
 
@@ -500,7 +515,12 @@ const GlobalStyles = () => (
 
       {/* ── HERO ── */}
       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 28px 100px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
+        <div style={{
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))",
+  gap: 48,
+  alignItems: "center",
+}}>
           <div style={{
             opacity: visible ? 1 : 0,
             transform: visible ? "none" : "translateY(24px)",
@@ -576,7 +596,7 @@ const GlobalStyles = () => (
       {/* ── STATS BAND ── */}
       <section style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, background: C.surface }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 28px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
             {[
               { label: "Patrimonio simulato",   val: "€ 2.4 mld", sub: "tra tutti gli utenti" },
               { label: "Simulazioni generate",  val: "340k+",      sub: "ultimi 12 mesi" },
@@ -619,7 +639,7 @@ const GlobalStyles = () => (
 
       {/* ── HOW IT WORKS ── */}
       <section style={{ background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "90px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "90px 28px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: 48, alignItems: "start" }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.blue, marginBottom: 14 }}>Come funziona</div>
             <h2 style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)", fontWeight: 800, letterSpacing: "-0.03em", color: C.text, marginBottom: 40 }}>
@@ -704,7 +724,7 @@ const GlobalStyles = () => (
         }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.blue, marginBottom: 16 }}>Inizia oggi</div>
           <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 900, letterSpacing: "-0.04em", color: C.text, marginBottom: 14 }}>
-            Il momento migliore<br />era ieri. Il secondo è adesso.
+            Il momento migliore era ieri.<br /> Il secondo è adesso.
           </h2>
           <p style={{ fontSize: 15, color: C.muted, maxWidth: 480, margin: "0 auto 36px" }}>
             Ogni mese di ritardo ha un costo reale. Inizia la simulazione gratuitamente e scopri dove puoi arrivare.
