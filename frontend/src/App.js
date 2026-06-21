@@ -213,123 +213,336 @@ export default function App() {
 
 function Landing({ onLogin, onRegister }) {
   const [visible, setVisible] = useState(false);
-  const [selectedNews, setSelectedNews] = useState(null);
-  useState(() => { setTimeout(() => setVisible(true), 100); });
 
-  const news = [
-    { title: "Nuovo motore di simulazione v2.0", date: "Giugno 2025", desc: "Algoritmi aggiornati con dati di mercato reali e proiezioni più accurate per il lungo periodo." },
-    { title: "Scenari multi-paese disponibili", date: "Maggio 2025", desc: "Ora puoi simulare la tua situazione finanziaria in oltre 20 paesi con parametri localizzati." },
-    { title: "Piano Premium: nuova analisi indipendenza finanziaria", date: "Aprile 2025", desc: "I nuovi insight premium includono il calcolo degli anni all'indipendenza finanziaria e la copertura pensione." },
-    { title: "Sicurezza avanzata: autenticazione 2FA", date: "Marzo 2025", desc: "Proteggi il tuo account con la verifica in due passaggi disponibile nelle Impostazioni." },
-  ];
+  useEffect(() => {
+    setTimeout(() => setVisible(true), 100);
+  }, []);
 
   return (
     <div style={styles.app}>
-      <div style={{ ...styles.bg, background: "radial-gradient(circle at 20% 30%, rgba(59,130,246,0.9), transparent 60%), radial-gradient(circle at 80% 70%, rgba(236,72,153,0.85), transparent 60%)" }} />
+      <div
+        style={{
+          ...styles.bg,
+          background:
+            "radial-gradient(circle at 20% 30%, rgba(59,130,246,0.9), transparent 60%), radial-gradient(circle at 80% 70%, rgba(236,72,153,0.85), transparent 60%)",
+        }}
+      />
 
       <div style={{ ...styles.topBar, justifyContent: "center" }}>
-        <span style={{ fontWeight: 800, fontSize: 15, background: "linear-gradient(90deg,#3b82f6,#ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+        <span
+          style={{
+            fontWeight: 800,
+            fontSize: 16,
+            background: "linear-gradient(90deg,#3b82f6,#ec4899)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
           WealthFuture
         </span>
       </div>
 
-      <div style={{ position: "relative", zIndex: 2, paddingTop: 70, paddingBottom: 60 }}>
-        <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px 40px", textAlign: "center" }}>
-          <h1 style={{
-            fontSize: "clamp(2rem, 4vw, 3.2rem)", fontWeight: 800, color: "white",
-            letterSpacing: "-0.02em", lineHeight: 1.15, margin: "0 0 16px",
-            opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(30px)",
-            transition: "opacity 0.9s ease 0.2s, transform 0.9s ease 0.2s",
-            textShadow: "0 0 60px rgba(59,130,246,0.4)",
-          }}>
-            Il tuo futuro<br />
-            <span style={{ background: "linear-gradient(90deg, #3b82f6, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              a portata di clic
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "100px 20px 80px",
+        }}
+      >
+        {/* HERO */}
+
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: 100,
+          }}
+        >
+          <div
+            style={{
+              display: "inline-block",
+              padding: "8px 16px",
+              borderRadius: 999,
+              background: "rgba(59,130,246,0.15)",
+              border: "1px solid rgba(59,130,246,0.3)",
+              color: "#60a5fa",
+              fontWeight: 700,
+              fontSize: 13,
+              marginBottom: 20,
+              opacity: visible ? 1 : 0,
+            }}
+          >
+            Pianificazione finanziaria intelligente
+          </div>
+
+          <h1
+            style={{
+              fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
+              fontWeight: 900,
+              lineHeight: 1.1,
+              marginBottom: 24,
+              color: "white",
+              opacity: visible ? 1 : 0,
+              transform: visible
+                ? "translateY(0)"
+                : "translateY(25px)",
+              transition: "all 0.8s ease",
+            }}
+          >
+            Costruisci il tuo
+            <br />
+            <span
+              style={{
+                background:
+                  "linear-gradient(90deg,#3b82f6,#ec4899)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              futuro finanziario
             </span>
           </h1>
 
-          <p style={{ fontSize: 16, lineHeight: 1.7, maxWidth: 420, margin: "0 auto 32px", opacity: visible ? 0.6 : 0, transition: "opacity 1s ease 0.5s" }}>
-            Simula la tua situazione finanziaria futura, pianifica obiettivi di vita e scopri il tuo potenziale economico.
+          <p
+            style={{
+              maxWidth: 700,
+              margin: "0 auto 40px",
+              fontSize: 18,
+              lineHeight: 1.8,
+              opacity: 0.7,
+            }}
+          >
+            Simula la crescita del tuo patrimonio,
+            pianifica pensione, acquisto casa, auto e
+            indipendenza finanziaria grazie ad analisi
+            realistiche basate sui tuoi dati.
           </p>
 
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", opacity: visible ? 1 : 0, transition: "opacity 1s ease 0.8s" }}>
-            <button onClick={onRegister} style={{ padding: "13px 28px", borderRadius: 14, border: "none", background: "linear-gradient(90deg,#3b82f6,#ec4899)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(59,130,246,0.4)" }}>
-              Registrati
+          <div
+            style={{
+              display: "flex",
+              gap: 14,
+              justifyContent: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              onClick={onRegister}
+              style={{
+                padding: "14px 32px",
+                borderRadius: 14,
+                border: "none",
+                background:
+                  "linear-gradient(90deg,#3b82f6,#ec4899)",
+                color: "white",
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: "pointer",
+              }}
+            >
+              Inizia Gratis
             </button>
-            <button onClick={onLogin} style={{ padding: "13px 28px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.06)", color: "white", fontWeight: 600, fontSize: 15, cursor: "pointer", backdropFilter: "blur(10px)" }}>
+
+            <button
+              onClick={onLogin}
+              style={{
+                padding: "14px 32px",
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "rgba(255,255,255,0.05)",
+                color: "white",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
               Accedi
             </button>
           </div>
         </div>
 
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px 40px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Novità & Aggiornamenti</h2>
-            <div style={{ marginLeft: 8, background: "linear-gradient(90deg,#3b82f6,#ec4899)", borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, color: "white" }}>NUOVO</div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 1 }}>
-            {news.map((item, i) => (
-  <div
-    key={i}
-    onClick={() => setSelectedNews(item)}
-    style={{
-      padding: "24px 20px",
-      borderTop: "1px solid rgba(255,255,255,0.08)",
-      cursor: "pointer",
-      transition: "all 0.25s ease"
-    }}
-  >
-    <div
-      style={{
-        fontSize: 11,
-        opacity: 0.4,
-        marginBottom: 8,
-        letterSpacing: "0.08em",
-        textTransform: "uppercase"
-      }}
-    >
-      {item.date}
-    </div>
+        {/* FEATURES */}
 
-    <div
-      style={{
-        fontWeight: 700,
-        fontSize: 15,
-        marginBottom: 8,
-        color: "white"
-      }}
-    >
-      {item.title}
-    </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(260px,1fr))",
+            gap: 24,
+            marginBottom: 100,
+          }}
+        >
+          {[
+            {
+              title: "Simulazioni realistiche",
+              text:
+                "Proiezioni basate su reddito, risparmi, spese e crescita finanziaria.",
+            },
+            {
+              title: "Pianificazione pensionistica",
+              text:
+                "Scopri il patrimonio che potresti accumulare fino all'età pensionabile.",
+            },
+            {
+              title: "Obiettivi di vita",
+              text:
+                "Valuta acquisto casa, auto e indipendenza finanziaria.",
+            },
+          ].map((item, index) => (
+            <div
+              key={index}
+              style={{
+                background:
+                  "rgba(255,255,255,0.05)",
+                border:
+                  "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 20,
+                padding: 28,
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              <h3
+                style={{
+                  margin: "0 0 12px",
+                  color: "white",
+                }}
+              >
+                {item.title}
+              </h3>
 
-    <div
-      style={{
-        fontSize: 13,
-        opacity: 0.55,
-        lineHeight: 1.7
-      }}
-    >
-      {item.desc}
-    </div>
-  </div>
-))}
+              <p
+                style={{
+                  margin: 0,
+                  opacity: 0.65,
+                  lineHeight: 1.7,
+                }}
+              >
+                {item.text}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* COME FUNZIONA */}
+
+        <div
+          style={{
+            marginBottom: 100,
+          }}
+        >
+          <h2
+            style={{
+              textAlign: "center",
+              fontSize: 32,
+              marginBottom: 50,
+            }}
+          >
+            Come funziona
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(220px,1fr))",
+              gap: 24,
+            }}
+          >
+            {[
+              {
+                step: "01",
+                title: "Inserisci i tuoi dati",
+              },
+              {
+                step: "02",
+                title: "Genera una simulazione",
+              },
+              {
+                step: "03",
+                title: "Analizza il risultato",
+              },
+              {
+                step: "04",
+                title: "Pianifica il futuro",
+              },
+            ].map((item) => (
+              <div
+                key={item.step}
+                style={{
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 42,
+                    fontWeight: 800,
+                    opacity: 0.15,
+                    marginBottom: 10,
+                  }}
+                >
+                  {item.step}
+                </div>
+
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 18,
+                  }}
+                >
+                  {item.title}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px" }}>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 32, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 8, color: "#60a5fa", textTransform: "uppercase", letterSpacing: "0.06em" }}>Solo simulazioni</div>
-              <div style={{ fontSize: 12, opacity: 0.45, lineHeight: 1.7 }}>Tutti i dati sono puramente simulativi e a scopo educativo. Non costituiscono consulenza finanziaria, fiscale o legale.</div>
-            </div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 8, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>Privacy & Cookie</div>
-              <div style={{ fontSize: 12, opacity: 0.45, lineHeight: 1.7 }}>I dati inseriti non vengono condivisi con terze parti. Utilizziamo solo cookie tecnici essenziali.</div>
-            </div>
-            <div style={{ gridColumn: "1 / -1", fontSize: 11, opacity: 0.25, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              © 2025 WealthFuture — Tutti i diritti riservati.
-            </div>
-          </div>
+        {/* CTA */}
+
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 20px",
+            borderRadius: 24,
+            background:
+              "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(236,72,153,0.15))",
+            border:
+              "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 32,
+              marginBottom: 12,
+            }}
+          >
+            Inizia oggi
+          </h2>
+
+          <p
+            style={{
+              opacity: 0.65,
+              marginBottom: 30,
+            }}
+          >
+            Crea gratuitamente il tuo primo scenario
+            finanziario.
+          </p>
+
+          <button
+            onClick={onRegister}
+            style={{
+              padding: "15px 34px",
+              borderRadius: 14,
+              border: "none",
+              background:
+                "linear-gradient(90deg,#3b82f6,#ec4899)",
+              color: "white",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Registrati Gratis
+          </button>
         </div>
       </div>
     </div>
