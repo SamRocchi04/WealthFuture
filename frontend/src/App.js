@@ -445,6 +445,11 @@ function Step({ n, title, desc, isLast }) {
 const GlobalStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', system-ui, sans-serif; }
     @keyframes tickerScroll {
@@ -461,11 +466,11 @@ const GlobalStyles = () => (
     .wf-btn-primary:hover  { filter: brightness(1.14); }
     .wf-btn-secondary:hover { background: rgba(255,255,255,0.08) !important; color: #f8fafc !important; }
     .wf-link:hover { color: rgba(248,250,252,0.7) !important; }
-    
+
     @media (max-width: 640px) {
-  section { padding-left: 16px !important; padding-right: 16px !important; }
-  nav > div { padding-left: 16px !important; padding-right: 16px !important; }
-}
+      section { padding-left: 16px !important; padding-right: 16px !important; }
+      nav > div { padding-left: 16px !important; padding-right: 16px !important; }
+    }
   `}</style>
 );
 
@@ -1990,9 +1995,9 @@ function planBadgeStyle(plan) {
 //#region STYLES
 
 const styles = {
-  app: { minHeight: "100vh", background: "#000", color: "white", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" },
+  app: { minHeight: "100vh", background: "#000", color: "white", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif", overflowX: "hidden" },
   bg: { position: "fixed", inset: 0, filter: "blur(120px)", zIndex: 0 },
-  container: { position: "relative", zIndex: 2, paddingTop: 70 },
+  container: { position: "relative", zIndex: 2, paddingTop: 70, overflowX: "hidden" },
   page: { padding: "32px 20px 80px", maxWidth: 1100, margin: "0 auto" },
   pageHeader: { marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.07)" },
   pageTitle: { fontSize: 26, fontWeight: 700, margin: "0 0 12px", letterSpacing: "-0.02em" },
@@ -2013,7 +2018,7 @@ const styles = {
   narrowCard: { width: "100%", maxWidth: 520, padding: "32px 0" },
   input: { width: "100%", height: 44, padding: "0 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#fff", boxSizing: "border-box", outline: "none", fontSize: 14, WebkitTextFillColor: "#fff", opacity: 1, transition: "border-color 0.2s" },
   button: { width: "100%", marginTop: 12, padding: "13px 20px", borderRadius: 12, border: "none", background: "linear-gradient(90deg,#3b82f6,#8b5cf6)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", letterSpacing: "0.01em" },
-  topBar: { position: "fixed", top: 0, width: "100%", height: 60, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 24px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)", zIndex: 10, boxSizing: "border-box", gap: 16 },
+  topBar: { position: "fixed", top: 0, width: "100%", height: 60, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)", zIndex: 10, boxSizing: "border-box", gap: 16 },
   smallButton: { padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.07)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em", transition: "background 0.2s" },
   loginWrapper: { height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", position: "relative", zIndex: 2 },
   loginCard: { width: "min(360px, 90vw)", padding: "40px 28px", borderRadius: 20, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(24px)", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" },
