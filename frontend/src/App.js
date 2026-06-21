@@ -1930,7 +1930,7 @@ function TopBar({ page, setPage }) {
 
   return (
     <>
-      <div style={{ position: "sticky", top: 0, zIndex: 1000, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 24px", backdropFilter: "blur(20px)", background: "rgba(10,10,20,0.65)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 1000, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", backdropFilter: "blur(20px)", background: "rgba(10,10,20,0.65)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <div onClick={() => setPage("home")} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
           <img src="/logo.png" alt="" style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; }} />
           <span style={{ fontWeight: 800, fontSize: 15, background: "linear-gradient(90deg,#3b82f6,#ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WealthFuture</span>
@@ -1993,12 +1993,12 @@ const styles = {
   app: { minHeight: "100vh", background: "#000", color: "white", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" },
   bg: { position: "fixed", inset: 0, filter: "blur(120px)", zIndex: 0 },
   container: { position: "relative", zIndex: 2, paddingTop: 70 },
-  page: { padding: "32px 32px 80px", maxWidth: 1100, margin: "0 auto" },
+  page: { padding: "32px 20px 80px", maxWidth: 1100, margin: "0 auto" },
   pageHeader: { marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.07)" },
   pageTitle: { fontSize: 26, fontWeight: 700, margin: "0 0 12px", letterSpacing: "-0.02em" },
   planBar: { display: "flex", alignItems: "center", gap: 8, fontSize: 13 },
   kpiStrip: { display: "flex", gap: 0, flexWrap: "wrap", margin: "24px 0" },
-  kpiItem: { flex: "1 1 160px", padding: "0 24px 0 0", borderRight: "1px solid rgba(255,255,255,0.07)", marginRight: 24, marginBottom: 20 },
+  kpiItem: { flex: "1 1 120px", padding: "0 16px 0 0", borderRight: "1px solid rgba(255,255,255,0.07)", marginRight: 16, marginBottom: 20 },
   kpiLabel: { fontSize: 11, opacity: 0.4, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 },
   kpiValue: { fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", color: "white" },
   kpiUnit: { fontSize: 14, fontWeight: 400, opacity: 0.5 },
@@ -2016,7 +2016,7 @@ const styles = {
   topBar: { position: "fixed", top: 0, width: "100%", height: 60, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 24px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)", zIndex: 10, boxSizing: "border-box", gap: 16 },
   smallButton: { padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.07)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em", transition: "background 0.2s" },
   loginWrapper: { height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", position: "relative", zIndex: 2 },
-  loginCard: { width: 360, padding: "40px 32px", borderRadius: 20, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(24px)", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" },
+  loginCard: { width: "min(360px, 90vw)", padding: "40px 28px", borderRadius: 20, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(24px)", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" },
   loginLogo: { width: 120, height: 120, objectFit: "contain", marginBottom: 8 },
   loginSlogan: { fontStyle: "italic", opacity: 0.55, fontSize: 14, textAlign: "center", marginBottom: 8 },
   field: { display: "flex", flexDirection: "column", width: "100%", marginBottom: 16 },
