@@ -905,6 +905,7 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
       growth, health, pension, wealth,
       homeAge, carAge, maxMortgageRate, mortgageCapacity, maxLoanRate, carLoanCapacity,
       monthlyExpenses, monthlySurplus, savingsRate, yearsToFinancialIndependence, breakEvenRetirement, affordableHousePrice,
+      hasHome: data.hasHome, hasCar: data.hasCar,
     };
 
     setResult(res);
@@ -1064,20 +1065,24 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
           </div>
 
           <div style={styles.kpiStrip}>
-            <div style={styles.kpiItem}>
-              <div style={styles.kpiLabel}>Score finanziario</div>
-              <div style={styles.kpiValue}>{result.health}<span style={styles.kpiUnit}>/100</span></div>
-              <div style={{ fontSize: 11, opacity: 0.4, marginTop: 2 }}>{plan === "free" ? "Base" : plan === "pro" ? "Avanzato" : "Professionale"}</div>
-            </div>
-            <div style={styles.kpiItem}>
-              <div style={styles.kpiLabel}>Mutuo max mensile</div>
-              <div style={styles.kpiValue}>€ {result.maxMortgageRate}<span style={styles.kpiUnit}>/m</span></div>
-            </div>
-            <div style={styles.kpiItem}>
-              <div style={styles.kpiLabel}>Finanziamento auto</div>
-              <div style={styles.kpiValue}>€ {result.maxLoanRate}<span style={styles.kpiUnit}>/m</span></div>
-            </div>
-          </div>
+  <div style={styles.kpiItem}>
+    <div style={styles.kpiLabel}>Score finanziario</div>
+    <div style={styles.kpiValue}>{result.health}<span style={styles.kpiUnit}>/100</span></div>
+    <div style={{ fontSize: 11, opacity: 0.4, marginTop: 2 }}>{plan === "free" ? "Base" : plan === "pro" ? "Avanzato" : "Professionale"}</div>
+  </div>
+  {!result.hasHome && (
+    <div style={styles.kpiItem}>
+      <div style={styles.kpiLabel}>Mutuo max mensile</div>
+      <div style={styles.kpiValue}>€ {result.maxMortgageRate}<span style={styles.kpiUnit}>/m</span></div>
+    </div>
+  )}
+  {!result.hasCar && (
+    <div style={styles.kpiItem}>
+      <div style={styles.kpiLabel}>Finanziamento auto</div>
+      <div style={styles.kpiValue}>€ {result.maxLoanRate}<span style={styles.kpiUnit}>/m</span></div>
+    </div>
+  )}
+</div>
 
           <div style={styles.divider} />
 
