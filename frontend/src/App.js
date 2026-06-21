@@ -1034,8 +1034,6 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
   {errors.sector && <div style={styles.fieldError}>Campo obbligatorio</div>}
 </div>
 
-<button style={styles.button} onClick={run}>Calcola</button>
-
           <div style={styles.field}>
             <label style={styles.label}>Paese di residenza</label>
             <select style={{ ...styles.input, borderColor: errors.country ? "rgba(239,68,68,0.8)" : undefined }}
