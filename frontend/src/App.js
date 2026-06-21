@@ -252,13 +252,7 @@ function Landing({ onLogin, onRegister }) {
         }}
       >
         {/* HERO */}
-
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: 100,
-          }}
-        >
+        <div style={{ textAlign: "center", marginBottom: 100 }}>
           <div
             style={{
               display: "inline-block",
@@ -284,9 +278,7 @@ function Landing({ onLogin, onRegister }) {
               marginBottom: 24,
               color: "white",
               opacity: visible ? 1 : 0,
-              transform: visible
-                ? "translateY(0)"
-                : "translateY(25px)",
+              transform: visible ? "translateY(0)" : "translateY(25px)",
               transition: "all 0.8s ease",
             }}
           >
@@ -294,8 +286,7 @@ function Landing({ onLogin, onRegister }) {
             <br />
             <span
               style={{
-                background:
-                  "linear-gradient(90deg,#3b82f6,#ec4899)",
+                background: "linear-gradient(90deg,#3b82f6,#ec4899)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -313,10 +304,9 @@ function Landing({ onLogin, onRegister }) {
               opacity: 0.7,
             }}
           >
-            Simula la crescita del tuo patrimonio,
-            pianifica pensione, acquisto casa, auto e
-            indipendenza finanziaria grazie ad analisi
-            realistiche basate sui tuoi dati.
+            Simula la crescita del tuo patrimonio, pianifica pensione, acquisto
+            casa, auto e indipendenza finanziaria grazie ad analisi realistiche
+            basate sui tuoi dati.
           </p>
 
           <div
@@ -333,8 +323,7 @@ function Landing({ onLogin, onRegister }) {
                 padding: "14px 32px",
                 borderRadius: 14,
                 border: "none",
-                background:
-                  "linear-gradient(90deg,#3b82f6,#ec4899)",
+                background: "linear-gradient(90deg,#3b82f6,#ec4899)",
                 color: "white",
                 fontWeight: 700,
                 fontSize: 15,
@@ -362,58 +351,77 @@ function Landing({ onLogin, onRegister }) {
         </div>
 
         {/* FEATURES */}
-
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(260px,1fr))",
-            gap: 24,
-            marginBottom: 100,
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: 0,
+            marginBottom: 80,
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 20,
+            overflow: "hidden",
+            background: "rgba(255,255,255,0.03)",
           }}
         >
           {[
             {
+              tag: "Analisi",
               title: "Simulazioni realistiche",
-              text:
-                "Proiezioni basate su reddito, risparmi, spese e crescita finanziaria.",
+              text: "Proiezioni basate su reddito, risparmi, spese e crescita finanziaria.",
             },
             {
+              tag: "Pensione",
               title: "Pianificazione pensionistica",
-              text:
-                "Scopri il patrimonio che potresti accumulare fino all'età pensionabile.",
+              text: "Scopri il patrimonio che potresti accumulare fino all'età pensionabile.",
             },
             {
+              tag: "Obiettivi",
               title: "Obiettivi di vita",
-              text:
-                "Valuta acquisto casa, auto e indipendenza finanziaria.",
+              text: "Valuta acquisto casa, auto e indipendenza finanziaria.",
             },
-          ].map((item, index) => (
+          ].map((item, index, arr) => (
             <div
               key={index}
               style={{
-                background:
-                  "rgba(255,255,255,0.05)",
-                border:
-                  "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 20,
-                padding: 28,
-                backdropFilter: "blur(12px)",
+                padding: "28px 26px",
+                borderRight:
+                  index < arr.length - 1
+                    ? "1px solid rgba(255,255,255,0.08)"
+                    : "none",
               }}
             >
+              <div
+                style={{
+                  display: "inline-block",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "#60a5fa",
+                  background: "rgba(59,130,246,0.12)",
+                  border: "1px solid rgba(59,130,246,0.25)",
+                  borderRadius: 4,
+                  padding: "3px 8px",
+                  marginBottom: 14,
+                }}
+              >
+                {item.tag}
+              </div>
               <h3
                 style={{
-                  margin: "0 0 12px",
+                  margin: "0 0 10px",
                   color: "white",
+                  fontSize: 15,
+                  fontWeight: 600,
                 }}
               >
                 {item.title}
               </h3>
-
               <p
                 style={{
                   margin: 0,
-                  opacity: 0.65,
+                  fontSize: 13,
+                  opacity: 0.55,
                   lineHeight: 1.7,
                 }}
               >
@@ -424,69 +432,61 @@ function Landing({ onLogin, onRegister }) {
         </div>
 
         {/* COME FUNZIONA */}
-
-        <div
-          style={{
-            marginBottom: 100,
-          }}
-        >
-          <h2
+        <div style={{ marginBottom: 80 }}>
+          <div
             style={{
-              textAlign: "center",
-              fontSize: 32,
-              marginBottom: 50,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.35)",
+              marginBottom: 28,
+              paddingBottom: 14,
+              borderBottom: "1px solid rgba(255,255,255,0.07)",
             }}
           >
             Come funziona
-          </h2>
+          </div>
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit,minmax(220px,1fr))",
-              gap: 24,
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
             }}
           >
             {[
-              {
-                step: "01",
-                title: "Inserisci i tuoi dati",
-              },
-              {
-                step: "02",
-                title: "Genera una simulazione",
-              },
-              {
-                step: "03",
-                title: "Analizza il risultato",
-              },
-              {
-                step: "04",
-                title: "Pianifica il futuro",
-              },
-            ].map((item) => (
+              { step: "01", title: "Inserisci i tuoi dati" },
+              { step: "02", title: "Genera una simulazione" },
+              { step: "03", title: "Analizza il risultato" },
+              { step: "04", title: "Pianifica il futuro" },
+            ].map((item, index) => (
               <div
                 key={item.step}
                 style={{
-                  textAlign: "center",
+                  padding: "20px 0 20px 20px",
+                  borderLeft:
+                    index === 0
+                      ? "none"
+                      : "1px solid rgba(255,255,255,0.07)",
+                  paddingLeft: index === 0 ? 0 : 20,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 42,
-                    fontWeight: 800,
-                    opacity: 0.15,
-                    marginBottom: 10,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#3b82f6",
+                    fontFamily: "monospace",
+                    marginBottom: 8,
                   }}
                 >
                   {item.step}
                 </div>
-
                 <div
                   style={{
-                    fontWeight: 700,
-                    fontSize: 18,
+                    fontWeight: 600,
+                    fontSize: 14,
+                    color: "rgba(255,255,255,0.8)",
                   }}
                 >
                   {item.title}
@@ -496,316 +496,327 @@ function Landing({ onLogin, onRegister }) {
           </div>
         </div>
 
-        {/* PREVIEW ENGINE */}
-
-<div
-  style={{
-    marginTop: 100,
-    borderRadius: 30,
-    overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.04)",
-    backdropFilter: "blur(20px)",
-  }}
->
-  <div
-    style={{
-      padding: "40px",
-      borderBottom: "1px solid rgba(255,255,255,0.08)",
-      textAlign: "center",
-    }}
-  >
-    <h2
-      style={{
-        fontSize: 34,
-        marginBottom: 15,
-      }}
-    >
-      Motore di Simulazione WealthFuture
-    </h2>
-
-    <p
-      style={{
-        maxWidth: 800,
-        margin: "0 auto",
-        opacity: 0.7,
-        lineHeight: 1.8,
-      }}
-    >
-      Analizziamo reddito, patrimonio, risparmi,
-      investimenti e inflazione per stimare in
-      modo realistico la tua evoluzione finanziaria
-      nei prossimi anni.
-    </p>
-  </div>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(auto-fit,minmax(320px,1fr))",
-      gap: 30,
-      padding: 40,
-    }}
-  >
-    {/* Formula */}
-
-    <div
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 20,
-        padding: 25,
-      }}
-    >
-      <h3 style={{ marginBottom: 20 }}>
-        Interesse Composto
-      </h3>
-
-      <div
-        style={{
-          fontFamily: "monospace",
-          color: "#60a5fa",
-          fontSize: 17,
-          lineHeight: 2,
-        }}
-      >
-        Capitale Futuro =
-        <br />
-        Capitale × (1 + rendimento)^anni
-        <br />
-        + contributi annuali
-      </div>
-
-      <p
-        style={{
-          marginTop: 20,
-          opacity: 0.65,
-        }}
-      >
-        Il capitale cresce nel tempo grazie alla
-        combinazione tra investimenti e risparmio.
-      </p>
-    </div>
-
-    {/* Dashboard Preview */}
-
-    <div
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 20,
-        padding: 25,
-      }}
-    >
-      <h3 style={{ marginBottom: 20 }}>
-        Anteprima Analisi
-      </h3>
-
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <div>
-          Reddito netto: <b>€2.500</b>
-        </div>
-
-        <div>
-          Risparmio mensile: <b>€500</b>
-        </div>
-
-        <div>
-          Patrimonio attuale: <b>€20.000</b>
-        </div>
-
-        <div>
-          Rendimento medio: <b>5%</b>
-        </div>
-
+        {/* ENGINE SECTION */}
         <div
           style={{
-            marginTop: 10,
-            color: "#10b981",
-            fontSize: 22,
-            fontWeight: 800,
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 20,
+            overflow: "hidden",
+            background: "rgba(0,0,0,0.25)",
+            backdropFilter: "blur(20px)",
           }}
         >
-          Patrimonio stimato:
-          <br />
-          €436.000
-        </div>
-      </div>
-    </div>
-
-    {/* Grafico */}
-
-    <div
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 20,
-        padding: 25,
-      }}
-    >
-      <h3 style={{ marginBottom: 25 }}>
-        Crescita Patrimoniale
-      </h3>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          gap: 10,
-          height: 180,
-        }}
-      >
-        {[25, 40, 60, 90, 130, 180].map(
-          (h, i) => (
-            <div
-              key={i}
+          {/* Header */}
+          <div
+            style={{
+              padding: "32px 36px",
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.03)",
+            }}
+          >
+            <h2
               style={{
-                flex: 1,
-                height: h,
-                borderRadius: 10,
-                background:
-                  "linear-gradient(180deg,#3b82f6,#ec4899)",
+                fontSize: 22,
+                fontWeight: 700,
+                color: "white",
+                marginBottom: 10,
               }}
-            />
-          )
-        )}
-      </div>
+            >
+              Motore di Simulazione WealthFuture
+            </h2>
+            <p
+              style={{
+                fontSize: 13,
+                color: "rgba(255,255,255,0.5)",
+                lineHeight: 1.7,
+                maxWidth: 680,
+                margin: 0,
+              }}
+            >
+              Analizziamo reddito, patrimonio, risparmi, investimenti e
+              inflazione per stimare in modo realistico la tua evoluzione
+              finanziaria nei prossimi anni.
+            </p>
+          </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: 12,
-          fontSize: 12,
-          opacity: 0.5,
-        }}
-      >
-        <span>0</span>
-        <span>5</span>
-        <span>10</span>
-        <span>15</span>
-        <span>20</span>
-        <span>30 anni</span>
-      </div>
-    </div>
-  </div>
+          {/* Cards row */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            {/* Formula */}
+            <div
+              style={{
+                padding: "24px 28px",
+                borderRight: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.35)",
+                  marginBottom: 16,
+                }}
+              >
+                Interesse Composto
+              </div>
+              <div
+                style={{
+                  background: "rgba(0,0,0,0.3)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: 8,
+                  padding: "14px 16px",
+                  fontFamily: "monospace",
+                  fontSize: 13,
+                  color: "#60a5fa",
+                  lineHeight: 1.9,
+                  marginBottom: 14,
+                }}
+              >
+                Capitale Futuro =<br />
+                Capitale × (1 + r)^anni<br />
+                + contributi annuali
+              </div>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.4)",
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
+                Il capitale cresce nel tempo grazie alla combinazione tra
+                investimenti e risparmio.
+              </p>
+            </div>
 
-  {/* KPI */}
+            {/* Analisi */}
+            <div
+              style={{
+                padding: "24px 28px",
+                borderRight: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.35)",
+                  marginBottom: 16,
+                }}
+              >
+                Anteprima Analisi
+              </div>
+              {[
+                { k: "Reddito netto", v: "€2.500" },
+                { k: "Risparmio mensile", v: "€500" },
+                { k: "Patrimonio attuale", v: "€20.000" },
+                { k: "Rendimento medio", v: "5%" },
+              ].map((row) => (
+                <div
+                  key={row.k}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 0",
+                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                  }}
+                >
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+                    {row.k}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
+                    {row.v}
+                  </span>
+                </div>
+              ))}
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: 14,
+                  background: "rgba(16,185,129,0.08)",
+                  border: "1px solid rgba(16,185,129,0.2)",
+                  borderRadius: 8,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: "rgba(255,255,255,0.4)",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    marginBottom: 6,
+                  }}
+                >
+                  Patrimonio stimato
+                </div>
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 800,
+                    color: "#10b981",
+                  }}
+                >
+                  €436.000
+                </div>
+              </div>
+            </div>
 
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(auto-fit,minmax(180px,1fr))",
-      gap: 20,
-      padding: "0 40px 40px",
-    }}
-  >
-    {[
-      {
-        label: "Pensione Stimata",
-        value: "€1.950/mese",
-      },
-      {
-        label: "FIRE",
-        value: "23 anni",
-      },
-      {
-        label: "Casa Acquistabile",
-        value: "€280.000",
-      },
-      {
-        label: "Salute Finanziaria",
-        value: "87/100",
-      },
-    ].map((item, i) => (
-      <div
-        key={i}
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          borderRadius: 16,
-          padding: 20,
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12,
-            opacity: 0.6,
-            marginBottom: 8,
-          }}
-        >
-          {item.label}
+            {/* Chart */}
+            <div style={{ padding: "24px 28px" }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.35)",
+                  marginBottom: 16,
+                }}
+              >
+                Crescita Patrimoniale
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  gap: 8,
+                  height: 140,
+                  marginBottom: 10,
+                }}
+              >
+                {[18, 28, 42, 58, 75, 100].map((pct, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      flex: 1,
+                      height: `${pct}%`,
+                      borderRadius: "4px 4px 0 0",
+                      background: "linear-gradient(180deg,#3b82f6,#8b5cf6)",
+                      opacity: 0.85,
+                    }}
+                  />
+                ))}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 10,
+                  color: "rgba(255,255,255,0.35)",
+                  fontFamily: "monospace",
+                  paddingTop: 8,
+                  borderTop: "1px solid rgba(255,255,255,0.06)",
+                }}
+              >
+                {["0", "5", "10", "15", "20", "30 anni"].map((l) => (
+                  <span key={l}>{l}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* KPI */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            }}
+          >
+            {[
+              { label: "Pensione Stimata", value: "€1.950/mese" },
+              { label: "FIRE", value: "23 anni" },
+              { label: "Casa Acquistabile", value: "€280.000" },
+              { label: "Salute Finanziaria", value: "87/100" },
+            ].map((item, i, arr) => (
+              <div
+                key={i}
+                style={{
+                  padding: "22px 28px",
+                  borderRight:
+                    i < arr.length - 1
+                      ? "1px solid rgba(255,255,255,0.08)"
+                      : "none",
+                  background: "rgba(255,255,255,0.02)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.35)",
+                    marginBottom: 8,
+                  }}
+                >
+                  {item.label}
+                </div>
+                <div
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 800,
+                    color: "white",
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  {item.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              padding: "18px 28px",
+              display: "flex",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 12,
+              background: "rgba(0,0,0,0.15)",
+            }}
+          >
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
+              © {new Date().getFullYear()} WealthFuture
+            </span>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+              {[
+                "Privacy Policy",
+                "Cookie Policy",
+                "Termini di Utilizzo",
+                "Diritti dell'Utente",
+                "Contatti",
+              ].map((link) => (
+                <span
+                  key={link}
+                  style={{
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.25)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {link}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-
-        <div
-          style={{
-            fontWeight: 800,
-            fontSize: 22,
-          }}
-        >
-          {item.value}
-        </div>
-      </div>
-    ))}
-  </div>
-
-  {/* Footer */}
-
-  <div
-    style={{
-      borderTop: "1px solid rgba(255,255,255,0.08)",
-      padding: "25px 40px",
-      display: "flex",
-      justifyContent: "space-between",
-      flexWrap: "wrap",
-      gap: 20,
-      fontSize: 14,
-      opacity: 0.6,
-    }}
-  >
-    <span>
-      © {new Date().getFullYear()} WealthFuture
-    </span>
-
-    <div
-      style={{
-        display: "flex",
-        gap: 20,
-        flexWrap: "wrap",
-      }}
-    >
-      <span style={{ cursor: "pointer" }}>
-        Privacy Policy
-      </span>
-
-      <span style={{ cursor: "pointer" }}>
-        Cookie Policy
-      </span>
-
-      <span style={{ cursor: "pointer" }}>
-        Termini di Utilizzo
-      </span>
-
-      <span style={{ cursor: "pointer" }}>
-        Diritti dell'Utente
-      </span>
-
-      <span style={{ cursor: "pointer" }}>
-        Contatti
-      </span>
-    </div>
-  </div>
-</div>
-        
       </div>
     </div>
   );
 }
+
 
 //#endregion
 
