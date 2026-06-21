@@ -210,7 +210,6 @@ export default function App() {
 //#endregion
 
 //#region LANDING
-
 function Landing({ onLogin, onRegister }) {
   const [visible, setVisible] = useState(false);
 
@@ -219,23 +218,33 @@ function Landing({ onLogin, onRegister }) {
   }, []);
 
   return (
-    <div style={styles.app}>
+    <div style={{ position: "relative", minHeight: "100vh", color: "white" }}>
+      {/* Background soft (più pulito, meno “gaming gradient”) */}
       <div
         style={{
-          ...styles.bg,
+          position: "absolute",
+          inset: 0,
           background:
-            "radial-gradient(circle at 20% 30%, rgba(59,130,246,0.9), transparent 60%), radial-gradient(circle at 80% 70%, rgba(236,72,153,0.85), transparent 60%)",
+            "radial-gradient(circle at 20% 20%, rgba(59,130,246,0.35), transparent 55%), radial-gradient(circle at 80% 60%, rgba(236,72,153,0.25), transparent 55%)",
         }}
       />
 
-      <div style={{ ...styles.topBar, justifyContent: "center" }}>
+      {/* Topbar minimal */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          display: "flex",
+          justifyContent: "center",
+          padding: "24px 0",
+        }}
+      >
         <span
           style={{
-            fontWeight: 800,
-            fontSize: 16,
-            background: "linear-gradient(90deg,#3b82f6,#ec4899)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
+            fontWeight: 700,
+            fontSize: 14,
+            letterSpacing: 1,
+            opacity: 0.8,
           }}
         >
           WealthFuture
@@ -246,31 +255,19 @@ function Landing({ onLogin, onRegister }) {
         style={{
           position: "relative",
           zIndex: 2,
-          maxWidth: 1200,
+          maxWidth: 1040,
           margin: "0 auto",
-          padding: "100px 20px 80px",
+          padding: "120px 24px 80px",
         }}
       >
         {/* HERO */}
-
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: 100,
-          }}
-        >
+        <div style={{ textAlign: "center", marginBottom: 140 }}>
           <div
             style={{
               display: "inline-block",
-              padding: "8px 16px",
-              borderRadius: 999,
-              background: "rgba(59,130,246,0.15)",
-              border: "1px solid rgba(59,130,246,0.3)",
-              color: "#60a5fa",
-              fontWeight: 700,
               fontSize: 13,
-              marginBottom: 20,
-              opacity: visible ? 1 : 0,
+              opacity: 0.6,
+              marginBottom: 24,
             }}
           >
             Pianificazione finanziaria intelligente
@@ -278,16 +275,11 @@ function Landing({ onLogin, onRegister }) {
 
           <h1
             style={{
-              fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
+              fontSize: "clamp(3rem, 6vw, 5rem)",
               fontWeight: 900,
-              lineHeight: 1.1,
-              marginBottom: 24,
-              color: "white",
-              opacity: visible ? 1 : 0,
-              transform: visible
-                ? "translateY(0)"
-                : "translateY(25px)",
-              transition: "all 0.8s ease",
+              lineHeight: 1.05,
+              marginBottom: 28,
+              letterSpacing: -1,
             }}
           >
             Costruisci il tuo
@@ -306,51 +298,40 @@ function Landing({ onLogin, onRegister }) {
 
           <p
             style={{
-              maxWidth: 700,
-              margin: "0 auto 40px",
-              fontSize: 18,
-              lineHeight: 1.8,
-              opacity: 0.7,
+              maxWidth: 680,
+              margin: "0 auto 48px",
+              fontSize: 19,
+              lineHeight: 1.7,
+              opacity: 0.65,
             }}
           >
-            Simula la crescita del tuo patrimonio,
-            pianifica pensione, acquisto casa, auto e
-            indipendenza finanziaria grazie ad analisi
-            realistiche basate sui tuoi dati.
+            Simula la crescita del tuo patrimonio e pianifica i tuoi obiettivi
+            con modelli realistici basati sui tuoi dati.
           </p>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 14,
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
+          <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
             <button
               onClick={onRegister}
               style={{
-                padding: "14px 32px",
-                borderRadius: 14,
+                padding: "14px 28px",
+                borderRadius: 12,
                 border: "none",
-                background:
-                  "linear-gradient(90deg,#3b82f6,#ec4899)",
-                color: "white",
+                background: "white",
+                color: "black",
                 fontWeight: 700,
-                fontSize: 15,
                 cursor: "pointer",
               }}
             >
-              Inizia Gratis
+              Inizia gratis
             </button>
 
             <button
               onClick={onLogin}
               style={{
-                padding: "14px 32px",
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: "rgba(255,255,255,0.05)",
+                padding: "14px 28px",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "transparent",
                 color: "white",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -361,452 +342,150 @@ function Landing({ onLogin, onRegister }) {
           </div>
         </div>
 
-        {/* FEATURES */}
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(260px,1fr))",
-            gap: 24,
-            marginBottom: 100,
-          }}
-        >
-          {[
-            {
-              title: "Simulazioni realistiche",
-              text:
-                "Proiezioni basate su reddito, risparmi, spese e crescita finanziaria.",
-            },
-            {
-              title: "Pianificazione pensionistica",
-              text:
-                "Scopri il patrimonio che potresti accumulare fino all'età pensionabile.",
-            },
-            {
-              title: "Obiettivi di vita",
-              text:
-                "Valuta acquisto casa, auto e indipendenza finanziaria.",
-            },
-          ].map((item, index) => (
-            <div
-              key={index}
-              style={{
-                background:
-                  "rgba(255,255,255,0.05)",
-                border:
-                  "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 20,
-                padding: 28,
-                backdropFilter: "blur(12px)",
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0 0 12px",
-                  color: "white",
-                }}
-              >
-                {item.title}
-              </h3>
-
-              <p
-                style={{
-                  margin: 0,
-                  opacity: 0.65,
-                  lineHeight: 1.7,
-                }}
-              >
-                {item.text}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* COME FUNZIONA */}
-
-        <div
-          style={{
-            marginBottom: 100,
-          }}
-        >
-          <h2
+        {/* FEATURES (molto più leggere, NO card grid) */}
+        <div style={{ marginBottom: 140 }}>
+          <div
             style={{
-              textAlign: "center",
-              fontSize: 32,
-              marginBottom: 50,
+              display: "grid",
+              gap: 18,
+              maxWidth: 760,
+              margin: "0 auto",
             }}
           >
+            {[
+              "Simulazioni realistiche basate su reddito e spese",
+              "Pianificazione pensionistica a lungo termine",
+              "Obiettivi: casa, auto e indipendenza finanziaria",
+            ].map((t, i) => (
+              <div
+                key={i}
+                style={{
+                  fontSize: 18,
+                  opacity: 0.75,
+                  padding: "10px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                {t}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* COME FUNZIONA (più aria, meno “box”) */}
+        <div style={{ marginBottom: 140, textAlign: "center" }}>
+          <h2 style={{ fontSize: 34, marginBottom: 60 }}>
             Come funziona
           </h2>
 
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit,minmax(220px,1fr))",
-              gap: 24,
+              display: "flex",
+              justifyContent: "center",
+              gap: 60,
+              flexWrap: "wrap",
             }}
           >
             {[
-              {
-                step: "01",
-                title: "Inserisci i tuoi dati",
-              },
-              {
-                step: "02",
-                title: "Genera una simulazione",
-              },
-              {
-                step: "03",
-                title: "Analizza il risultato",
-              },
-              {
-                step: "04",
-                title: "Pianifica il futuro",
-              },
-            ].map((item) => (
-              <div
-                key={item.step}
-                style={{
-                  textAlign: "center",
-                }}
-              >
+              "Inserisci dati",
+              "Simula crescita",
+              "Analizza risultati",
+              "Pianifica futuro",
+            ].map((t, i) => (
+              <div key={i} style={{ textAlign: "center" }}>
                 <div
                   style={{
-                    fontSize: 42,
+                    fontSize: 44,
                     fontWeight: 800,
                     opacity: 0.15,
-                    marginBottom: 10,
                   }}
                 >
-                  {item.step}
+                  0{i + 1}
                 </div>
-
-                <div
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 18,
-                  }}
-                >
-                  {item.title}
+                <div style={{ fontSize: 16, opacity: 0.75 }}>
+                  {t}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* PREVIEW ENGINE */}
+        {/* PREVIEW SECTION (più “editoriale”, meno card) */}
+        <div style={{ maxWidth: 820, margin: "0 auto 140px" }}>
+          <p style={{ fontSize: 18, opacity: 0.65, lineHeight: 1.8 }}>
+            Analizziamo reddito, patrimonio e investimenti per stimare
+            l’evoluzione reale del tuo capitale nel tempo.
+          </p>
 
-<div
-  style={{
-    marginTop: 100,
-    borderRadius: 30,
-    overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.04)",
-    backdropFilter: "blur(20px)",
-  }}
->
-  <div
-    style={{
-      padding: "40px",
-      borderBottom: "1px solid rgba(255,255,255,0.08)",
-      textAlign: "center",
-    }}
-  >
-    <h2
-      style={{
-        fontSize: 34,
-        marginBottom: 15,
-      }}
-    >
-      Motore di Simulazione WealthFuture
-    </h2>
-
-    <p
-      style={{
-        maxWidth: 800,
-        margin: "0 auto",
-        opacity: 0.7,
-        lineHeight: 1.8,
-      }}
-    >
-      Analizziamo reddito, patrimonio, risparmi,
-      investimenti e inflazione per stimare in
-      modo realistico la tua evoluzione finanziaria
-      nei prossimi anni.
-    </p>
-  </div>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(auto-fit,minmax(320px,1fr))",
-      gap: 30,
-      padding: 40,
-    }}
-  >
-    {/* Formula */}
-
-    <div
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 20,
-        padding: 25,
-      }}
-    >
-      <h3 style={{ marginBottom: 20 }}>
-        Interesse Composto
-      </h3>
-
-      <div
-        style={{
-          fontFamily: "monospace",
-          color: "#60a5fa",
-          fontSize: 17,
-          lineHeight: 2,
-        }}
-      >
-        Capitale Futuro =
-        <br />
-        Capitale × (1 + rendimento)^anni
-        <br />
-        + contributi annuali
-      </div>
-
-      <p
-        style={{
-          marginTop: 20,
-          opacity: 0.65,
-        }}
-      >
-        Il capitale cresce nel tempo grazie alla
-        combinazione tra investimenti e risparmio.
-      </p>
-    </div>
-
-    {/* Dashboard Preview */}
-
-    <div
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 20,
-        padding: 25,
-      }}
-    >
-      <h3 style={{ marginBottom: 20 }}>
-        Anteprima Analisi
-      </h3>
-
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <div>
-          Reddito netto: <b>€2.500</b>
+          <div style={{ marginTop: 40, fontFamily: "monospace", opacity: 0.8 }}>
+            Capitale futuro = capitale × (1 + rendimento)^anni + contributi
+          </div>
         </div>
 
-        <div>
-          Risparmio mensile: <b>€500</b>
-        </div>
-
-        <div>
-          Patrimonio attuale: <b>€20.000</b>
-        </div>
-
-        <div>
-          Rendimento medio: <b>5%</b>
-        </div>
-
+        {/* DASHBOARD PREVIEW (UN SOLO BLOCCO, NON 3 CARD) */}
         <div
           style={{
-            marginTop: 10,
-            color: "#10b981",
-            fontSize: 22,
-            fontWeight: 800,
+            maxWidth: 860,
+            margin: "0 auto 140px",
+            padding: "40px 0",
           }}
         >
-          Patrimonio stimato:
-          <br />
-          €436.000
+          <div style={{ fontSize: 14, opacity: 0.5, marginBottom: 12 }}>
+            Anteprima simulazione
+          </div>
+
+          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>
+            Patrimonio stimato: €436.000
+          </div>
+
+          <div style={{ opacity: 0.6, lineHeight: 1.9 }}>
+            Reddito: €2.500 · Risparmio: €500 · Patrimonio: €20.000 · Rendimento: 5%
+          </div>
         </div>
-      </div>
-    </div>
 
-    {/* Grafico */}
+        {/* GRAPH (più integrato, meno “widget”) */}
+        <div style={{ maxWidth: 860, margin: "0 auto 160px" }}>
+          <div style={{ fontSize: 14, opacity: 0.5, marginBottom: 20 }}>
+            Crescita patrimoniale
+          </div>
 
-    <div
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 20,
-        padding: 25,
-      }}
-    >
-      <h3 style={{ marginBottom: 25 }}>
-        Crescita Patrimoniale
-      </h3>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 140 }}>
+            {[25, 40, 60, 90, 130, 180].map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  height: h,
+                  borderRadius: 8,
+                  background:
+                    "linear-gradient(180deg,#3b82f6,rgba(236,72,153,0.6))",
+                  opacity: 0.8,
+                }}
+              />
+            ))}
+          </div>
+        </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          gap: 10,
-          height: 180,
-        }}
-      >
-        {[25, 40, 60, 90, 130, 180].map(
-          (h, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                height: h,
-                borderRadius: 10,
-                background:
-                  "linear-gradient(180deg,#3b82f6,#ec4899)",
-              }}
-            />
-          )
-        )}
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: 12,
-          fontSize: 12,
-          opacity: 0.5,
-        }}
-      >
-        <span>0</span>
-        <span>5</span>
-        <span>10</span>
-        <span>15</span>
-        <span>20</span>
-        <span>30 anni</span>
-      </div>
-    </div>
-  </div>
-
-  {/* KPI */}
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns:
-        "repeat(auto-fit,minmax(180px,1fr))",
-      gap: 20,
-      padding: "0 40px 40px",
-    }}
-  >
-    {[
-      {
-        label: "Pensione Stimata",
-        value: "€1.950/mese",
-      },
-      {
-        label: "FIRE",
-        value: "23 anni",
-      },
-      {
-        label: "Casa Acquistabile",
-        value: "€280.000",
-      },
-      {
-        label: "Salute Finanziaria",
-        value: "87/100",
-      },
-    ].map((item, i) => (
-      <div
-        key={i}
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          borderRadius: 16,
-          padding: 20,
-          textAlign: "center",
-        }}
-      >
+        {/* FOOTER MINIMAL */}
         <div
           style={{
-            fontSize: 12,
-            opacity: 0.6,
-            marginBottom: 8,
+            display: "flex",
+            gap: 24,
+            flexWrap: "wrap",
+            justifyContent: "center",
+            opacity: 0.5,
+            fontSize: 13,
+            paddingBottom: 40,
           }}
         >
-          {item.label}
+          <span>Privacy</span>
+          <span>Termini</span>
+          <span>Contatti</span>
         </div>
-
-        <div
-          style={{
-            fontWeight: 800,
-            fontSize: 22,
-          }}
-        >
-          {item.value}
-        </div>
-      </div>
-    ))}
-  </div>
-
-  {/* Footer */}
-
-  <div
-    style={{
-      borderTop: "1px solid rgba(255,255,255,0.08)",
-      padding: "25px 40px",
-      display: "flex",
-      justifyContent: "space-between",
-      flexWrap: "wrap",
-      gap: 20,
-      fontSize: 14,
-      opacity: 0.6,
-    }}
-  >
-    <span>
-      © {new Date().getFullYear()} WealthFuture
-    </span>
-
-    <div
-      style={{
-        display: "flex",
-        gap: 20,
-        flexWrap: "wrap",
-      }}
-    >
-      <span style={{ cursor: "pointer" }}>
-        Privacy Policy
-      </span>
-
-      <span style={{ cursor: "pointer" }}>
-        Cookie Policy
-      </span>
-
-      <span style={{ cursor: "pointer" }}>
-        Termini di Utilizzo
-      </span>
-
-      <span style={{ cursor: "pointer" }}>
-        Diritti dell'Utente
-      </span>
-
-      <span style={{ cursor: "pointer" }}>
-        Contatti
-      </span>
-    </div>
-  </div>
-</div>
-        
       </div>
     </div>
   );
 }
-
 //#endregion
 
 //#region LOGIN
