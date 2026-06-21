@@ -212,609 +212,542 @@ export default function App() {
 //#region LANDING
 
 function Landing({ onLogin, onRegister }) {
-  const [visible, setVisible] = useState(false);
+  // ── DESIGN TOKENS ────────────────────────────────────────────
+const C = {
+  base:     "#050810",
+  surface:  "#0b1120",
+  card:     "#111827",
+  cardHi:   "#162033",
+  border:   "rgba(255,255,255,0.07)",
+  borderHi: "rgba(255,255,255,0.13)",
+  blue:     "#2563eb",
+  blueDim:  "rgba(37,99,235,0.15)",
+  blueGlow: "rgba(37,99,235,0.25)",
+  green:    "#10b981",
+  greenDim: "rgba(16,185,129,0.12)",
+  amber:    "#f59e0b",
+  text:     "#f8fafc",
+  muted:    "rgba(248,250,252,0.45)",
+  hint:     "rgba(248,250,252,0.25)",
+};
 
-  useEffect(() => {
-    setTimeout(() => setVisible(true), 100);
-  }, []);
-
+// ── SPARKLINE ─────────────────────────────────────────────────
+function Sparkline({ data, color = C.green, width = 80, height = 32 }) {
+  const max = Math.max(...data), min = Math.min(...data);
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / (max - min || 1)) * (height - 4) - 2;
+    return `${x},${y}`;
+  }).join(" ");
   return (
-    <div style={styles.app}>
-      <div
-        style={{
-          ...styles.bg,
-          background:
-            "radial-gradient(circle at 20% 30%, rgba(59,130,246,0.9), transparent 60%), radial-gradient(circle at 80% 70%, rgba(236,72,153,0.85), transparent 60%)",
-        }}
-      />
+    <svg width={width} height={height} style={{ display: "block" }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
-      <div style={{ ...styles.topBar, justifyContent: "center" }}>
-        <span
-          style={{
-            fontWeight: 800,
-            fontSize: 16,
-            background: "linear-gradient(90deg,#3b82f6,#ec4899)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          WealthFuture
-        </span>
+// ── ANIMATED TICKER ───────────────────────────────────────────
+const TICKERS = [
+  { sym: "MSFT", val: "421.80", chg: "+1.2%" },
+  { sym: "AAPL", val: "196.45", chg: "+0.8%" },
+  { sym: "NVDA", val: "138.20", chg: "+3.4%" },
+  { sym: "BTC",  val: "67,420", chg: "+2.1%" },
+  { sym: "ETH",  val: "3,512",  chg: "+1.7%" },
+  { sym: "SPY",  val: "536.90", chg: "+0.5%" },
+  { sym: "AMZN", val: "185.30", chg: "+0.9%" },
+  { sym: "GOOGL",val: "175.60", chg: "-0.3%", neg: true },
+];
+
+function Ticker() {
+  const doubled = [...TICKERS, ...TICKERS];
+  return (
+    <div style={{
+      overflow: "hidden", width: "100%",
+      borderBottom: `1px solid ${C.border}`,
+      background: C.surface,
+      padding: "8px 0",
+    }}>
+      <div style={{
+        display: "flex", gap: 48,
+        animation: "tickerScroll 30s linear infinite",
+        width: "max-content",
+      }}>
+        {doubled.map((t, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: "0.06em" }}>{t.sym}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: C.text, fontVariantNumeric: "tabular-nums" }}>{t.val}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: t.neg ? "#f87171" : C.green }}>{t.chg}</span>
+          </div>
+        ))}
       </div>
+    </div>
+  );
+}
 
-      <div
-        style={{
-          position: "relative",
-          zIndex: 2,
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: "100px 20px 80px",
-        }}
-      >
-        {/* HERO */}
-        <div style={{ textAlign: "center", marginBottom: 100 }}>
-          <div
-            style={{
-              display: "inline-block",
-              padding: "8px 16px",
-              borderRadius: 999,
-              background: "rgba(59,130,246,0.15)",
-              border: "1px solid rgba(59,130,246,0.3)",
-              color: "#60a5fa",
-              fontWeight: 700,
-              fontSize: 13,
-              marginBottom: 20,
-              opacity: visible ? 1 : 0,
-            }}
-          >
-            Pianificazione finanziaria intelligente
+// ── STAT CARD ─────────────────────────────────────────────────
+function StatCard({ label, value, sub, color = C.green, data }) {
+  return (
+    <div className="wf-card-hover" style={{
+      background: C.card, border: `1px solid ${C.border}`,
+      borderRadius: 16, padding: "20px 22px",
+      transition: "border-color 0.2s, background 0.2s", cursor: "default",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.hint }}>
+          {label}
+        </span>
+        {data && <Sparkline data={data} color={color} />}
+      </div>
+      <div style={{ fontSize: 24, fontWeight: 800, color: C.text, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", marginBottom: 4 }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 12, color, fontWeight: 600 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ── FEATURE ROW ───────────────────────────────────────────────
+function FeatureRow({ icon, title, desc }) {
+  return (
+    <div className="wf-card-hover" style={{
+      display: "flex", gap: 16, alignItems: "flex-start",
+      padding: "20px 22px", background: C.card,
+      border: `1px solid ${C.border}`, borderRadius: 14,
+      transition: "border-color 0.2s, background 0.2s",
+    }}>
+      <div style={{
+        width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+        background: C.blueDim, border: `1px solid ${C.blueGlow}`,
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17,
+      }}>{icon}</div>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 5 }}>{title}</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.65 }}>{desc}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── BAR CHART ─────────────────────────────────────────────────
+function BarChart() {
+  const bars = [12, 22, 35, 48, 65, 80, 100];
+  const labels = ["0", "5", "10", "15", "20", "25", "30a"];
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120, marginBottom: 8 }}>
+        {bars.map((h, i) => (
+          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <div style={{
+              height: `${h}%`, borderRadius: "4px 4px 0 0",
+              background: i === bars.length - 1 ? C.green : `rgba(37,99,235,${0.3 + i * 0.1})`,
+            }} />
           </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
+        {labels.map(l => (
+          <span key={l} style={{ fontSize: 10, color: C.hint, fontFamily: "monospace" }}>{l}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-          <h1
-            style={{
-              fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
-              fontWeight: 900,
-              lineHeight: 1.1,
-              marginBottom: 24,
-              color: "white",
-              opacity: visible ? 1 : 0,
-              transform: visible ? "translateY(0)" : "translateY(25px)",
-              transition: "all 0.8s ease",
-            }}
-          >
-            Costruisci il tuo
-            <br />
-            <span
-              style={{
-                background: "linear-gradient(90deg,#3b82f6,#ec4899)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              futuro finanziario
-            </span>
-          </h1>
-
-          <p
-            style={{
-              maxWidth: 700,
-              margin: "0 auto 40px",
-              fontSize: 18,
-              lineHeight: 1.8,
-              opacity: 0.7,
-            }}
-          >
-            Simula la crescita del tuo patrimonio, pianifica pensione, acquisto
-            casa, auto e indipendenza finanziaria grazie ad analisi realistiche
-            basate sui tuoi dati.
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              gap: 14,
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              onClick={onRegister}
-              style={{
-                padding: "14px 32px",
-                borderRadius: 14,
-                border: "none",
-                background: "linear-gradient(90deg,#3b82f6,#ec4899)",
-                color: "white",
-                fontWeight: 700,
-                fontSize: 15,
-                cursor: "pointer",
-              }}
-            >
-              Inizia Gratis
-            </button>
-
-            <button
-              onClick={onLogin}
-              style={{
-                padding: "14px 32px",
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: "rgba(255,255,255,0.05)",
-                color: "white",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Accedi
-            </button>
-          </div>
+// ── DASHBOARD PREVIEW ─────────────────────────────────────────
+function DashboardPreview() {
+  const spark1 = [20, 25, 22, 35, 40, 38, 55, 60, 58, 72, 80, 90];
+  const spark2 = [10, 12, 15, 13, 18, 22, 20, 28, 30, 27, 35, 40];
+  return (
+    <div style={{
+      background: C.surface, border: `1px solid ${C.border}`,
+      borderRadius: 20, overflow: "hidden",
+      boxShadow: "0 40px 80px rgba(0,0,0,0.6)",
+    }}>
+      <div style={{
+        padding: "12px 18px", background: C.card,
+        borderBottom: `1px solid ${C.border}`,
+        display: "flex", alignItems: "center", gap: 8,
+      }}>
+        {["#ef4444", "#f59e0b", "#10b981"].map(c => (
+          <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c, opacity: 0.7 }} />
+        ))}
+        <span style={{ fontSize: 12, color: C.hint, marginLeft: 8, fontFamily: "monospace" }}>wealthfuture.app — Dashboard</span>
+      </div>
+      <div style={{ padding: "20px 18px" }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.hint, marginBottom: 6 }}>Patrimonio netto</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: C.text, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>€ 136.400</div>
+          <div style={{ fontSize: 12, color: C.green, fontWeight: 600, marginTop: 3 }}>↑ +€ 4.200 questo mese</div>
         </div>
-
-        {/* FEATURES */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: 0,
-            marginBottom: 80,
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 20,
-            overflow: "hidden",
-            background: "rgba(255,255,255,0.03)",
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
           {[
-            {
-              tag: "Analisi",
-              title: "Simulazioni realistiche",
-              text: "Proiezioni basate su reddito, risparmi, spese e crescita finanziaria.",
-            },
-            {
-              tag: "Pensione",
-              title: "Pianificazione pensionistica",
-              text: "Scopri il patrimonio che potresti accumulare fino all'età pensionabile.",
-            },
-            {
-              tag: "Obiettivi",
-              title: "Obiettivi di vita",
-              text: "Valuta acquisto casa, auto e indipendenza finanziaria.",
-            },
-          ].map((item, index, arr) => (
-            <div
-              key={index}
-              style={{
-                padding: "28px 26px",
-                borderRight:
-                  index < arr.length - 1
-                    ? "1px solid rgba(255,255,255,0.08)"
-                    : "none",
-              }}
-            >
-              <div
-                style={{
-                  display: "inline-block",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "#60a5fa",
-                  background: "rgba(59,130,246,0.12)",
-                  border: "1px solid rgba(59,130,246,0.25)",
-                  borderRadius: 4,
-                  padding: "3px 8px",
-                  marginBottom: 14,
-                }}
-              >
-                {item.tag}
-              </div>
-              <h3
-                style={{
-                  margin: "0 0 10px",
-                  color: "white",
-                  fontSize: 15,
-                  fontWeight: 600,
-                }}
-              >
-                {item.title}
-              </h3>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 13,
-                  opacity: 0.55,
-                  lineHeight: 1.7,
-                }}
-              >
-                {item.text}
-              </p>
+            { label: "Investimenti", val: "€92.000", color: C.blue, data: spark1 },
+            { label: "Liquidità",    val: "€44.400", color: C.green, data: spark2 },
+          ].map(item => (
+            <div key={item.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px" }}>
+              <div style={{ fontSize: 10, color: C.hint, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 8 }}>{item.label}</div>
+              <Sparkline data={item.data} color={item.color} width={90} height={28} />
+              <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginTop: 6, fontVariantNumeric: "tabular-nums" }}>{item.val}</div>
             </div>
           ))}
         </div>
-
-        {/* COME FUNZIONA */}
-        <div style={{ marginBottom: 80 }}>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "rgba(255,255,255,0.35)",
-              marginBottom: 28,
-              paddingBottom: 14,
-              borderBottom: "1px solid rgba(255,255,255,0.07)",
-            }}
-          >
-            Come funziona
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, color: C.hint, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>FIRE progress</span>
+            <span style={{ fontSize: 11, color: C.green, fontWeight: 700 }}>43%</span>
           </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            }}
-          >
-            {[
-              { step: "01", title: "Inserisci i tuoi dati" },
-              { step: "02", title: "Genera una simulazione" },
-              { step: "03", title: "Analizza il risultato" },
-              { step: "04", title: "Pianifica il futuro" },
-            ].map((item, index) => (
-              <div
-                key={item.step}
-                style={{
-                  padding: "20px 0 20px 20px",
-                  borderLeft:
-                    index === 0
-                      ? "none"
-                      : "1px solid rgba(255,255,255,0.07)",
-                  paddingLeft: index === 0 ? 0 : 20,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#3b82f6",
-                    fontFamily: "monospace",
-                    marginBottom: 8,
-                  }}
-                >
-                  {item.step}
-                </div>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    fontSize: 14,
-                    color: "rgba(255,255,255,0.8)",
-                  }}
-                >
-                  {item.title}
-                </div>
-              </div>
-            ))}
+          <div style={{ height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: "43%", background: `linear-gradient(90deg,${C.blue},${C.green})`, borderRadius: 3 }} />
           </div>
-        </div>
-
-        {/* ENGINE SECTION */}
-        <div
-          style={{
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 20,
-            overflow: "hidden",
-            background: "rgba(0,0,0,0.25)",
-            backdropFilter: "blur(20px)",
-          }}
-        >
-          {/* Header */}
-          <div
-            style={{
-              padding: "32px 36px",
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.03)",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: 22,
-                fontWeight: 700,
-                color: "white",
-                marginBottom: 10,
-              }}
-            >
-              Motore di Simulazione WealthFuture
-            </h2>
-            <p
-              style={{
-                fontSize: 13,
-                color: "rgba(255,255,255,0.5)",
-                lineHeight: 1.7,
-                maxWidth: 680,
-                margin: 0,
-              }}
-            >
-              Analizziamo reddito, patrimonio, risparmi, investimenti e
-              inflazione per stimare in modo realistico la tua evoluzione
-              finanziaria nei prossimi anni.
-            </p>
-          </div>
-
-          {/* Cards row */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            {/* Formula */}
-            <div
-              style={{
-                padding: "24px 28px",
-                borderRight: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.35)",
-                  marginBottom: 16,
-                }}
-              >
-                Interesse Composto
-              </div>
-              <div
-                style={{
-                  background: "rgba(0,0,0,0.3)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 8,
-                  padding: "14px 16px",
-                  fontFamily: "monospace",
-                  fontSize: 13,
-                  color: "#60a5fa",
-                  lineHeight: 1.9,
-                  marginBottom: 14,
-                }}
-              >
-                Capitale Futuro =<br />
-                Capitale × (1 + r)^anni<br />
-                + contributi annuali
-              </div>
-              <p
-                style={{
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.4)",
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}
-              >
-                Il capitale cresce nel tempo grazie alla combinazione tra
-                investimenti e risparmio.
-              </p>
-            </div>
-
-            {/* Analisi */}
-            <div
-              style={{
-                padding: "24px 28px",
-                borderRight: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.35)",
-                  marginBottom: 16,
-                }}
-              >
-                Anteprima Analisi
-              </div>
-              {[
-                { k: "Reddito netto", v: "€2.500" },
-                { k: "Risparmio mensile", v: "€500" },
-                { k: "Patrimonio attuale", v: "€20.000" },
-                { k: "Rendimento medio", v: "5%" },
-              ].map((row) => (
-                <div
-                  key={row.k}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "8px 0",
-                    borderBottom: "1px solid rgba(255,255,255,0.05)",
-                  }}
-                >
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
-                    {row.k}
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
-                    {row.v}
-                  </span>
-                </div>
-              ))}
-              <div
-                style={{
-                  marginTop: 16,
-                  padding: 14,
-                  background: "rgba(16,185,129,0.08)",
-                  border: "1px solid rgba(16,185,129,0.2)",
-                  borderRadius: 8,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(255,255,255,0.4)",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    marginBottom: 6,
-                  }}
-                >
-                  Patrimonio stimato
-                </div>
-                <div
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: "#10b981",
-                  }}
-                >
-                  €436.000
-                </div>
-              </div>
-            </div>
-
-            {/* Chart */}
-            <div style={{ padding: "24px 28px" }}>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.35)",
-                  marginBottom: 16,
-                }}
-              >
-                Crescita Patrimoniale
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-end",
-                  gap: 8,
-                  height: 140,
-                  marginBottom: 10,
-                }}
-              >
-                {[18, 28, 42, 58, 75, 100].map((pct, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      flex: 1,
-                      height: `${pct}%`,
-                      borderRadius: "4px 4px 0 0",
-                      background: "linear-gradient(180deg,#3b82f6,#8b5cf6)",
-                      opacity: 0.85,
-                    }}
-                  />
-                ))}
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 10,
-                  color: "rgba(255,255,255,0.35)",
-                  fontFamily: "monospace",
-                  paddingTop: 8,
-                  borderTop: "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
-                {["0", "5", "10", "15", "20", "30 anni"].map((l) => (
-                  <span key={l}>{l}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* KPI */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            }}
-          >
-            {[
-              { label: "Pensione Stimata", value: "€1.950/mese" },
-              { label: "FIRE", value: "23 anni" },
-              { label: "Casa Acquistabile", value: "€280.000" },
-              { label: "Salute Finanziaria", value: "87/100" },
-            ].map((item, i, arr) => (
-              <div
-                key={i}
-                style={{
-                  padding: "22px 28px",
-                  borderRight:
-                    i < arr.length - 1
-                      ? "1px solid rgba(255,255,255,0.08)"
-                      : "none",
-                  background: "rgba(255,255,255,0.02)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    color: "rgba(255,255,255,0.35)",
-                    marginBottom: 8,
-                  }}
-                >
-                  {item.label}
-                </div>
-                <div
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 800,
-                    color: "white",
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {item.value}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              padding: "18px 28px",
-              display: "flex",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: 12,
-              background: "rgba(0,0,0,0.15)",
-            }}
-          >
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
-              © {new Date().getFullYear()} WealthFuture
-            </span>
-            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-              {[
-                "Privacy Policy",
-                "Cookie Policy",
-                "Termini di Utilizzo",
-                "Diritti dell'Utente",
-                "Contatti",
-              ].map((link) => (
-                <span
-                  key={link}
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.25)",
-                    cursor: "pointer",
-                  }}
-                >
-                  {link}
-                </span>
-              ))}
-            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+            <span style={{ fontSize: 11, color: C.muted }}>€136k attuale</span>
+            <span style={{ fontSize: 11, color: C.muted }}>€316k target</span>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+// ── STEP ─────────────────────────────────────────────────────
+function Step({ n, title, desc, isLast }) {
+  return (
+    <div style={{ display: "flex", gap: 16, position: "relative" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: "50%",
+          background: C.blueDim, border: `1px solid ${C.blueGlow}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 12, fontWeight: 800, color: C.blue, fontFamily: "monospace",
+        }}>{n}</div>
+        {!isLast && <div style={{ width: 1, flex: 1, minHeight: 32, background: C.border, marginTop: 8 }} />}
+      </div>
+      <div style={{ paddingBottom: isLast ? 0 : 32 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>{title}</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{desc}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── GLOBAL STYLES ─────────────────────────────────────────────
+const GlobalStyles = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    @keyframes tickerScroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    .wf-card-hover:hover {
+      border-color: rgba(255,255,255,0.13) !important;
+      background: #162033 !important;
+    }
+    .wf-btn-primary:hover  { filter: brightness(1.14); }
+    .wf-btn-secondary:hover { background: rgba(255,255,255,0.08) !important; color: #f8fafc !important; }
+    .wf-link:hover { color: rgba(248,250,252,0.7) !important; }
+  `}</style>
+);
+
+// ── MAIN COMPONENT ────────────────────────────────────────────
+export default function Landing({ onLogin, onRegister }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { setTimeout(() => setVisible(true), 80); }, []);
+
+  return (
+    <div style={{ background: C.base, minHeight: "100vh", color: C.text, fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <GlobalStyles />
+
+      {/* ── NAVBAR ── */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 100,
+        borderBottom: `1px solid ${C.border}`,
+        background: "rgba(5,8,16,0.85)",
+        backdropFilter: "blur(20px)",
+      }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 28px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${C.blue},#7c3aed)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 14, fontWeight: 900, color: "white" }}>W</span>
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em" }}>WealthFuture</span>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={onLogin} className="wf-btn-secondary" style={{
+              padding: "8px 18px", borderRadius: 9, border: `1px solid ${C.border}`,
+              background: "transparent", color: C.muted, fontSize: 13, fontWeight: 600, cursor: "pointer",
+              transition: "background 0.15s, color 0.15s",
+            }}>Accedi</button>
+            <button onClick={onRegister} className="wf-btn-primary" style={{
+              padding: "8px 18px", borderRadius: 9, border: "none",
+              background: C.blue, color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
+              transition: "filter 0.15s",
+            }}>Inizia gratis</button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── TICKER ── */}
+      <Ticker />
+
+      {/* ── HERO ── */}
+      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 28px 100px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
+          <div style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "none" : "translateY(24px)",
+            transition: "all 0.7s cubic-bezier(.16,1,.3,1)",
+          }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "6px 14px", borderRadius: 999,
+              background: C.blueDim, border: `1px solid ${C.blueGlow}`,
+              marginBottom: 28,
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, animation: "pulse 2s ease infinite" }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: C.blue }}>Pianificazione finanziaria intelligente</span>
+            </div>
+
+            <h1 style={{
+              fontSize: "clamp(2.2rem,4vw,3.8rem)",
+              fontWeight: 900, lineHeight: 1.08,
+              letterSpacing: "-0.04em",
+              marginBottom: 22, color: C.text,
+            }}>
+              Costruisci il tuo<br />
+              <span style={{ background: `linear-gradient(120deg,${C.blue} 0%,#7c3aed 60%,${C.green} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                futuro finanziario
+              </span>
+            </h1>
+
+            <p style={{ fontSize: 16, lineHeight: 1.75, color: C.muted, maxWidth: 460, marginBottom: 36 }}>
+              Simula la crescita del patrimonio, pianifica pensione, casa e indipendenza finanziaria con analisi precise basate sui tuoi dati reali.
+            </p>
+
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 44 }}>
+              <button onClick={onRegister} className="wf-btn-primary" style={{
+                padding: "13px 28px", borderRadius: 11, border: "none",
+                background: C.blue, color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                transition: "filter 0.15s",
+              }}>Inizia gratis →</button>
+              <button onClick={onLogin} className="wf-btn-secondary" style={{
+                padding: "13px 28px", borderRadius: 11,
+                border: `1px solid ${C.border}`, background: "transparent",
+                color: C.muted, fontWeight: 600, fontSize: 14, cursor: "pointer",
+                transition: "background 0.15s",
+              }}>Accedi</button>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ display: "flex" }}>
+                {["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"].map((c, i) => (
+                  <div key={i} style={{
+                    width: 28, height: 28, borderRadius: "50%",
+                    background: c, border: `2px solid ${C.base}`,
+                    marginLeft: i === 0 ? 0 : -8, opacity: 0.85,
+                  }} />
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>+12.000 utenti attivi</div>
+                <div style={{ fontSize: 12, color: C.muted }}>★★★★★ 4.9/5</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "none" : "translateY(30px)",
+            transition: "all 0.9s cubic-bezier(.16,1,.3,1) 0.15s",
+          }}>
+            <DashboardPreview />
+          </div>
+        </div>
+      </section>
+
+      {/* ── STATS BAND ── */}
+      <section style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, background: C.surface }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 28px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)" }}>
+            {[
+              { label: "Patrimonio simulato",   val: "€ 2.4 mld", sub: "tra tutti gli utenti" },
+              { label: "Simulazioni generate",  val: "340k+",      sub: "ultimi 12 mesi" },
+              { label: "Precisione proiezioni", val: "94.2%",      sub: "su dati storici" },
+              { label: "Risparmio ottimizzato", val: "€ 380",      sub: "medio mensile utente" },
+            ].map((s, i, arr) => (
+              <div key={s.label} style={{
+                padding: "28px 24px",
+                borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none",
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.hint, marginBottom: 8 }}>{s.label}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", marginBottom: 3 }}>{s.val}</div>
+                <div style={{ fontSize: 12, color: C.muted }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "90px 28px" }}>
+        <div style={{ marginBottom: 52 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.blue, marginBottom: 14 }}>Funzionalità</div>
+          <h2 style={{ fontSize: "clamp(1.6rem,3vw,2.4rem)", fontWeight: 800, letterSpacing: "-0.03em", color: C.text, marginBottom: 12, maxWidth: 480 }}>
+            Tutto quello che serve per decidere meglio
+          </h2>
+          <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.7, maxWidth: 500 }}>
+            Strumenti di analisi professionale, accessibili senza essere un esperto di finanza.
+          </p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 }}>
+          <FeatureRow icon="📈" title="Interesse composto" desc="Proiezioni a lungo termine basate su rendimento annuo, inflazione reale e contributi periodici." />
+          <FeatureRow icon="🏦" title="Pianificazione pensione" desc="Stima il capitale accumulato all'età pensionabile e la rendita mensile disponibile." />
+          <FeatureRow icon="🏠" title="Obiettivo casa" desc="Calcola in quanti anni puoi permetterti un mutuo, con simulazione di anticipo e rate." />
+          <FeatureRow icon="⚡" title="Indipendenza finanziaria" desc="Scopri il tuo numero FIRE e quanto manca al punto in cui il capitale lavora per te." />
+          <FeatureRow icon="🛡️" title="Fondo di emergenza" desc="Analizza la solidità della tua riserva liquidità rispetto alle spese mensili reali." />
+          <FeatureRow icon="📊" title="Salute finanziaria" desc="Score aggregato 0–100 che misura equilibrio, crescita e rischio del tuo profilo." />
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section style={{ background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "90px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "start" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.blue, marginBottom: 14 }}>Come funziona</div>
+            <h2 style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)", fontWeight: 800, letterSpacing: "-0.03em", color: C.text, marginBottom: 40 }}>
+              Dalla prima cifra alla strategia completa
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <Step n="01" title="Inserisci il tuo profilo" desc="Reddito netto, spese, risparmi e patrimonio attuale. Bastano 3 minuti." />
+              <Step n="02" title="Configura gli obiettivi" desc="Pensione, casa, FIRE o tutti e tre. Il sistema adatta i calcoli in tempo reale." />
+              <Step n="03" title="Analizza le proiezioni" desc="Grafici interattivi con scenari ottimista, realistico e conservativo." isLast={false} />
+              <Step n="04" title="Prendi decisioni informate" desc="Confronta strategie, ottimizza i risparmi e monitora i progressi nel tempo." isLast />
+            </div>
+          </div>
+
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, overflow: "hidden" }}>
+            <div style={{ padding: "20px 22px", borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.hint, marginBottom: 4 }}>Motore di simulazione</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>WealthFuture Engine v2.0</div>
+            </div>
+            <div style={{ padding: "20px 22px", borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", fontFamily: "monospace", fontSize: 12.5, color: C.blue, lineHeight: 2, marginBottom: 14 }}>
+                Vf = V₀ × (1 + r)ⁿ<br />
+                <span style={{ color: C.hint }}>+ Σ c × (1 + r)^(n-t)</span><br />
+                <span style={{ color: "rgba(248,250,252,0.2)" }}>− inflazione × n</span>
+              </div>
+              <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.65, margin: 0 }}>
+                Capitale iniziale, contributi periodici e rendimento composto corretti per l'inflazione storica italiana.
+              </p>
+            </div>
+            <div style={{ padding: "16px 22px", borderBottom: `1px solid ${C.border}` }}>
+              {[
+                { k: "Reddito netto mensile", v: "€ 2.500" },
+                { k: "Risparmio mensile",     v: "€ 500" },
+                { k: "Patrimonio attuale",    v: "€ 20.000" },
+                { k: "Rendimento annuo",      v: "5,0%" },
+                { k: "Inflazione stimata",    v: "2,1%" },
+              ].map((row, i, arr) => (
+                <div key={row.k} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "8px 0",
+                  borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                }}>
+                  <span style={{ fontSize: 12, color: C.hint }}>{row.k}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text, fontVariantNumeric: "tabular-nums" }}>{row.v}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: "16px 22px", borderBottom: `1px solid ${C.border}`, background: C.greenDim }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.green, marginBottom: 6 }}>Patrimonio stimato a 30 anni</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: C.green, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>€ 436.000</div>
+            </div>
+            <div style={{ padding: "18px 22px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.hint, marginBottom: 14 }}>Crescita patrimoniale</div>
+              <BarChart />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── KPI ── */}
+      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 28px" }}>
+        <div style={{ marginBottom: 40, textAlign: "center" }}>
+          <h2 style={{ fontSize: "clamp(1.5rem,3vw,2.2rem)", fontWeight: 800, letterSpacing: "-0.03em", color: C.text, marginBottom: 10 }}>
+            Il tuo profilo finanziario, a colpo d'occhio
+          </h2>
+          <p style={{ fontSize: 15, color: C.muted }}>Indicatori chiave aggiornati ad ogni simulazione</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 14 }}>
+          <StatCard label="Pensione stimata"   value="€ 1.950/mese" sub="↑ rivalutabile con contributi" color={C.green} data={[30,35,38,42,48,55,60,65,72,80,85,90]} />
+          <StatCard label="Anni al FIRE"        value="23 anni"      sub="con risparmio attuale"          color={C.blue}  data={[100,90,82,75,68,62,57,52,48,44,40,37]} />
+          <StatCard label="Casa acquistabile"   value="€ 280.000"    sub="con mutuo al 70%"               color={C.amber} data={[10,15,22,30,38,45,52,60,68,74,80,88]} />
+          <StatCard label="Salute finanziaria"  value="87 / 100"     sub="ottimo — top 15%"               color={C.green} data={[55,60,62,65,68,70,72,75,78,80,84,87]} />
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 28px 80px" }}>
+        <div style={{
+          borderRadius: 24,
+          background: `linear-gradient(135deg,rgba(37,99,235,0.2) 0%,rgba(124,58,237,0.2) 50%,rgba(16,185,129,0.12) 100%)`,
+          border: `1px solid rgba(37,99,235,0.3)`,
+          padding: "60px 48px", textAlign: "center",
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.blue, marginBottom: 16 }}>Inizia oggi</div>
+          <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 900, letterSpacing: "-0.04em", color: C.text, marginBottom: 14 }}>
+            Il momento migliore<br />era ieri. Il secondo è adesso.
+          </h2>
+          <p style={{ fontSize: 15, color: C.muted, maxWidth: 480, margin: "0 auto 36px" }}>
+            Ogni mese di ritardo ha un costo reale. Inizia la simulazione gratuitamente e scopri dove puoi arrivare.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <button onClick={onRegister} className="wf-btn-primary" style={{
+              padding: "14px 32px", borderRadius: 12, border: "none",
+              background: C.blue, color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer",
+              transition: "filter 0.15s",
+            }}>Crea account gratuito →</button>
+            <button onClick={onLogin} className="wf-btn-secondary" style={{
+              padding: "14px 32px", borderRadius: 12,
+              border: `1px solid ${C.border}`, background: "transparent",
+              color: C.muted, fontWeight: 600, fontSize: 15, cursor: "pointer",
+              transition: "background 0.15s",
+            }}>Ho già un account</button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ borderTop: `1px solid ${C.border}`, background: C.surface }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 24, height: 24, borderRadius: 7, background: `linear-gradient(135deg,${C.blue},#7c3aed)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 12, fontWeight: 900, color: "white" }}>W</span>
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>WealthFuture</span>
+            <span style={{ fontSize: 12, color: C.hint }}>© {new Date().getFullYear()}</span>
+          </div>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+            {["Privacy Policy", "Cookie Policy", "Termini di Utilizzo", "Diritti dell'Utente", "Contatti"].map(l => (
+              <span key={l} className="wf-link" style={{ fontSize: 12, color: C.hint, cursor: "pointer", transition: "color 0.15s" }}>{l}</span>
+            ))}
+          </div>
+        </div>
+        <div style={{ borderTop: `1px solid ${C.border}`, padding: "16px 28px", maxWidth: 1200, margin: "0 auto" }}>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", lineHeight: 1.6, margin: 0 }}>
+            Solo simulazioni. I dati mostrati sono puramente illustrativi e a scopo educativo. Non costituiscono consulenza finanziaria, fiscale o legale. I rendimenti passati non garantiscono quelli futuri.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 }
 
 
