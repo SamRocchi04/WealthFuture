@@ -1035,26 +1035,6 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
   {errors.sector && <div style={styles.fieldError}>Campo obbligatorio</div>}
 </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Paese di residenza</label>
-            <select style={{ ...styles.input, borderColor: errors.country ? "rgba(239,68,68,0.8)" : undefined }}
-              value={data.country || ""} onChange={(e) => setData({ ...data, country: e.target.value })}>
-              <option style={{ color: "#000" }}></option>
-              {countries.map((c) => <option key={c} value={c} style={{ color: "#000", background: "#fff" }}>{c}</option>)}
-            </select>
-            {errors.country && <div style={styles.fieldError}>Campo obbligatorio</div>}
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>Settore lavorativo</label>
-            <select style={{ ...styles.input, borderColor: errors.sector ? "rgba(239,68,68,0.8)" : undefined }}
-              value={data.sector || ""} onChange={(e) => setData({ ...data, sector: e.target.value })}>
-              <option style={{ color: "#000" }}></option>
-              {sectors.map((s) => <option key={s} value={s} style={{ color: "#000", background: "#fff" }}>{s}</option>)}
-            </select>
-            {errors.sector && <div style={styles.fieldError}>Campo obbligatorio</div>}
-          </div>
-
           <button style={styles.button} onClick={run}>Calcola</button>
         </div>
       ) : (
