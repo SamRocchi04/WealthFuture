@@ -833,8 +833,10 @@ function Scenario({ history, setHistory, plan, setPage }) {
   function run() {
     const newErrors = {};
     if (!data.age) newErrors.age = true;
-    if (!data.homeAge) newErrors.homeAge = true;
-    if (!data.carAge) newErrors.carAge = true;
+    if (data.hasHome === undefined) newErrors.hasHome = true;
+if (data.hasHome === false && !data.homeAge) newErrors.homeAge = true;
+if (data.hasCar === undefined) newErrors.hasCar = true;
+if (data.hasCar === false && !data.carAge) newErrors.carAge = true;
     if (!data.salary) newErrors.salary = true;
     if (!data.savings) newErrors.savings = true;
     if (!data.sector) newErrors.sector = true;
@@ -846,8 +848,8 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const salary = Number(data.salary || 0);
     const savings = Number(data.savings || 0);
     const age = Number(data.age || 30);
-    const homeAge = Number(data.homeAge || age);
-    const carAge = Number(data.carAge || age);
+    const homeAge = data.hasHome ? Number(data.age) : Number(data.homeAge || age);
+const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
 
     if (age < 16 || age > 100) { alert("Età non valida"); return; }
     if (homeAge < age || homeAge > 100) { alert("L'età di acquisto casa deve essere maggiore o uguale all'età attuale"); return; }
@@ -949,22 +951,90 @@ function Scenario({ history, setHistory, plan, setPage }) {
           </div>
 
           {[
-            { key: "age", label: "Età", type: "number", min: 16, max: 100 },
-            { key: "homeAge", label: "Età acquisto casa prevista", type: "number", min: data.age || 16, max: 100 },
-            { key: "carAge", label: "Età acquisto auto prevista", type: "number", min: data.age || 16, max: 100 },
-            { key: "salary", label: "Stipendio netto mensile (€)", type: "number" },
-            { key: "savings", label: "Risparmi attuali (€)", type: "number" },
-            { key: "expenses", label: "Spese mensili (€)", type: "number", min: 0, step: 50 },
-          ].map(({ key, label, type, min, max, step }) => (
-            <div key={key} style={styles.field}>
-              <label style={styles.label}>{label}</label>
-              <input type={type} min={min} max={max} step={step}
-                style={{ ...styles.input, borderColor: errors[key] ? "rgba(239,68,68,0.8)" : undefined }}
-                value={data[key] || ""}
-                onChange={(e) => setData({ ...data, [key]: e.target.value })} />
-              {errors[key] && <div style={styles.fieldError}>Campo obbligatorio</div>}
-            </div>
-          ))}
+  { key: "age", label: "Età", type: "number", min: 16, max: 100 },
+  { key: "salary", label: "Stipendio netto mensile (€)", type: "number" },
+  { key: "savings", label: "Risparmi attuali (€)", type: "number" },
+  { key: "expenses", label: "Spese mensili (€)", type: "number", min: 0, step: 50 },
+].map(({ key, label, type, min, max, step }) => (
+  <div key={key} style={styles.field}>
+    <label style={styles.label}>{label}</label>
+    <input type={type} min={min} max={max} step={step}
+      style={{ ...styles.input, borderColor: errors[key] ? "rgba(239,68,68,0.8)" : undefined }}
+      value={data[key] || ""}
+      onChange={(e) => setData({ ...data, [key]: e.target.value })} />
+    {errors[key] && <div style={styles.fieldError}>Campo obbligatorio</div>}
+  </div>
+))}
+
+<div style={styles.field}>
+  <label style={styles.label}>Possiedi una casa?</label>
+  <div style={{ display: "flex", gap: 10 }}>
+    {["Sì", "No"].map((opt) => (
+      <button key={opt} type="button"
+        onClick={() => setData({ ...data, hasHome: opt === "Sì", homeAge: opt === "Sì" ? data.age : data.homeAge })}
+        style={{ flex: 1, padding: "10px", borderRadius: 10, border: data.hasHome === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.12)", background: data.hasHome === (opt === "Sì") ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+        {opt}
+      </button>
+    ))}
+  </div>
+</div>
+
+{data.hasHome === false && (
+  <div style={styles.field}>
+    <label style={styles.label}>Età prevista acquisto casa</label>
+    <input type="number" min={data.age || 16} max={100}
+      style={{ ...styles.input, borderColor: errors.homeAge ? "rgba(239,68,68,0.8)" : undefined }}
+      value={data.homeAge || ""}
+      onChange={(e) => setData({ ...data, homeAge: e.target.value })} />
+    {errors.homeAge && <div style={styles.fieldError}>Campo obbligatorio</div>}
+  </div>
+)}
+
+<div style={styles.field}>
+  <label style={styles.label}>Possiedi una macchina?</label>
+  <div style={{ display: "flex", gap: 10 }}>
+    {["Sì", "No"].map((opt) => (
+      <button key={opt} type="button"
+        onClick={() => setData({ ...data, hasCar: opt === "Sì", carAge: opt === "Sì" ? data.age : data.carAge })}
+        style={{ flex: 1, padding: "10px", borderRadius: 10, border: data.hasCar === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.12)", background: data.hasCar === (opt === "Sì") ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+        {opt}
+      </button>
+    ))}
+  </div>
+</div>
+
+{data.hasCar === false && (
+  <div style={styles.field}>
+    <label style={styles.label}>Età prevista acquisto macchina</label>
+    <input type="number" min={data.age || 16} max={100}
+      style={{ ...styles.input, borderColor: errors.carAge ? "rgba(239,68,68,0.8)" : undefined }}
+      value={data.carAge || ""}
+      onChange={(e) => setData({ ...data, carAge: e.target.value })} />
+    {errors.carAge && <div style={styles.fieldError}>Campo obbligatorio</div>}
+  </div>
+)}
+
+<div style={styles.field}>
+  <label style={styles.label}>Paese di residenza</label>
+  <select style={{ ...styles.input, borderColor: errors.country ? "rgba(239,68,68,0.8)" : undefined }}
+    value={data.country || ""} onChange={(e) => setData({ ...data, country: e.target.value })}>
+    <option style={{ color: "#000" }}></option>
+    {countries.map((c) => <option key={c} value={c} style={{ color: "#000", background: "#fff" }}>{c}</option>)}
+  </select>
+  {errors.country && <div style={styles.fieldError}>Campo obbligatorio</div>}
+</div>
+
+<div style={styles.field}>
+  <label style={styles.label}>Settore lavorativo</label>
+  <select style={{ ...styles.input, borderColor: errors.sector ? "rgba(239,68,68,0.8)" : undefined }}
+    value={data.sector || ""} onChange={(e) => setData({ ...data, sector: e.target.value })}>
+    <option style={{ color: "#000" }}></option>
+    {sectors.map((s) => <option key={s} value={s} style={{ color: "#000", background: "#fff" }}>{s}</option>)}
+  </select>
+  {errors.sector && <div style={styles.fieldError}>Campo obbligatorio</div>}
+</div>
+
+<button style={styles.button} onClick={run}>Calcola</button>
 
           <div style={styles.field}>
             <label style={styles.label}>Paese di residenza</label>
