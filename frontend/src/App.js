@@ -496,54 +496,312 @@ function Landing({ onLogin, onRegister }) {
           </div>
         </div>
 
-        {/* CTA */}
+        {/* PREVIEW ENGINE */}
+
+<div
+  style={{
+    marginTop: 100,
+    borderRadius: 30,
+    overflow: "hidden",
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.04)",
+    backdropFilter: "blur(20px)",
+  }}
+>
+  <div
+    style={{
+      padding: "40px",
+      borderBottom: "1px solid rgba(255,255,255,0.08)",
+      textAlign: "center",
+    }}
+  >
+    <h2
+      style={{
+        fontSize: 34,
+        marginBottom: 15,
+      }}
+    >
+      Motore di Simulazione WealthFuture
+    </h2>
+
+    <p
+      style={{
+        maxWidth: 800,
+        margin: "0 auto",
+        opacity: 0.7,
+        lineHeight: 1.8,
+      }}
+    >
+      Analizziamo reddito, patrimonio, risparmi,
+      investimenti e inflazione per stimare in
+      modo realistico la tua evoluzione finanziaria
+      nei prossimi anni.
+    </p>
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "repeat(auto-fit,minmax(320px,1fr))",
+      gap: 30,
+      padding: 40,
+    }}
+  >
+    {/* Formula */}
+
+    <div
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: 20,
+        padding: 25,
+      }}
+    >
+      <h3 style={{ marginBottom: 20 }}>
+        Interesse Composto
+      </h3>
+
+      <div
+        style={{
+          fontFamily: "monospace",
+          color: "#60a5fa",
+          fontSize: 17,
+          lineHeight: 2,
+        }}
+      >
+        Capitale Futuro =
+        <br />
+        Capitale × (1 + rendimento)^anni
+        <br />
+        + contributi annuali
+      </div>
+
+      <p
+        style={{
+          marginTop: 20,
+          opacity: 0.65,
+        }}
+      >
+        Il capitale cresce nel tempo grazie alla
+        combinazione tra investimenti e risparmio.
+      </p>
+    </div>
+
+    {/* Dashboard Preview */}
+
+    <div
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: 20,
+        padding: 25,
+      }}
+    >
+      <h3 style={{ marginBottom: 20 }}>
+        Anteprima Analisi
+      </h3>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        <div>
+          Reddito netto: <b>€2.500</b>
+        </div>
+
+        <div>
+          Risparmio mensile: <b>€500</b>
+        </div>
+
+        <div>
+          Patrimonio attuale: <b>€20.000</b>
+        </div>
+
+        <div>
+          Rendimento medio: <b>5%</b>
+        </div>
 
         <div
           style={{
-            textAlign: "center",
-            padding: "60px 20px",
-            borderRadius: 24,
-            background:
-              "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(236,72,153,0.15))",
-            border:
-              "1px solid rgba(255,255,255,0.08)",
+            marginTop: 10,
+            color: "#10b981",
+            fontSize: 22,
+            fontWeight: 800,
           }}
         >
-          <h2
-            style={{
-              fontSize: 32,
-              marginBottom: 12,
-            }}
-          >
-            Inizia oggi
-          </h2>
-
-          <p
-            style={{
-              opacity: 0.65,
-              marginBottom: 30,
-            }}
-          >
-            Crea gratuitamente il tuo primo scenario
-            finanziario.
-          </p>
-
-          <button
-            onClick={onRegister}
-            style={{
-              padding: "15px 34px",
-              borderRadius: 14,
-              border: "none",
-              background:
-                "linear-gradient(90deg,#3b82f6,#ec4899)",
-              color: "white",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            Registrati Gratis
-          </button>
+          Patrimonio stimato:
+          <br />
+          €436.000
         </div>
+      </div>
+    </div>
+
+    {/* Grafico */}
+
+    <div
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: 20,
+        padding: 25,
+      }}
+    >
+      <h3 style={{ marginBottom: 25 }}>
+        Crescita Patrimoniale
+      </h3>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          gap: 10,
+          height: 180,
+        }}
+      >
+        {[25, 40, 60, 90, 130, 180].map(
+          (h, i) => (
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                height: h,
+                borderRadius: 10,
+                background:
+                  "linear-gradient(180deg,#3b82f6,#ec4899)",
+              }}
+            />
+          )
+        )}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 12,
+          fontSize: 12,
+          opacity: 0.5,
+        }}
+      >
+        <span>0</span>
+        <span>5</span>
+        <span>10</span>
+        <span>15</span>
+        <span>20</span>
+        <span>30 anni</span>
+      </div>
+    </div>
+  </div>
+
+  {/* KPI */}
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "repeat(auto-fit,minmax(180px,1fr))",
+      gap: 20,
+      padding: "0 40px 40px",
+    }}
+  >
+    {[
+      {
+        label: "Pensione Stimata",
+        value: "€1.950/mese",
+      },
+      {
+        label: "FIRE",
+        value: "23 anni",
+      },
+      {
+        label: "Casa Acquistabile",
+        value: "€280.000",
+      },
+      {
+        label: "Salute Finanziaria",
+        value: "87/100",
+      },
+    ].map((item, i) => (
+      <div
+        key={i}
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: 16,
+          padding: 20,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            opacity: 0.6,
+            marginBottom: 8,
+          }}
+        >
+          {item.label}
+        </div>
+
+        <div
+          style={{
+            fontWeight: 800,
+            fontSize: 22,
+          }}
+        >
+          {item.value}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* Footer */}
+
+  <div
+    style={{
+      borderTop: "1px solid rgba(255,255,255,0.08)",
+      padding: "25px 40px",
+      display: "flex",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 20,
+      fontSize: 14,
+      opacity: 0.6,
+    }}
+  >
+    <span>
+      © {new Date().getFullYear()} WealthFuture
+    </span>
+
+    <div
+      style={{
+        display: "flex",
+        gap: 20,
+        flexWrap: "wrap",
+      }}
+    >
+      <span style={{ cursor: "pointer" }}>
+        Privacy Policy
+      </span>
+
+      <span style={{ cursor: "pointer" }}>
+        Cookie Policy
+      </span>
+
+      <span style={{ cursor: "pointer" }}>
+        Termini di Utilizzo
+      </span>
+
+      <span style={{ cursor: "pointer" }}>
+        Diritti dell'Utente
+      </span>
+
+      <span style={{ cursor: "pointer" }}>
+        Contatti
+      </span>
+    </div>
+  </div>
+</div>
+        
       </div>
     </div>
   );
