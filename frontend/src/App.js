@@ -455,7 +455,6 @@ const GlobalStyles = () => (
 );
 
 // ── MAIN COMPONENT ────────────────────────────────────────────
-function Landing({ onLogin, onRegister }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => { setTimeout(() => setVisible(true), 80); }, []);
 
@@ -746,8 +745,6 @@ function Landing({ onLogin, onRegister }) {
       </footer>
     </div>
   );
-}
-
 }
 
 
