@@ -623,8 +623,8 @@ const GlobalStyles = () => (
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 28px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
             {[
-              { label: "Patrimonio simulato",   val: "€ 2.4 mld", sub: "tra tutti gli utenti" },
-              { label: "Simulazioni generate",  val: "340k+",      sub: "ultimi 12 mesi" },
+              { label: "Patrimonio simulato",   val: "€ 130 mln", sub: "tra tutti gli utenti" },
+              { label: "Simulazioni generate",  val: "500+",      sub: "ultimo mese" },
               { label: "Precisione proiezioni", val: "94.2%",      sub: "su dati storici" },
               { label: "Risparmio ottimizzato", val: "€ 380",      sub: "medio mensile utente" },
             ].map((s, i, arr) => (
@@ -1101,8 +1101,8 @@ function Login({ mode, onLogin, onRegister, onBack }) {
           />
 
           {/* Strength bar (always visible when typing) */}
-          {password.length > 0 && (
-            <div style={{ ...fieldAnim(isRegister ? 6 : 4), width: "100%", marginBottom: 6 }}>
+          {isRegister && password.length > 0 && (
+            <div style={{ ...fieldAnim(6), width: "100%", marginBottom: 6 }}>
               {/* Track */}
               <div style={{
                 width: "100%",
