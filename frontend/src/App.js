@@ -1579,14 +1579,14 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const emergencyMonths = expenses > 0 ? savings / expenses : 0;
     const debtCapacity    = salary > 0 ? Math.max(1 - expenses / salary, 0) : 0;
     const ageBonus        = age < 35 ? 10 : age < 50 ? 5 : 0;
-    const health          = Math.round(Math.min(Math.max(
-      surplusRate                              * 40 +
-      (Math.min(emergencyMonths, 12) / 12)     * 30 +
-      debtCapacity                             * 20 +
-      ageBonus
-    , 0), 100));
+    // Normalizzazione: evita che surplus altissimi (es. 89%) gonfino lo score
+    const surplusScore  = Math.min(surplusRate / 0.50, 1) * 40;
+    const emergencyScore = (Math.min(emergencyMonths, 12) / 12) * 30;
+    const debtScore     = Math.min(debtCapacity / 0.50, 1) * 20;
+    const health        = Math.round(Math.min(surplusScore + emergencyScore + debtScore + ageBonus, 100));
 
-    // ── Helper: interesse composto + contributi annui ───────────
+    // ── Helper: interesse composto + contributi fissi al 20% ────
+    // contribRate fisso: evita che surplus irrisori o altissimi distorcano
     function projectCapital(years, annualReturn, contribRate = 0.20) {
       let sal = salary;
       let cap = savings;
@@ -1597,48 +1597,32 @@ function Scenario({ history, setHistory, plan, setPage }) {
       return Math.round(cap);
     }
 
-    // ── Helper: proiezione futura (usa surplus rate reale) ──────
-    function projectFuture(years) {
-      let sal = salary;
-      let sav = savings;
-      const sr = Math.max(surplusRate, 0);
-      for (let i = 0; i < years; i++) {
-        sal *= 1 + growth;
-        sav  = sav * 1.04 + sal * 12 * sr;
-      }
-      return { salary: Math.round(sal), savings: Math.round(sav) };
-    }
-
-    // ── 2. MUTUO MAX ─────────────────────────────────────────────
-    const yearsToHome     = Math.max(0, homeAge - age);
-    const futureHome      = projectFuture(yearsToHome);
-    const maxMortgageRate = Math.round(futureHome.salary * 0.30);
-    const mortgageRate    = 0.035 / 12;
-    const mortgageMonths  = 25 * 12;
-    const pvMortgage      = (1 - Math.pow(1 + mortgageRate, -mortgageMonths)) / mortgageRate;
+    // ── 2. MUTUO MAX (stipendio attuale, non proiettato) ────────
+    const maxMortgageRate      = Math.round(salary * 0.30);
+    const mortgageRate         = 0.035 / 12;
+    const mortgageMonths       = 25 * 12;
+    const pvMortgage           = (1 - Math.pow(1 + mortgageRate, -mortgageMonths)) / mortgageRate;
     const mortgageCapacity     = Math.round(maxMortgageRate * pvMortgage);
-    const affordableHousePrice = Math.round(mortgageCapacity / 0.80 + futureHome.savings * 0.50);
+    const affordableHousePrice = Math.round(mortgageCapacity / 0.80 + savings * 0.50);
 
-    // ── 3. FINANZIAMENTO AUTO MAX ────────────────────────────────
-    const yearsToCar    = Math.max(0, carAge - age);
-    const futureCar     = projectFuture(yearsToCar);
-    const maxLoanRate   = Math.round(futureCar.salary * 0.15);
-    const carRate       = 0.06 / 12;
-    const carMonths     = 5 * 12;
-    const pvCar         = (1 - Math.pow(1 + carRate, -carMonths)) / carRate;
+    // ── 3. FINANZIAMENTO AUTO (stipendio attuale) ───────────────
+    const maxLoanRate     = Math.round(salary * 0.15);
+    const carRate         = 0.06 / 12;
+    const carMonths       = 5 * 12;
+    const pvCar           = (1 - Math.pow(1 + carRate, -carMonths)) / carRate;
     const carLoanCapacity = Math.round(maxLoanRate * pvCar);
 
-    // ── 4. PENSIONE (SWR 4%) ─────────────────────────────────────
-    const retirementAge         = 67;
-    const yearsToRetirement     = Math.max(0, retirementAge - age);
-    const pension               = projectCapital(yearsToRetirement, 0.05, 0.20);
-    const pensioneMensile       = Math.round((pension * 0.04) / 12);
+    // ── 4. PENSIONE (contribuzione fissa 20%, SWR 4%) ───────────
+    const retirementAge     = 67;
+    const yearsToRetirement = Math.max(0, retirementAge - age);
+    const pension           = projectCapital(yearsToRetirement, 0.05, 0.20);
+    const pensioneMensile   = Math.round((pension * 0.04) / 12);
 
-    // ── 5. PATRIMONIO OGNI 10 ANNI ───────────────────────────────
+    // ── 5. PATRIMONIO OGNI 10 ANNI (contribuzione fissa 20%) ────
     const wealth = {
-      10: { pess: projectCapital(10, 0.03), norm: projectCapital(10, 0.05), real: projectCapital(10, 0.08) },
-      20: { pess: projectCapital(20, 0.03), norm: projectCapital(20, 0.05), real: projectCapital(20, 0.08) },
-      30: { pess: projectCapital(30, 0.03), norm: projectCapital(30, 0.05), real: projectCapital(30, 0.08) },
+      10: { pess: projectCapital(10, 0.03, 0.20), norm: projectCapital(10, 0.05, 0.20), real: projectCapital(10, 0.08, 0.20) },
+      20: { pess: projectCapital(20, 0.03, 0.20), norm: projectCapital(20, 0.05, 0.20), real: projectCapital(20, 0.08, 0.20) },
+      30: { pess: projectCapital(30, 0.03, 0.20), norm: projectCapital(30, 0.05, 0.20), real: projectCapital(30, 0.08, 0.20) },
     };
 
     // ── 6. TASSO DI RISPARMIO ────────────────────────────────────
@@ -1646,11 +1630,14 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const savingsRate    = salary > 0 ? Math.round((monthlySurplus / salary) * 100) : 0;
 
     // ── 7. COPERTURA PENSIONE ────────────────────────────────────
+    // rendita mensile / stipendio attuale × 100
     const breakEvenRetirement = salary > 0
       ? Math.round((pensioneMensile / salary) * 100)
       : 0;
 
     // ── 8. ANNI AL FIRE ──────────────────────────────────────────
+    // target = spese annue × 25 (regola del 4%)
+    // simulazione iterativa con rendimento 6%
     const targetFIRE   = expenses * 12 * 25;
     const surplusAnnuo = monthlySurplus * 12;
     let anniFIRE = null;
@@ -1719,10 +1706,10 @@ function Scenario({ history, setHistory, plan, setPage }) {
           </div>
 
           {[
-            { key: "age",      label: "Età",                       type: "number", min: 16, max: 100 },
+            { key: "age",      label: "Età",                        type: "number", min: 16, max: 100 },
             { key: "salary",   label: "Stipendio netto mensile (€)", type: "number" },
-            { key: "savings",  label: "Risparmi attuali (€)",       type: "number" },
-            { key: "expenses", label: "Spese mensili (€)",          type: "number", min: 0, step: 50 },
+            { key: "savings",  label: "Risparmi attuali (€)",        type: "number" },
+            { key: "expenses", label: "Spese mensili (€)",           type: "number", min: 0, step: 50 },
           ].map(({ key, label, type, min, max, step }) => (
             <div key={key} style={styles.field}>
               <label style={styles.label}>{label}</label>
@@ -1973,8 +1960,8 @@ function Scenario({ history, setHistory, plan, setPage }) {
 
           {(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
             <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-              {PLAN_LIMITS[plan].reportPdf    && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
-              {PLAN_LIMITS[plan].exportExcel  && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
+              {PLAN_LIMITS[plan].reportPdf   && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
+              {PLAN_LIMITS[plan].exportExcel && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
             </div>
           )}
           {plan === "free" && (
