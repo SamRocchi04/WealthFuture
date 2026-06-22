@@ -789,6 +789,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [fieldMessages, setFieldMessages] = useState({});
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -796,29 +797,108 @@ function Login({ mode, onLogin, onRegister, onBack }) {
     return () => clearTimeout(t);
   }, []);
 
-  function validate() {
-    const errs = {};
-    if (isRegister && !nome.trim()) errs.nome = true;
-    if (isRegister && !cognome.trim()) errs.cognome = true;
-    if (!email.trim()) errs.email = true;
-    if (!password) errs.password = true;
-    return errs;
+  // ── Password strength ──────────────────────────────────────────
+  function getPasswordStrength(pw) {
+    if (!pw) return { score: 0, label: "", color: "transparent", width: "0%" };
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[a-z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    if (score <= 2) return { score, label: "Debole",   color: "rgba(239,68,68,0.85)",   width: "30%" };
+    if (score === 3) return { score, label: "Media",    color: "rgba(251,146,60,0.85)",  width: "60%" };
+    if (score === 4) return { score, label: "Buona",    color: "rgba(234,179,8,0.85)",   width: "80%" };
+    return              { score, label: "Ottima",   color: "rgba(34,197,94,0.85)",   width: "100%" };
   }
 
+  function validatePassword(pw) {
+    const missing = [];
+    if (!/[A-Z]/.test(pw)) missing.push("una lettera maiuscola");
+    if (!/[a-z]/.test(pw)) missing.push("una lettera minuscola");
+    if (!/[0-9]/.test(pw)) missing.push("un numero");
+    if (!/[^A-Za-z0-9]/.test(pw)) missing.push("un carattere speciale");
+    if (pw.length < 8) missing.push("almeno 8 caratteri");
+    return missing;
+  }
+
+  // ── Field validators ───────────────────────────────────────────
+  function validateNome(v) {
+    if (!v.trim()) return "Il nome è obbligatorio.";
+    if (/[^A-Za-zÀ-ÿ\s'-]/.test(v)) return "Il nome non può contenere numeri o caratteri speciali.";
+    return null;
+  }
+  function validateCognome(v) {
+    if (!v.trim()) return "Il cognome è obbligatorio.";
+    if (/[^A-Za-zÀ-ÿ\s'-]/.test(v)) return "Il cognome non può contenere numeri o caratteri speciali.";
+    return null;
+  }
+  function validateEmail(v) {
+    if (!v.trim()) return "L'email è obbligatoria.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Formato email non corretto (es. nome@dominio.com).";
+    return null;
+  }
+
+  // ── Live field blur handlers ───────────────────────────────────
+  function handleBlurNome() {
+    const msg = validateNome(nome);
+    setFieldErrors(p => ({ ...p, nome: !!msg }));
+    setFieldMessages(p => ({ ...p, nome: msg || "" }));
+  }
+  function handleBlurCognome() {
+    const msg = validateCognome(cognome);
+    setFieldErrors(p => ({ ...p, cognome: !!msg }));
+    setFieldMessages(p => ({ ...p, cognome: msg || "" }));
+  }
+  function handleBlurEmail() {
+    const msg = validateEmail(email);
+    setFieldErrors(p => ({ ...p, email: !!msg }));
+    setFieldMessages(p => ({ ...p, email: msg || "" }));
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────
   function handleSubmit() {
     setError("");
-    const errs = validate();
+    const errs = {};
+    const msgs = {};
+
+    if (isRegister) {
+      const nMsg = validateNome(nome);
+      if (nMsg) { errs.nome = true; msgs.nome = nMsg; }
+      const cMsg = validateCognome(cognome);
+      if (cMsg) { errs.cognome = true; msgs.cognome = cMsg; }
+    }
+
+    const eMsg = validateEmail(email);
+    if (eMsg) { errs.email = true; msgs.email = eMsg; }
+
+    if (!password) {
+      errs.password = true;
+      msgs.password = "La password è obbligatoria.";
+    } else if (isRegister) {
+      const missing = validatePassword(password);
+      if (missing.length > 0) {
+        errs.password = true;
+        msgs.password = "La password deve contenere: " + missing.join(", ") + ".";
+      }
+    }
+
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
-      setError("Compila tutti i campi obbligatori.");
+      setFieldMessages(msgs);
+      setError("Correggi i campi evidenziati.");
       return;
     }
+
     setFieldErrors({});
+    setFieldMessages({});
 
     if (isRegister) {
       const result = onRegister({ nome, cognome, email, password });
       if (!result.ok) {
         setFieldErrors({ email: true });
+        setFieldMessages({ email: result.error });
         setError(result.error);
       }
     } else {
@@ -826,14 +906,19 @@ function Login({ mode, onLogin, onRegister, onBack }) {
       if (!result.ok) {
         if (result.error.includes("Password")) {
           setFieldErrors({ password: true });
+          setFieldMessages({ password: result.error });
         } else {
           setFieldErrors({ email: true });
+          setFieldMessages({ email: result.error });
         }
         setError(result.error);
       }
     }
   }
 
+  const strength = getPasswordStrength(password);
+
+  // ── Styles helpers ─────────────────────────────────────────────
   const inputStyle = (field) => ({
     ...styles.input,
     borderColor: fieldErrors[field] ? "rgba(239,68,68,0.8)" : undefined,
@@ -844,18 +929,30 @@ function Login({ mode, onLogin, onRegister, onBack }) {
     transform: visible ? "translateY(0px) scale(1)" : "translateY(32px) scale(0.97)",
     transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)",
   };
-
   const bgAnimStyle = {
     opacity: visible ? 1 : 0,
     transition: "opacity 0.7s ease",
   };
-
-  // Staggered animation helper
   const fieldAnim = (index) => ({
     opacity: visible ? 1 : 0,
     transform: visible ? "translateY(0px)" : "translateY(18px)",
     transition: `opacity 0.45s cubic-bezier(0.22,1,0.36,1) ${0.18 + index * 0.07}s, transform 0.45s cubic-bezier(0.22,1,0.36,1) ${0.18 + index * 0.07}s`,
   });
+
+  const FieldError = ({ field }) =>
+    fieldMessages[field] ? (
+      <div style={{
+        fontSize: 11.5,
+        color: "rgba(239,68,68,0.9)",
+        marginTop: -6,
+        marginBottom: 2,
+        paddingLeft: 4,
+        lineHeight: 1.4,
+        animation: "fadeInDown 0.25s cubic-bezier(0.22,1,0.36,1)",
+      }}>
+        {fieldMessages[field]}
+      </div>
+    ) : null;
 
   return (
     <div style={styles.app}>
@@ -864,20 +961,29 @@ function Login({ mode, onLogin, onRegister, onBack }) {
         ...bgAnimStyle,
         background: "radial-gradient(circle at 30% 40%, rgba(15,118,110,0.85), transparent 60%), radial-gradient(circle at 75% 65%, rgba(30,58,138,0.75), transparent 55%)"
       }} />
+
       <div style={styles.loginWrapper}>
         <div style={{ ...styles.loginCard, ...cardAnimStyle }}>
 
+          {/* ── Logo (più grande, gap ridotto) ── */}
           <img
             src="/logo.png"
-            style={{ ...styles.loginLogo, ...fieldAnim(0) }}
+            style={{
+              ...styles.loginLogo,
+              ...fieldAnim(0),
+              width: 110,
+              height: 110,
+              marginBottom: 8,
+            }}
             alt="WealthFuture"
             onError={(e) => { e.target.style.display = "none"; }}
           />
 
-          <div style={{ ...styles.loginSlogan, ...fieldAnim(1) }}>
+          <div style={{ ...styles.loginSlogan, ...fieldAnim(1), marginBottom: 18 }}>
             {isRegister ? "Crea il tuo account" : "Bentornato"}
           </div>
 
+          {/* ── Global error banner ── */}
           {error && (
             <div style={{
               width: "100%",
@@ -895,47 +1001,127 @@ function Login({ mode, onLogin, onRegister, onBack }) {
             </div>
           )}
 
+          {/* ── Register-only fields ── */}
           {isRegister && (
             <>
               <input
                 placeholder="Nome"
                 style={{ ...inputStyle("nome"), ...fieldAnim(2) }}
                 value={nome}
-                onChange={(e) => { setNome(e.target.value); setFieldErrors(prev => ({ ...prev, nome: false })); }}
+                onChange={(e) => {
+                  setNome(e.target.value);
+                  setFieldErrors(p => ({ ...p, nome: false }));
+                  setFieldMessages(p => ({ ...p, nome: "" }));
+                }}
+                onBlur={handleBlurNome}
               />
+              <FieldError field="nome" />
+
               <input
                 placeholder="Cognome"
                 style={{ ...inputStyle("cognome"), ...fieldAnim(3) }}
                 value={cognome}
-                onChange={(e) => { setCognome(e.target.value); setFieldErrors(prev => ({ ...prev, cognome: false })); }}
+                onChange={(e) => {
+                  setCognome(e.target.value);
+                  setFieldErrors(p => ({ ...p, cognome: false }));
+                  setFieldMessages(p => ({ ...p, cognome: "" }));
+                }}
+                onBlur={handleBlurCognome}
               />
+              <FieldError field="cognome" />
             </>
           )}
 
+          {/* ── Email ── */}
           <input
             placeholder="Email"
             type="email"
             style={{ ...inputStyle("email"), ...fieldAnim(isRegister ? 4 : 2) }}
             value={email}
-            onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: false })); }}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setFieldErrors(p => ({ ...p, email: false }));
+              setFieldMessages(p => ({ ...p, email: "" }));
+            }}
+            onBlur={handleBlurEmail}
           />
+          <FieldError field="email" />
+
+          {/* ── Password + strength bar ── */}
           <input
             placeholder="Password"
             type="password"
-            style={{ ...inputStyle("password"), ...fieldAnim(isRegister ? 5 : 3) }}
+            style={{ ...inputStyle("password"), ...fieldAnim(isRegister ? 5 : 3), marginBottom: 6 }}
             value={password}
-            onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: false })); }}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setFieldErrors(p => ({ ...p, password: false }));
+              setFieldMessages(p => ({ ...p, password: "" }));
+            }}
             onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
           />
 
-          <button style={{ ...styles.button, ...fieldAnim(isRegister ? 6 : 4) }} onClick={handleSubmit}>
+          {/* Strength bar (always visible when typing) */}
+          {password.length > 0 && (
+            <div style={{ ...fieldAnim(isRegister ? 6 : 4), width: "100%", marginBottom: 6 }}>
+              {/* Track */}
+              <div style={{
+                width: "100%",
+                height: 4,
+                borderRadius: 99,
+                background: "rgba(255,255,255,0.08)",
+                overflow: "hidden",
+              }}>
+                {/* Fill */}
+                <div style={{
+                  height: "100%",
+                  borderRadius: 99,
+                  width: strength.width,
+                  background: strength.color,
+                  boxShadow: `0 0 8px ${strength.color}`,
+                  transition: "width 0.4s cubic-bezier(0.22,1,0.36,1), background 0.4s ease, box-shadow 0.4s ease",
+                }} />
+              </div>
+              {/* Label */}
+              <div style={{
+                marginTop: 4,
+                fontSize: 11,
+                color: strength.color,
+                textAlign: "right",
+                transition: "color 0.3s ease",
+                letterSpacing: "0.03em",
+                fontWeight: 600,
+              }}>
+                {strength.label}
+              </div>
+              {/* Requirements hint */}
+              {isRegister && (
+                <div style={{
+                  marginTop: 3,
+                  fontSize: 10.5,
+                  color: "rgba(255,255,255,0.3)",
+                  lineHeight: 1.5,
+                }}>
+                  Richiesti: maiuscola · minuscola · numero · carattere speciale
+                </div>
+              )}
+            </div>
+          )}
+
+          <FieldError field="password" />
+
+          {/* ── Submit ── */}
+          <button
+            style={{ ...styles.button, ...fieldAnim(isRegister ? 7 : 5) }}
+            onClick={handleSubmit}
+          >
             {isRegister ? "Crea account" : "Accedi"}
           </button>
 
           <button
             onClick={onBack}
             style={{
-              ...fieldAnim(isRegister ? 7 : 5),
+              ...fieldAnim(isRegister ? 8 : 6),
               background: "none",
               border: "none",
               color: "rgba(255,255,255,0.4)",
