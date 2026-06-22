@@ -2264,9 +2264,23 @@ function planBadgeStyle(plan) {
 //#region STYLES
 
 const styles = {
-  app: { minHeight: "100vh", background: "#000", color: "white", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif", overflowX: "hidden", overflowY: "auto" },
+  app: { 
+  height: "100vh",        // ← era minHeight
+  overflow: "hidden",     // ← blocca tutto lo scroll sull'app
+  background: "#000", 
+  color: "white", 
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif", 
+  overflowX: "hidden" 
+},
   bg: { position: "fixed", inset: 0, filter: "blur(120px)", zIndex: 0 },
-  container: { position: "relative", zIndex: 2, paddingTop: 70, overflowX: "hidden", overflowY: "visible" },
+  container: { 
+  position: "relative", 
+  zIndex: 2, 
+  paddingTop: 70,
+  height: "calc(100vh - 70px)",   // ← altezza esatta rimanente
+  overflowY: "auto",              // ← unico punto di scroll
+  overflowX: "hidden",
+},
   page: { padding: "32px 20px 80px", maxWidth: 1100, margin: "0 auto" },
   pageHeader: { marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.07)" },
   pageTitle: { fontSize: 26, fontWeight: 700, margin: "0 0 12px", letterSpacing: "-0.02em" },
