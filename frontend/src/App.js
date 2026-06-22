@@ -1439,7 +1439,7 @@ function Dashboard({ history, plan, setPage }) {
     { label: "Stipendio medio", value: `€ ${avgSalary.toFixed(0)}`, unit: "" },
     { label: "Health finanziaria", value: `${avgHealth.toFixed(0)}`, unit: "/100" },
     { label: "Livello rischio", value: riskLevel, unit: "" },
-    { label: "Miglior scenario", value: bestScenario ? `€ ${bestScenario.pension.toFixed(0)}` : "—", unit: "" },
+    { label: "Miglior scenario", value: bestScenario ? `€ ${(bestScenario.pensioneMensile ?? 0).toLocaleString("it-IT")}/mese` : "—", unit: "" },
   ];
 
   return (
@@ -1519,7 +1519,6 @@ function Dashboard({ history, plan, setPage }) {
 //#endregion
 
 //#region SCENARIO
-
 function Scenario({ history, setHistory, plan, setPage }) {
   const [data, setData] = useState({});
   const [result, setResult] = useState(null);
@@ -1530,23 +1529,13 @@ function Scenario({ history, setHistory, plan, setPage }) {
   const allowedLines = PLAN_LIMITS[plan].lines;
   const limitReached = history.length >= limit;
 
-  function projectFinancialSituation(currentSalary, currentSavings, years, growthRate) {
-    let salary = currentSalary;
-    let savings = currentSavings;
-    for (let i = 0; i < years; i++) {
-      salary *= 1 + growthRate;
-      savings = savings * 1.04 + salary * 12 * 0.20;
-    }
-    return { salary: Math.round(salary), savings: Math.round(savings) };
-  }
-
   function run() {
     const newErrors = {};
     if (!data.age) newErrors.age = true;
     if (data.hasHome === undefined) newErrors.hasHome = true;
-if (data.hasHome === false && !data.homeAge) newErrors.homeAge = true;
-if (data.hasCar === undefined) newErrors.hasCar = true;
-if (data.hasCar === false && !data.carAge) newErrors.carAge = true;
+    if (data.hasHome === false && !data.homeAge) newErrors.homeAge = true;
+    if (data.hasCar === undefined) newErrors.hasCar = true;
+    if (data.hasCar === false && !data.carAge) newErrors.carAge = true;
     if (!data.salary) newErrors.salary = true;
     if (!data.savings) newErrors.savings = true;
     if (!data.sector) newErrors.sector = true;
@@ -1555,71 +1544,139 @@ if (data.hasCar === false && !data.carAge) newErrors.carAge = true;
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
     setErrors({});
 
-    const salary = Number(data.salary || 0);
-    const savings = Number(data.savings || 0);
-    const age = Number(data.age || 30);
-    const homeAge = data.hasHome ? Number(data.age) : Number(data.homeAge || age);
-const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
+    const salary   = Number(data.salary);
+    const savings  = Number(data.savings);
+    const age      = Number(data.age);
+    const expenses = Number(data.expenses);
+    const homeAge  = data.hasHome ? age : Number(data.homeAge);
+    const carAge   = data.hasCar  ? age : Number(data.carAge);
 
-    if (age < 16 || age > 100) { alert("Età non valida"); return; }
-    if (homeAge < age || homeAge > 100) { alert("L'età di acquisto casa deve essere maggiore o uguale all'età attuale"); return; }
-    if (carAge < age || carAge > 100) { alert("L'età di acquisto auto deve essere maggiore o uguale all'età attuale"); return; }
-    if (!salary || !savings || !age) return;
+    if (age < 16 || age > 100)          { alert("Età non valida"); return; }
+    if (homeAge < age || homeAge > 100) { alert("L'età acquisto casa deve essere ≥ età attuale"); return; }
+    if (carAge  < age || carAge  > 100) { alert("L'età acquisto auto deve essere ≥ età attuale"); return; }
 
-    const growth = { Tecnologia: 0.05, Finanza: 0.04, Sanità: 0.03, Ingegneria: 0.035, Istruzione: 0.02, Altro: 0.025 }[data.sector] || 0.03;
-    const retirementAge = 67;
-    const yearsToRetirement = Math.max(0, retirementAge - age);
+    // ── Crescita stipendio per settore ──────────────────────────
+    const sectorGrowth = {
+      "IT e Software":         0.050,
+      "Banche e Finanza":      0.045,
+      "Energia":               0.040,
+      "Sanità":                0.035,
+      "Architettura e Design": 0.030,
+      "Costruzioni":           0.030,
+      "Commercio":             0.025,
+      "Logistica":             0.025,
+      "Comunicazione":         0.025,
+      "Educazione":            0.020,
+      "Arte e Cultura":        0.020,
+      "Turismo":               0.020,
+      "Agricoltura":           0.018,
+      "Altro":                 0.025,
+    };
+    const growth = sectorGrowth[data.sector] ?? 0.025;
 
-    function projectCapital(years, annualReturn) {
-      let currentSalary = salary;
-      let capital = savings;
+    // ── 1. SCORE FINANZIARIO (0–100) ────────────────────────────
+    const surplusRate     = salary > 0 ? (salary - expenses) / salary : 0;
+    const emergencyMonths = expenses > 0 ? savings / expenses : 0;
+    const debtCapacity    = salary > 0 ? Math.max(1 - expenses / salary, 0) : 0;
+    const ageBonus        = age < 35 ? 10 : age < 50 ? 5 : 0;
+    const health          = Math.round(Math.min(Math.max(
+      surplusRate                              * 40 +
+      (Math.min(emergencyMonths, 12) / 12)     * 30 +
+      debtCapacity                             * 20 +
+      ageBonus
+    , 0), 100));
+
+    // ── Helper: interesse composto + contributi annui ───────────
+    function projectCapital(years, annualReturn, contribRate = 0.20) {
+      let sal = salary;
+      let cap = savings;
       for (let i = 0; i < years; i++) {
-        currentSalary *= 1 + growth;
-        capital = capital * (1 + annualReturn) + currentSalary * 12 * 0.20;
+        sal *= 1 + growth;
+        cap  = cap * (1 + annualReturn) + sal * 12 * contribRate;
       }
-      return Math.round(capital);
+      return Math.round(cap);
     }
 
+    // ── Helper: proiezione futura (usa surplus rate reale) ──────
+    function projectFuture(years) {
+      let sal = salary;
+      let sav = savings;
+      const sr = Math.max(surplusRate, 0);
+      for (let i = 0; i < years; i++) {
+        sal *= 1 + growth;
+        sav  = sav * 1.04 + sal * 12 * sr;
+      }
+      return { salary: Math.round(sal), savings: Math.round(sav) };
+    }
+
+    // ── 2. MUTUO MAX ─────────────────────────────────────────────
+    const yearsToHome     = Math.max(0, homeAge - age);
+    const futureHome      = projectFuture(yearsToHome);
+    const maxMortgageRate = Math.round(futureHome.salary * 0.30);
+    const mortgageRate    = 0.035 / 12;
+    const mortgageMonths  = 25 * 12;
+    const pvMortgage      = (1 - Math.pow(1 + mortgageRate, -mortgageMonths)) / mortgageRate;
+    const mortgageCapacity     = Math.round(maxMortgageRate * pvMortgage);
+    const affordableHousePrice = Math.round(mortgageCapacity / 0.80 + futureHome.savings * 0.50);
+
+    // ── 3. FINANZIAMENTO AUTO MAX ────────────────────────────────
+    const yearsToCar    = Math.max(0, carAge - age);
+    const futureCar     = projectFuture(yearsToCar);
+    const maxLoanRate   = Math.round(futureCar.salary * 0.15);
+    const carRate       = 0.06 / 12;
+    const carMonths     = 5 * 12;
+    const pvCar         = (1 - Math.pow(1 + carRate, -carMonths)) / carRate;
+    const carLoanCapacity = Math.round(maxLoanRate * pvCar);
+
+    // ── 4. PENSIONE (SWR 4%) ─────────────────────────────────────
+    const retirementAge         = 67;
+    const yearsToRetirement     = Math.max(0, retirementAge - age);
+    const pension               = projectCapital(yearsToRetirement, 0.05, 0.20);
+    const pensioneMensile       = Math.round((pension * 0.04) / 12);
+
+    // ── 5. PATRIMONIO OGNI 10 ANNI ───────────────────────────────
     const wealth = {
-      10: { pess: projectCapital(10, 0.04), norm: projectCapital(10, 0.06), real: projectCapital(10, 0.08) },
-      20: { pess: projectCapital(20, 0.04), norm: projectCapital(20, 0.06), real: projectCapital(20, 0.08) },
-      30: { pess: projectCapital(30, 0.04), norm: projectCapital(30, 0.06), real: projectCapital(30, 0.08) },
+      10: { pess: projectCapital(10, 0.03), norm: projectCapital(10, 0.05), real: projectCapital(10, 0.08) },
+      20: { pess: projectCapital(20, 0.03), norm: projectCapital(20, 0.05), real: projectCapital(20, 0.08) },
+      30: { pess: projectCapital(30, 0.03), norm: projectCapital(30, 0.05), real: projectCapital(30, 0.08) },
     };
 
-    const pension = projectCapital(yearsToRetirement, 0.06);
-    const yearsToHome = Math.max(0, homeAge - age);
-    const homeProjection = projectFinancialSituation(salary, savings, yearsToHome, growth);
-    const futureHomeSalary = homeProjection.salary;
-    const futureHomeSavings = homeProjection.savings;
-    const maxMortgageRate = Math.round(futureHomeSalary * 0.33);
-    const mortgageCapacity = Math.round(futureHomeSalary * 12 * 4.5);
-    const affordableHousePrice = Math.round(mortgageCapacity + futureHomeSavings * 0.8);
-    const yearsToCar = Math.max(0, carAge - age);
-    const carProjection = projectFinancialSituation(salary, savings, yearsToCar, growth);
-    const futureCarSalary = carProjection.salary;
-    const maxLoanRate = Math.round(futureCarSalary * 0.15);
-    const carLoanCapacity = Math.round(futureCarSalary * 10);
-    const annualSalary = salary * 12;
-    const savingsRatio = savings / Math.max(annualSalary, 1);
-    const health = Math.min(100, Math.round(savingsRatio * 30 + (salary / 5000) * 40 + (age < 40 ? 30 : 20)));
-    const monthlyExpenses = Number(data.expenses || 0);
-    const monthlySurplus = salary - monthlyExpenses;
-    const annualSurplus = monthlySurplus * 12;
-    const savingsRate = salary > 0 ? Math.round((monthlySurplus / salary) * 100) : 0;
-    const yearsToFinancialIndependence = monthlySurplus > 0 ? Math.ceil(savings / annualSurplus + (pension / annualSurplus)) : null;
-    const breakEvenRetirement = salary > 0 ? Math.round((pension / (salary * 12)) * 100) : 0;
+    // ── 6. TASSO DI RISPARMIO ────────────────────────────────────
+    const monthlySurplus = salary - expenses;
+    const savingsRate    = salary > 0 ? Math.round((monthlySurplus / salary) * 100) : 0;
+
+    // ── 7. COPERTURA PENSIONE ────────────────────────────────────
+    const breakEvenRetirement = salary > 0
+      ? Math.round((pensioneMensile / salary) * 100)
+      : 0;
+
+    // ── 8. ANNI AL FIRE ──────────────────────────────────────────
+    const targetFIRE   = expenses * 12 * 25;
+    const surplusAnnuo = monthlySurplus * 12;
+    let anniFIRE = null;
+    if (monthlySurplus > 0) {
+      let cap = savings, anni = 0;
+      while (cap < targetFIRE && anni < 100) {
+        cap = cap * 1.06 + surplusAnnuo;
+        anni++;
+      }
+      anniFIRE = cap >= targetFIRE ? anni : null;
+    }
 
     const res = {
       id: Date.now(), date: new Date().toLocaleDateString(),
       age, country: data.country, sector: data.sector, salary, savings,
-      growth, health, pension, wealth,
-      homeAge, carAge, maxMortgageRate, mortgageCapacity, maxLoanRate, carLoanCapacity,
-      monthlyExpenses, monthlySurplus, savingsRate, yearsToFinancialIndependence, breakEvenRetirement, affordableHousePrice,
+      growth, health, pension, pensioneMensile, wealth,
+      homeAge, carAge, maxMortgageRate, mortgageCapacity, affordableHousePrice,
+      maxLoanRate, carLoanCapacity,
+      monthlyExpenses: expenses, monthlySurplus, savingsRate,
+      breakEvenRetirement,
+      yearsToFinancialIndependence: anniFIRE,
       hasHome: data.hasHome, hasCar: data.hasCar,
     };
 
     setResult(res);
-    setHistory((prev) => [res, ...prev]);
+    setHistory(prev => [res, ...prev]);
   }
 
   if (limitReached && !result) {
@@ -1641,11 +1698,11 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
     { years: 10, pessimistico: result?.wealth[10].pess, normale: result?.wealth[10].norm, ottimistico: result?.wealth[10].real },
     { years: 20, pessimistico: result?.wealth[20].pess, normale: result?.wealth[20].norm, ottimistico: result?.wealth[20].real },
     { years: 30, pessimistico: result?.wealth[30].pess, normale: result?.wealth[30].norm, ottimistico: result?.wealth[30].real },
-    { years: 40, pessimistico: result?.wealth[30].pess * 1.1,  normale: result?.wealth[30].norm * 1.2,  ottimistico: result?.wealth[30].real * 1.5 },
-    { years: 50, pessimistico: result?.wealth[30].pess * 1.2,  normale: result?.wealth[30].norm * 1.35, ottimistico: result?.wealth[30].real * 1.7 },
-    { years: 60, pessimistico: result?.wealth[30].pess * 1.25, normale: result?.wealth[30].norm * 1.5,  ottimistico: result?.wealth[30].real * 2 },
-    { years: 70, pessimistico: result?.wealth[30].pess * 1.3,  normale: result?.wealth[30].norm * 1.7,  ottimistico: result?.wealth[30].real * 2.3 },
-    { years: 80, pessimistico: result?.wealth[30].pess * 1.35, normale: result?.wealth[30].norm * 2,    ottimistico: result?.wealth[30].real * 2.8 },
+    { years: 40, pessimistico: result?.wealth[30].pess * 1.10, normale: result?.wealth[30].norm * 1.20, ottimistico: result?.wealth[30].real * 1.50 },
+    { years: 50, pessimistico: result?.wealth[30].pess * 1.20, normale: result?.wealth[30].norm * 1.35, ottimistico: result?.wealth[30].real * 1.70 },
+    { years: 60, pessimistico: result?.wealth[30].pess * 1.25, normale: result?.wealth[30].norm * 1.50, ottimistico: result?.wealth[30].real * 2.00 },
+    { years: 70, pessimistico: result?.wealth[30].pess * 1.30, normale: result?.wealth[30].norm * 1.70, ottimistico: result?.wealth[30].real * 2.30 },
+    { years: 80, pessimistico: result?.wealth[30].pess * 1.35, normale: result?.wealth[30].norm * 2.00, ottimistico: result?.wealth[30].real * 2.80 },
   ];
   const chartData = allChartPoints.filter(p => p.years <= orizzonteAnni);
 
@@ -1662,91 +1719,94 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
           </div>
 
           {[
-  { key: "age", label: "Età", type: "number", min: 16, max: 100 },
-  { key: "salary", label: "Stipendio netto mensile (€)", type: "number" },
-  { key: "savings", label: "Risparmi attuali (€)", type: "number" },
-  { key: "expenses", label: "Spese mensili (€)", type: "number", min: 0, step: 50 },
-].map(({ key, label, type, min, max, step }) => (
-  <div key={key} style={styles.field}>
-    <label style={styles.label}>{label}</label>
-    <input type={type} min={min} max={max} step={step}
-      style={{ ...styles.input, borderColor: errors[key] ? "rgba(239,68,68,0.8)" : undefined }}
-      value={data[key] || ""}
-      onChange={(e) => setData({ ...data, [key]: e.target.value })} />
-    {errors[key] && <div style={styles.fieldError}>Campo obbligatorio</div>}
-  </div>
-))}
+            { key: "age",      label: "Età",                       type: "number", min: 16, max: 100 },
+            { key: "salary",   label: "Stipendio netto mensile (€)", type: "number" },
+            { key: "savings",  label: "Risparmi attuali (€)",       type: "number" },
+            { key: "expenses", label: "Spese mensili (€)",          type: "number", min: 0, step: 50 },
+          ].map(({ key, label, type, min, max, step }) => (
+            <div key={key} style={styles.field}>
+              <label style={styles.label}>{label}</label>
+              <input type={type} min={min} max={max} step={step}
+                style={{ ...styles.input, borderColor: errors[key] ? "rgba(239,68,68,0.8)" : undefined }}
+                value={data[key] || ""}
+                onChange={(e) => setData({ ...data, [key]: e.target.value })} />
+              {errors[key] && <div style={styles.fieldError}>Campo obbligatorio</div>}
+            </div>
+          ))}
 
-<div style={styles.field}>
-  <label style={styles.label}>Possiedi una casa?</label>
-  <div style={{ display: "flex", gap: 10 }}>
-    {["Sì", "No"].map((opt) => (
-      <button key={opt} type="button"
-        onClick={() => setData({ ...data, hasHome: opt === "Sì", homeAge: opt === "Sì" ? data.age : data.homeAge })}
-        style={{ flex: 1, padding: "10px", borderRadius: 10, border: data.hasHome === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.12)", background: data.hasHome === (opt === "Sì") ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
-        {opt}
-      </button>
-    ))}
-  </div>
-</div>
+          <div style={styles.field}>
+            <label style={styles.label}>Possiedi una casa?</label>
+            <div style={{ display: "flex", gap: 10 }}>
+              {["Sì", "No"].map((opt) => (
+                <button key={opt} type="button"
+                  onClick={() => setData({ ...data, hasHome: opt === "Sì", homeAge: opt === "Sì" ? data.age : data.homeAge })}
+                  style={{ flex: 1, padding: "10px", borderRadius: 10, border: data.hasHome === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.12)", background: data.hasHome === (opt === "Sì") ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {errors.hasHome && <div style={styles.fieldError}>Campo obbligatorio</div>}
+          </div>
 
-{data.hasHome === false && (
-  <div style={styles.field}>
-    <label style={styles.label}>Età prevista acquisto casa</label>
-    <input type="number" min={data.age || 16} max={100}
-      style={{ ...styles.input, borderColor: errors.homeAge ? "rgba(239,68,68,0.8)" : undefined }}
-      value={data.homeAge || ""}
-      onChange={(e) => setData({ ...data, homeAge: e.target.value })} />
-    {errors.homeAge && <div style={styles.fieldError}>Campo obbligatorio</div>}
-  </div>
-)}
+          {data.hasHome === false && (
+            <div style={styles.field}>
+              <label style={styles.label}>Età prevista acquisto casa</label>
+              <input type="number" min={data.age || 16} max={100}
+                style={{ ...styles.input, borderColor: errors.homeAge ? "rgba(239,68,68,0.8)" : undefined }}
+                value={data.homeAge || ""}
+                onChange={(e) => setData({ ...data, homeAge: e.target.value })} />
+              {errors.homeAge && <div style={styles.fieldError}>Campo obbligatorio</div>}
+            </div>
+          )}
 
-<div style={styles.field}>
-  <label style={styles.label}>Possiedi una macchina?</label>
-  <div style={{ display: "flex", gap: 10 }}>
-    {["Sì", "No"].map((opt) => (
-      <button key={opt} type="button"
-        onClick={() => setData({ ...data, hasCar: opt === "Sì", carAge: opt === "Sì" ? data.age : data.carAge })}
-        style={{ flex: 1, padding: "10px", borderRadius: 10, border: data.hasCar === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.12)", background: data.hasCar === (opt === "Sì") ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
-        {opt}
-      </button>
-    ))}
-  </div>
-</div>
+          <div style={styles.field}>
+            <label style={styles.label}>Possiedi una macchina?</label>
+            <div style={{ display: "flex", gap: 10 }}>
+              {["Sì", "No"].map((opt) => (
+                <button key={opt} type="button"
+                  onClick={() => setData({ ...data, hasCar: opt === "Sì", carAge: opt === "Sì" ? data.age : data.carAge })}
+                  style={{ flex: 1, padding: "10px", borderRadius: 10, border: data.hasCar === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.12)", background: data.hasCar === (opt === "Sì") ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {errors.hasCar && <div style={styles.fieldError}>Campo obbligatorio</div>}
+          </div>
 
-{data.hasCar === false && (
-  <div style={styles.field}>
-    <label style={styles.label}>Età prevista acquisto macchina</label>
-    <input type="number" min={data.age || 16} max={100}
-      style={{ ...styles.input, borderColor: errors.carAge ? "rgba(239,68,68,0.8)" : undefined }}
-      value={data.carAge || ""}
-      onChange={(e) => setData({ ...data, carAge: e.target.value })} />
-    {errors.carAge && <div style={styles.fieldError}>Campo obbligatorio</div>}
-  </div>
-)}
+          {data.hasCar === false && (
+            <div style={styles.field}>
+              <label style={styles.label}>Età prevista acquisto macchina</label>
+              <input type="number" min={data.age || 16} max={100}
+                style={{ ...styles.input, borderColor: errors.carAge ? "rgba(239,68,68,0.8)" : undefined }}
+                value={data.carAge || ""}
+                onChange={(e) => setData({ ...data, carAge: e.target.value })} />
+              {errors.carAge && <div style={styles.fieldError}>Campo obbligatorio</div>}
+            </div>
+          )}
 
-<div style={styles.field}>
-  <label style={styles.label}>Paese di residenza</label>
-  <select style={{ ...styles.input, borderColor: errors.country ? "rgba(239,68,68,0.8)" : undefined }}
-    value={data.country || ""} onChange={(e) => setData({ ...data, country: e.target.value })}>
-    <option style={{ color: "#000" }}></option>
-    {countries.map((c) => <option key={c} value={c} style={{ color: "#000", background: "#fff" }}>{c}</option>)}
-  </select>
-  {errors.country && <div style={styles.fieldError}>Campo obbligatorio</div>}
-</div>
+          <div style={styles.field}>
+            <label style={styles.label}>Paese di residenza</label>
+            <select style={{ ...styles.input, borderColor: errors.country ? "rgba(239,68,68,0.8)" : undefined }}
+              value={data.country || ""} onChange={(e) => setData({ ...data, country: e.target.value })}>
+              <option style={{ color: "#000" }}></option>
+              {countries.map((c) => <option key={c} value={c} style={{ color: "#000", background: "#fff" }}>{c}</option>)}
+            </select>
+            {errors.country && <div style={styles.fieldError}>Campo obbligatorio</div>}
+          </div>
 
-<div style={styles.field}>
-  <label style={styles.label}>Settore lavorativo</label>
-  <select style={{ ...styles.input, borderColor: errors.sector ? "rgba(239,68,68,0.8)" : undefined }}
-    value={data.sector || ""} onChange={(e) => setData({ ...data, sector: e.target.value })}>
-    <option style={{ color: "#000" }}></option>
-    {sectors.map((s) => <option key={s} value={s} style={{ color: "#000", background: "#fff" }}>{s}</option>)}
-  </select>
-  {errors.sector && <div style={styles.fieldError}>Campo obbligatorio</div>}
-</div>
+          <div style={styles.field}>
+            <label style={styles.label}>Settore lavorativo</label>
+            <select style={{ ...styles.input, borderColor: errors.sector ? "rgba(239,68,68,0.8)" : undefined }}
+              value={data.sector || ""} onChange={(e) => setData({ ...data, sector: e.target.value })}>
+              <option style={{ color: "#000" }}></option>
+              {sectors.map((s) => <option key={s} value={s} style={{ color: "#000", background: "#fff" }}>{s}</option>)}
+            </select>
+            {errors.sector && <div style={styles.fieldError}>Campo obbligatorio</div>}
+          </div>
 
           <button style={styles.button} onClick={run}>Calcola</button>
         </div>
+
       ) : (
         <div style={{ ...styles.narrowCard, maxWidth: 700 }}>
           <div style={{ marginBottom: 28 }}>
@@ -1754,40 +1814,55 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
             <div style={{ fontSize: 13, opacity: 0.45 }}>{result.country} · {result.sector} · {result.age} anni</div>
           </div>
 
+          {/* ── KPI strip ── */}
           <div style={styles.kpiStrip}>
-  <div style={styles.kpiItem}>
-    <div style={styles.kpiLabel}>Score finanziario</div>
-    <div style={styles.kpiValue}>{result.health}<span style={styles.kpiUnit}>/100</span></div>
-    <div style={{ fontSize: 11, opacity: 0.4, marginTop: 2 }}>{plan === "free" ? "Base" : plan === "pro" ? "Avanzato" : "Professionale"}</div>
-  </div>
-  {!result.hasHome && (
-    <div style={styles.kpiItem}>
-      <div style={styles.kpiLabel}>Mutuo max mensile</div>
-      <div style={styles.kpiValue}>€ {result.maxMortgageRate}<span style={styles.kpiUnit}>/m</span></div>
-    </div>
-  )}
-  {!result.hasCar && (
-    <div style={styles.kpiItem}>
-      <div style={styles.kpiLabel}>Finanziamento auto</div>
-      <div style={styles.kpiValue}>€ {result.maxLoanRate}<span style={styles.kpiUnit}>/m</span></div>
-    </div>
-  )}
-</div>
+            <div style={styles.kpiItem}>
+              <div style={styles.kpiLabel}>Score finanziario</div>
+              <div style={styles.kpiValue}>{result.health}<span style={styles.kpiUnit}>/100</span></div>
+              <div style={{ fontSize: 11, opacity: 0.4, marginTop: 2 }}>
+                {plan === "free" ? "Base" : plan === "pro" ? "Avanzato" : "Professionale"}
+              </div>
+            </div>
+            {!result.hasHome && (
+              <div style={styles.kpiItem}>
+                <div style={styles.kpiLabel}>Rata mutuo max</div>
+                <div style={styles.kpiValue}>€ {result.maxMortgageRate.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
+              </div>
+            )}
+            {!result.hasCar && (
+              <div style={styles.kpiItem}>
+                <div style={styles.kpiLabel}>Rata auto max</div>
+                <div style={styles.kpiValue}>€ {result.maxLoanRate.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
+              </div>
+            )}
+          </div>
 
           <div style={styles.divider} />
 
+          {/* ── Pensione ── */}
           {PLAN_LIMITS[plan].simulazionePensione ? (
             <div style={styles.section}>
               <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Pensione stimata</span></div>
               <div style={styles.dataRow}>
-                <span style={styles.dataLabel}>Patrimonio a 67 anni</span>
-                <span style={{ ...styles.dataValue, color: "#22c55e", fontWeight: 700 }}>€ {result.pension.toFixed(0)}</span>
+                <span style={styles.dataLabel}>Capitale accumulato a 67 anni</span>
+                <span style={{ ...styles.dataValue, color: "#22c55e", fontWeight: 700 }}>
+                  € {result.pension.toLocaleString("it-IT")}
+                </span>
+              </div>
+              <div style={styles.dataRow}>
+                <span style={styles.dataLabel}>Rendita mensile stimata (SWR 4%)</span>
+                <span style={{ ...styles.dataValue, color: "#22c55e", fontWeight: 700 }}>
+                  € {result.pensioneMensile.toLocaleString("it-IT")} / mese
+                </span>
               </div>
             </div>
           ) : (
-            <div style={{ fontSize: 13, opacity: 0.4, padding: "12px 0" }}>Simulazione pensione disponibile dal piano Pro</div>
+            <div style={{ fontSize: 13, opacity: 0.4, padding: "12px 0" }}>
+              Simulazione pensione disponibile dal piano Pro
+            </div>
           )}
 
+          {/* ── Analisi Pro / Premium ── */}
           {plan !== "free" && (
             <>
               <div style={styles.divider} />
@@ -1795,17 +1870,53 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
                 <div style={styles.sectionHeader}>
                   <span style={styles.sectionTitle}>{plan === "premium" ? "Analisi Premium" : "Analisi Pro"}</span>
                 </div>
-                <div style={styles.dataRow}><span style={styles.dataLabel}>Surplus mensile</span><span style={styles.dataValue}>€ {result.monthlySurplus.toFixed(0)}</span></div>
-                <div style={styles.dataRow}><span style={styles.dataLabel}>Tasso di risparmio</span><span style={styles.dataValue}>{result.savingsRate}%</span></div>
+                <div style={styles.dataRow}>
+                  <span style={styles.dataLabel}>Surplus mensile</span>
+                  <span style={styles.dataValue}>€ {result.monthlySurplus.toLocaleString("it-IT")}</span>
+                </div>
+                <div style={styles.dataRow}>
+                  <span style={styles.dataLabel}>Tasso di risparmio</span>
+                  <span style={styles.dataValue}>{result.savingsRate}%
+                    <span style={{ fontSize: 11, opacity: 0.45, marginLeft: 6 }}>
+                      {result.savingsRate >= 35 ? "· eccellente" : result.savingsRate >= 20 ? "· buono" : result.savingsRate >= 10 ? "· nella media" : "· basso"}
+                    </span>
+                  </span>
+                </div>
                 {PLAN_LIMITS[plan].confrontoScelte && (
                   <>
-                    <div style={styles.dataRow}><span style={styles.dataLabel}>Casa acquistabile (stima)</span><span style={styles.dataValue}>€ {result.affordableHousePrice?.toFixed(0) ?? "—"}</span></div>
-                    <div style={styles.dataRow}><span style={styles.dataLabel}>Auto finanziabile (stima)</span><span style={styles.dataValue}>€ {result.carLoanCapacity.toFixed(0)}</span></div>
+                    <div style={styles.dataRow}>
+                      <span style={styles.dataLabel}>Casa acquistabile (stima)</span>
+                      <span style={styles.dataValue}>€ {result.affordableHousePrice?.toLocaleString("it-IT") ?? "—"}</span>
+                    </div>
+                    <div style={styles.dataRow}>
+                      <span style={styles.dataLabel}>Mutuo erogabile totale</span>
+                      <span style={styles.dataValue}>€ {result.mortgageCapacity.toLocaleString("it-IT")}</span>
+                    </div>
+                    <div style={styles.dataRow}>
+                      <span style={styles.dataLabel}>Auto finanziabile (totale)</span>
+                      <span style={styles.dataValue}>€ {result.carLoanCapacity.toLocaleString("it-IT")}</span>
+                    </div>
                   </>
                 )}
-                <div style={styles.dataRow}><span style={styles.dataLabel}>Copertura pensione</span><span style={styles.dataValue}>{result.breakEvenRetirement}% stipendio attuale</span></div>
+                <div style={styles.dataRow}>
+                  <span style={styles.dataLabel}>Copertura pensione</span>
+                  <span style={styles.dataValue}>{result.breakEvenRetirement}% stipendio attuale
+                    <span style={{ fontSize: 11, opacity: 0.45, marginLeft: 6 }}>
+                      {result.breakEvenRetirement >= 80 ? "· ottima" : result.breakEvenRetirement >= 60 ? "· adeguata" : result.breakEvenRetirement >= 40 ? "· insufficiente" : "· critica"}
+                    </span>
+                  </span>
+                </div>
                 {result.yearsToFinancialIndependence && (
-                  <div style={styles.dataRow}><span style={styles.dataLabel}>Anni all'indipendenza finanziaria</span><span style={styles.dataValue}>{result.yearsToFinancialIndependence} anni</span></div>
+                  <div style={styles.dataRow}>
+                    <span style={styles.dataLabel}>Anni all'indipendenza finanziaria (FIRE)</span>
+                    <span style={styles.dataValue}>{result.yearsToFinancialIndependence} anni</span>
+                  </div>
+                )}
+                {!result.yearsToFinancialIndependence && (
+                  <div style={styles.dataRow}>
+                    <span style={styles.dataLabel}>Anni all'indipendenza finanziaria (FIRE)</span>
+                    <span style={{ ...styles.dataValue, opacity: 0.4 }}>Non raggiungibile con risparmio attuale</span>
+                  </div>
                 )}
               </div>
             </>
@@ -1813,13 +1924,16 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
 
           <div style={styles.divider} />
 
+          {/* ── Grafico patrimonio ── */}
           <div style={{ marginBottom: 20 }}>
             <div style={styles.sectionHeader}>
               <span style={styles.sectionTitle}>Patrimonio stimato</span>
               <span style={{ fontSize: 12, opacity: 0.4 }}>fino a {orizzonteAnni} anni</span>
             </div>
             {plan === "free" && (
-              <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 8 }}>Scenari pessimistico e ottimistico disponibili dal piano Pro</div>
+              <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 8 }}>
+                Scenari pessimistico e ottimistico disponibili dal piano Pro
+              </div>
             )}
             <div style={{ width: "100%", height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -1829,7 +1943,8 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
                     ticks={allChartPoints.filter(p => p.years <= orizzonteAnni).map(p => p.years)}
                     label={{ value: "Anni", position: "insideBottom", offset: -10 }}
                     stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => new Intl.NumberFormat("it-IT", { notation: "compact", maximumFractionDigits: 1 }).format(v)}
+                  <YAxis
+                    tickFormatter={(v) => new Intl.NumberFormat("it-IT", { notation: "compact", maximumFractionDigits: 1 }).format(v)}
                     stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
                   <Tooltip content={({ active, payload, label }) => {
                     if (!active || !payload || payload.length === 0) return null;
@@ -1838,7 +1953,7 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
                     return (
                       <div style={{ background: "rgba(10,10,20,0.95)", border: "1px solid rgba(255,255,255,0.1)", padding: "10px 14px", borderRadius: 10, color: "white" }}>
                         <div style={{ color: item.stroke, fontWeight: 700, marginBottom: 4, fontSize: 12 }}>{item.dataKey}</div>
-                        <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toFixed(0)}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toLocaleString("it-IT")}</div>
                         <div style={{ opacity: 0.45, marginTop: 4, fontSize: 11 }}>{label} anni</div>
                       </div>
                     );
@@ -1858,21 +1973,24 @@ const carAge = data.hasCar ? Number(data.age) : Number(data.carAge || age);
 
           {(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
             <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-              {PLAN_LIMITS[plan].reportPdf && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
-              {PLAN_LIMITS[plan].exportExcel && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
+              {PLAN_LIMITS[plan].reportPdf    && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
+              {PLAN_LIMITS[plan].exportExcel  && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
             </div>
           )}
           {plan === "free" && (
-            <div style={{ fontSize: 12, opacity: 0.35, marginBottom: 12 }}>Report PDF ed Esportazione Excel disponibili dal piano Pro</div>
+            <div style={{ fontSize: 12, opacity: 0.35, marginBottom: 12 }}>
+              Report PDF ed Esportazione Excel disponibili dal piano Pro
+            </div>
           )}
 
-          <button style={styles.button} onClick={() => { setResult(null); setData({}); setErrors({}); }}>Nuovo Scenario</button>
+          <button style={styles.button} onClick={() => { setResult(null); setData({}); setErrors({}); }}>
+            Nuovo Scenario
+          </button>
         </div>
       )}
     </div>
   );
 }
-
 //#endregion
 
 //#region HISTORY
@@ -1948,7 +2066,8 @@ function History({ history, setHistory }) {
                       { label: "Capacità mutuo totale", value: `€ ${Number(h.mortgageCapacity ?? 0).toFixed(0)}` },
                       { label: "Finanziamento auto mensile", value: `€ ${Number(h.maxLoanRate ?? 0).toFixed(0)}` },
                       { label: "Capacità finanziamento auto", value: `€ ${Number(h.carLoanCapacity ?? 0).toFixed(0)}` },
-                      { label: "Pensione stimata", value: `€ ${pension.toFixed(0)}`, highlight: true },
+                      { label: "Capitale pensione a 67 anni", value: `€ ${pension.toFixed(0)}`, highlight: true },
+{ label: "Rendita mensile (SWR 4%)", value: `€ ${Number(h.pensioneMensile ?? 0).toLocaleString("it-IT")} / mese`, highlight: true },
                       { label: "Casa acquistabile (stima)", value: h.affordableHousePrice ? `€ ${Number(h.affordableHousePrice).toFixed(0)}` : "—" },
                       { label: "Surplus mensile", value: `€ ${Number(h.monthlySurplus ?? 0).toFixed(0)}` },
                       { label: "Tasso di risparmio", value: `${h.savingsRate ?? 0}%` },
