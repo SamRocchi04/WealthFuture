@@ -977,7 +977,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
             src="/logo.png"
             style={{
               ...fieldAnim(0),
-              width: 200,
+              width: 300,
               height: "auto",
               marginBottom: 4,
             }}
