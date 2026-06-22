@@ -115,6 +115,14 @@ const PLAN_LIMITS = {
 export default function App() {
   const [users, setUsers] = useState(() => {
   const saved = localStorage.getItem("users");
+  const isFirstAccess =
+  currentUser &&
+  users.find(u => u.email === currentUser.email)?.firstLogin;
+
+const welcomeText = isFirstAccess
+  ? `Benvenuto/a ${currentUser?.nome}`
+  : `Bentornato/a ${currentUser?.nome}`;
+  
   return saved ? JSON.parse(saved) : [];
 });
   const [logged, setLogged] = useState(false);
@@ -132,7 +140,13 @@ const [currentUser, setCurrentUser] = useState(null);
     if (users.find(u => u.email === emailNorm)) {
       return { ok: false, error: "Questa email è associata ad un altro account." };
     }
-    const newUser = { nome, cognome, email: emailNorm, password };
+   const newUser = {
+  nome,
+  cognome,
+  email: emailNorm,
+  password,
+  firstLogin: true
+};
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     
@@ -150,9 +164,35 @@ const [currentUser, setCurrentUser] = useState(null);
     if (found.password !== password) {
       return { ok: false, error: "Password errata." };
     }
-    setCurrentUser(found);
-  
-    setLogged(true);
+    // Se è il primo accesso
+if (found.firstLogin) {
+
+  const updatedUsers = users.map(user => {
+    if (user.email === found.email) {
+      return {
+        ...user,
+        firstLogin: false
+      };
+    }
+    return user;
+  });
+
+  setUsers(updatedUsers);
+
+  // aggiorno anche l'utente corrente
+  setCurrentUser({
+    ...found,
+    firstLogin: false
+  });
+
+} else {
+
+  setCurrentUser(found);
+
+}
+
+setLogged(true);
+    
     setPage("home");
     return { ok: true };
   }
@@ -161,6 +201,37 @@ const [currentUser, setCurrentUser] = useState(null);
   localStorage.removeItem("currentUser");
   setCurrentUser(null);
   setLogged(false);
+}
+
+function getGreeting(nome, firstAccess) {
+  const femaleNames = [
+    "giulia",
+    "sofia",
+    "martina",
+    "chiara",
+    "anna",
+    "alice",
+    "gaia",
+    "giorgia",
+    "elisa",
+    "sara",
+    "aurora",
+    "vanessa"
+  ];
+
+  const isFemale = femaleNames.includes(
+    nome.toLowerCase()
+  );
+
+  if (firstAccess) {
+    return isFemale
+      ? `Benvenuta, ${nome}`
+      : `Benvenuto, ${nome}`;
+  }
+
+  return isFemale
+    ? `Bentornata, ${nome}`
+    : `Bentornato, ${nome}`;
 }
 
   if (!logged) {
@@ -1273,6 +1344,25 @@ const closeModal = () => {
                 Dashboard
               </button>
             </div>
+            {currentUser && (
+  <div
+    style={{
+      textAlign: "center",
+      marginBottom: 24
+    }}
+  >
+    <h2
+      style={{
+        color: "#1e293b",
+        fontWeight: 700,
+        fontSize: "1.5rem",
+        margin: 0
+      }}
+    >
+      {welcomeText}
+    </h2>
+  </div>
+)}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, flexShrink: 0, opacity: visible ? 1 : 0, transition: "opacity 1s ease 0.8s" }}>
