@@ -940,18 +940,25 @@ function Login({ mode, onLogin, onRegister, onBack }) {
   });
 
   const FieldError = ({ field }) =>
-    fieldMessages[field] ? (
-      <div style={{
-        fontSize: 11.5,
-        color: "rgba(239,68,68,0.9)",
-        marginTop: -6,
-        marginBottom: 2,
-        paddingLeft: 4,
-        lineHeight: 1.4,
-        animation: "fadeInDown 0.25s cubic-bezier(0.22,1,0.36,1)",
-      }}>
-        {fieldMessages[field]}
-      </div>
+  fieldMessages[field] ? (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 5,
+      fontSize: 12,
+      color: "rgba(255,255,255,0.92)",
+      background: "rgba(239,68,68,0.22)",
+      border: "1px solid rgba(239,68,68,0.4)",
+      borderRadius: 7,
+      padding: "5px 10px",
+      marginTop: -4,
+      marginBottom: 2,
+      lineHeight: 1.4,
+      animation: "fadeInDown 0.25s cubic-bezier(0.22,1,0.36,1)",
+    }}>
+      <span style={{ fontSize: 13 }}>⚠️</span>
+      {fieldMessages[field]}
+    </div>
     ) : null;
 
   return (
@@ -971,34 +978,47 @@ function Login({ mode, onLogin, onRegister, onBack }) {
             style={{
               ...styles.loginLogo,
               ...fieldAnim(0),
-              width: 110,
-              height: 110,
-              marginBottom: 8,
+              width: 148,
+              height: 148,
+              marginBottom: 4,
             }}
             alt="WealthFuture"
             onError={(e) => { e.target.style.display = "none"; }}
           />
 
-          <div style={{ ...styles.loginSlogan, ...fieldAnim(1), marginBottom: 18 }}>
-            {isRegister ? "Crea il tuo account" : "Bentornato"}
-          </div>
+          <div style={{
+  ...styles.loginSlogan,
+  ...fieldAnim(1),
+  fontStyle: "normal",
+  opacity: 1,
+  fontSize: 20,
+  fontWeight: 700,
+  letterSpacing: "-0.02em",
+  marginBottom: 20,
+  marginTop: 0,
+}}>
+  {isRegister ? "Crea il tuo account" : "Bentornato"}
+</div>
 
           {/* ── Global error banner ── */}
           {error && (
-            <div style={{
-              width: "100%",
-              padding: "10px 14px",
-              borderRadius: 10,
-              background: "rgba(239,68,68,0.12)",
-              border: "1px solid rgba(239,68,68,0.35)",
-              color: "rgba(239,68,68,0.95)",
-              fontSize: 13,
-              lineHeight: 1.5,
-              textAlign: "center",
-              animation: "fadeInDown 0.3s cubic-bezier(0.22,1,0.36,1)",
-            }}>
-              {error}
-            </div>
+            {error && (
+  <div style={{
+    width: "100%",
+    padding: "11px 14px",
+    borderRadius: 10,
+    background: "rgba(239,68,68,0.18)",
+    border: "1px solid rgba(239,68,68,0.55)",
+    color: "rgba(255,100,100,1)",
+    fontSize: 13,
+    fontWeight: 600,
+    lineHeight: 1.5,
+    textAlign: "center",
+    animation: "fadeInDown 0.3s cubic-bezier(0.22,1,0.36,1)",
+    textShadow: "0 0 12px rgba(239,68,68,0.4)",
+  }}>
+    {error}
+  </div>
           )}
 
           {/* ── Register-only fields ── */}
@@ -1084,27 +1104,28 @@ function Login({ mode, onLogin, onRegister, onBack }) {
               </div>
               {/* Label */}
               <div style={{
-                marginTop: 4,
-                fontSize: 11,
-                color: strength.color,
-                textAlign: "right",
-                transition: "color 0.3s ease",
-                letterSpacing: "0.03em",
-                fontWeight: 600,
-              }}>
-                {strength.label}
-              </div>
+  marginTop: 4,
+  fontSize: 12,
+  color: strength.color,
+  textAlign: "right",
+  transition: "color 0.3s ease",
+  letterSpacing: "0.03em",
+  fontWeight: 700,
+  textShadow: `0 0 10px ${strength.color}`,
+}}>
+  {strength.label}
+</div>
               {/* Requirements hint */}
               {isRegister && (
-                <div style={{
-                  marginTop: 3,
-                  fontSize: 10.5,
-                  color: "rgba(255,255,255,0.3)",
-                  lineHeight: 1.5,
-                }}>
-                  Richiesti: maiuscola · minuscola · numero · carattere speciale
-                </div>
-              )}
+  <div style={{
+    marginTop: 3,
+    fontSize: 11,
+    color: "rgba(255,255,255,0.45)",
+    lineHeight: 1.6,
+  }}>
+    Richiesti: maiuscola · minuscola · numero · carattere speciale
+  </div>
+)}
             </div>
           )}
 
@@ -2259,7 +2280,7 @@ const styles = {
   topBar: { position: "fixed", top: 0, width: "100%", height: 60, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)", zIndex: 10, boxSizing: "border-box", gap: 16 },
   smallButton: { padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.07)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em", transition: "background 0.2s" },
   loginWrapper: { height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", position: "relative", zIndex: 2 },
-  loginCard: { width: "min(360px, 90vw)", padding: "40px 28px", borderRadius: 20, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(24px)", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" },
+  loginCard: { width: "min(400px, 92vw)", padding: "44px 32px", borderRadius: 20, background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(24px)", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" },
   loginLogo: { width: 120, height: 120, objectFit: "contain", marginBottom: 8 },
   loginSlogan: { fontStyle: "italic", opacity: 0.55, fontSize: 14, textAlign: "center", marginBottom: 8 },
   field: { display: "flex", flexDirection: "column", width: "100%", marginBottom: 16 },
