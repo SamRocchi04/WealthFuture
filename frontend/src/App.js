@@ -976,10 +976,9 @@ function Login({ mode, onLogin, onRegister, onBack }) {
           <img
             src="/logo.png"
             style={{
-              ...styles.loginLogo,
               ...fieldAnim(0),
-              width: 148,
-              height: 148,
+              width: 200,
+              height: "auto",
               marginBottom: 4,
             }}
             alt="WealthFuture"
