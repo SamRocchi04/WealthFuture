@@ -117,14 +117,8 @@ export default function App() {
   const saved = localStorage.getItem("users");
   return saved ? JSON.parse(saved) : [];
 });
-  const [currentUser, setCurrentUser] = useState(() => {
-  const saved = localStorage.getItem("currentUser");
-  return saved ? JSON.parse(saved) : null;
-});
-
-const [logged, setLogged] = useState(() => {
-  return !!localStorage.getItem("currentUser");
-});
+  const [logged, setLogged] = useState(false);
+const [currentUser, setCurrentUser] = useState(null);
   const [page, setPage] = useState("home");
   const [authPage, setAuthPage] = useState(null);
   const [history, setHistory] = useState([]);
@@ -132,17 +126,6 @@ const [logged, setLogged] = useState(() => {
   useEffect(() => {
   localStorage.setItem("users", JSON.stringify(users));
 }, [users]);
-
-useEffect(() => {
-  if (currentUser) {
-    localStorage.setItem(
-      "currentUser",
-      JSON.stringify(currentUser)
-    );
-  } else {
-    localStorage.removeItem("currentUser");
-  }
-}, [currentUser]);
 
   function handleRegister({ nome, cognome, email, password }) {
     const emailNorm = email.trim().toLowerCase();
@@ -152,10 +135,7 @@ useEffect(() => {
     const newUser = { nome, cognome, email: emailNorm, password };
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
-    localStorage.setItem(
-  "currentUser",
-  JSON.stringify(newUser)
-);
+    
     setLogged(true);
     setPage("home");
     return { ok: true };
@@ -171,10 +151,7 @@ useEffect(() => {
       return { ok: false, error: "Password errata." };
     }
     setCurrentUser(found);
-    localStorage.setItem(
-  "currentUser",
-  JSON.stringify(found)
-);
+  
     setLogged(true);
     setPage("home");
     return { ok: true };
