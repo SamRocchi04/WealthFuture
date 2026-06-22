@@ -562,7 +562,7 @@ const GlobalStyles = () => (
                 padding: "13px 28px", borderRadius: 11, border: "none",
                 background: C.blue, color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer",
                 transition: "filter 0.15s",
-              }}>Inizia gratis →</button>
+              }}>Inizia gratis</button>
               <button onClick={onLogin} className="wf-btn-secondary" style={{
                 padding: "13px 28px", borderRadius: 11,
                 border: `1px solid ${C.border}`, background: "transparent",
@@ -780,7 +780,6 @@ const GlobalStyles = () => (
 //#endregion
 
 //#region LOGIN
-
 function Login({ mode, onLogin, onRegister, onBack }) {
   const isRegister = mode === "register";
 
@@ -790,6 +789,12 @@ function Login({ mode, onLogin, onRegister, onBack }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   function validate() {
     const errs = {};
@@ -834,13 +839,42 @@ function Login({ mode, onLogin, onRegister, onBack }) {
     borderColor: fieldErrors[field] ? "rgba(239,68,68,0.8)" : undefined,
   });
 
+  const cardAnimStyle = {
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0px) scale(1)" : "translateY(32px) scale(0.97)",
+    transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)",
+  };
+
+  const bgAnimStyle = {
+    opacity: visible ? 1 : 0,
+    transition: "opacity 0.7s ease",
+  };
+
+  // Staggered animation helper
+  const fieldAnim = (index) => ({
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0px)" : "translateY(18px)",
+    transition: `opacity 0.45s cubic-bezier(0.22,1,0.36,1) ${0.18 + index * 0.07}s, transform 0.45s cubic-bezier(0.22,1,0.36,1) ${0.18 + index * 0.07}s`,
+  });
+
   return (
     <div style={styles.app}>
-      <div style={{ ...styles.bg, background: "radial-gradient(circle at 30% 40%, rgba(15,118,110,0.85), transparent 60%), radial-gradient(circle at 75% 65%, rgba(30,58,138,0.75), transparent 55%)" }} />
+      <div style={{
+        ...styles.bg,
+        ...bgAnimStyle,
+        background: "radial-gradient(circle at 30% 40%, rgba(15,118,110,0.85), transparent 60%), radial-gradient(circle at 75% 65%, rgba(30,58,138,0.75), transparent 55%)"
+      }} />
       <div style={styles.loginWrapper}>
-        <div style={styles.loginCard}>
-          <img src="/logo.png" style={styles.loginLogo} alt="WealthFuture" onError={(e) => { e.target.style.display = "none"; }} />
-          <div style={styles.loginSlogan}>
+        <div style={{ ...styles.loginCard, ...cardAnimStyle }}>
+
+          <img
+            src="/logo.png"
+            style={{ ...styles.loginLogo, ...fieldAnim(0) }}
+            alt="WealthFuture"
+            onError={(e) => { e.target.style.display = "none"; }}
+          />
+
+          <div style={{ ...styles.loginSlogan, ...fieldAnim(1) }}>
             {isRegister ? "Crea il tuo account" : "Bentornato"}
           </div>
 
@@ -855,6 +889,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
               fontSize: 13,
               lineHeight: 1.5,
               textAlign: "center",
+              animation: "fadeInDown 0.3s cubic-bezier(0.22,1,0.36,1)",
             }}>
               {error}
             </div>
@@ -864,13 +899,13 @@ function Login({ mode, onLogin, onRegister, onBack }) {
             <>
               <input
                 placeholder="Nome"
-                style={inputStyle("nome")}
+                style={{ ...inputStyle("nome"), ...fieldAnim(2) }}
                 value={nome}
                 onChange={(e) => { setNome(e.target.value); setFieldErrors(prev => ({ ...prev, nome: false })); }}
               />
               <input
                 placeholder="Cognome"
-                style={inputStyle("cognome")}
+                style={{ ...inputStyle("cognome"), ...fieldAnim(3) }}
                 value={cognome}
                 onChange={(e) => { setCognome(e.target.value); setFieldErrors(prev => ({ ...prev, cognome: false })); }}
               />
@@ -880,32 +915,49 @@ function Login({ mode, onLogin, onRegister, onBack }) {
           <input
             placeholder="Email"
             type="email"
-            style={inputStyle("email")}
+            style={{ ...inputStyle("email"), ...fieldAnim(isRegister ? 4 : 2) }}
             value={email}
             onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: false })); }}
           />
           <input
             placeholder="Password"
             type="password"
-            style={inputStyle("password")}
+            style={{ ...inputStyle("password"), ...fieldAnim(isRegister ? 5 : 3) }}
             value={password}
             onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: false })); }}
             onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
           />
 
-          <button style={styles.button} onClick={handleSubmit}>
+          <button style={{ ...styles.button, ...fieldAnim(isRegister ? 6 : 4) }} onClick={handleSubmit}>
             {isRegister ? "Crea account" : "Accedi"}
           </button>
 
-          <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", marginTop: 4 }}>
+          <button
+            onClick={onBack}
+            style={{
+              ...fieldAnim(isRegister ? 7 : 5),
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.4)",
+              fontSize: 13,
+              cursor: "pointer",
+              marginTop: 4,
+            }}
+          >
             Torna indietro
           </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
-
 //#endregion
 
 //#region HOME
