@@ -1001,7 +1001,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
 </div>
 
           {/* ── Global error banner ── */}
-          {error && (
+          
             {error && (
   <div style={{
     width: "100%",
