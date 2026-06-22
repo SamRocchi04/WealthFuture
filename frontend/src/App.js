@@ -113,13 +113,36 @@ const PLAN_LIMITS = {
 //#region APP
 
 export default function App() {
-  const [users, setUsers] = useState([]);
-  const [logged, setLogged] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [users, setUsers] = useState(() => {
+  const saved = localStorage.getItem("users");
+  return saved ? JSON.parse(saved) : [];
+});
+  const [currentUser, setCurrentUser] = useState(() => {
+  const saved = localStorage.getItem("currentUser");
+  return saved ? JSON.parse(saved) : null;
+});
+
+const [logged, setLogged] = useState(() => {
+  return !!localStorage.getItem("currentUser");
+});
   const [page, setPage] = useState("home");
   const [authPage, setAuthPage] = useState(null);
   const [history, setHistory] = useState([]);
   const [plan, setPlan] = useState("free");
+  useEffect(() => {
+  localStorage.setItem("users", JSON.stringify(users));
+}, [users]);
+
+useEffect(() => {
+  if (currentUser) {
+    localStorage.setItem(
+      "currentUser",
+      JSON.stringify(currentUser)
+    );
+  } else {
+    localStorage.removeItem("currentUser");
+  }
+}, [currentUser]);
 
   function handleRegister({ nome, cognome, email, password }) {
     const emailNorm = email.trim().toLowerCase();
@@ -129,6 +152,10 @@ export default function App() {
     const newUser = { nome, cognome, email: emailNorm, password };
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
+    localStorage.setItem(
+  "currentUser",
+  JSON.stringify(newUser)
+);
     setLogged(true);
     setPage("home");
     return { ok: true };
@@ -144,10 +171,20 @@ export default function App() {
       return { ok: false, error: "Password errata." };
     }
     setCurrentUser(found);
+    localStorage.setItem(
+  "currentUser",
+  JSON.stringify(found)
+);
     setLogged(true);
     setPage("home");
     return { ok: true };
   }
+  
+  function handleLogout() {
+  localStorage.removeItem("currentUser");
+  setCurrentUser(null);
+  setLogged(false);
+}
 
   if (!logged) {
     if (authPage === "login") {
