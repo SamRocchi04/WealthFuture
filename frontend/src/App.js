@@ -113,13 +113,22 @@ const PLAN_LIMITS = {
 //#region APP
 
 export default function App() {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(() => {
+  const savedUsers = localStorage.getItem("wealthfuture_users");
+  return savedUsers ? JSON.parse(savedUsers) : [];
+});
   const [logged, setLogged] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [page, setPage] = useState("home");
   const [authPage, setAuthPage] = useState(null);
   const [history, setHistory] = useState([]);
   const [plan, setPlan] = useState("free");
+  useEffect(() => {
+  localStorage.setItem(
+    "wealthfuture_users",
+    JSON.stringify(users)
+  );
+}, [users]);
 
   function handleRegister({ nome, cognome, email, password }) {
     const emailNorm = email.trim().toLowerCase();
