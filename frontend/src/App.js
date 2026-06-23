@@ -714,6 +714,40 @@ const GlobalStyles = () => (
             <div style={{ padding: "16px 22px", borderBottom: `1px solid ${C.border}`, background: C.greenDim }}>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.green, marginBottom: 6 }}>Patrimonio stimato a 30 anni</div>
               <div style={{ fontSize: 28, fontWeight: 900, color: C.green, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>€ 436.000</div>
+              <div style={{ marginTop: 14 }}>
+  {(() => {
+    const data = [20000,26000,33000,42000,52000,64000,78000,94000,112000,133000,157000,184000,214000,248000,286000,328000,374000,424000,436000];
+    const w = 260, h = 72, maxV = 436000, minV = 20000;
+    const pts = data.map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - ((v - minV) / (maxV - minV)) * (h - 6) - 3;
+      return `${x},${y}`;
+    }).join(" ");
+    const area = `M0,${h} ` + data.map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - ((v - minV) / (maxV - minV)) * (h - 6) - 3;
+      return `L${x},${y}`;
+    }).join(" ") + ` L${w},${h} Z`;
+    return (
+      <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block", overflow: "visible" }}>
+        <defs>
+          <linearGradient id="wgGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#wgGrad)" />
+        <polyline points={pts} fill="none" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={w} cy={3} r="3.5" fill="#10b981" />
+        {[0, 10, 20, 30].map((yr) => {
+          const idx = Math.round((yr / 30) * (data.length - 1));
+          const x = (idx / (data.length - 1)) * w;
+          return <text key={yr} x={x} y={h + 12} textAnchor="middle" fontSize="8" fill="rgba(248,250,252,0.3)" fontFamily="monospace">{yr}a</text>;
+        })}
+      </svg>
+    );
+  })()}
+</div>
             </div>
             <div style={{ padding: "18px 22px" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.hint, marginBottom: 14 }}>Crescita patrimoniale</div>
@@ -985,193 +1019,151 @@ function Login({ mode, onLogin, onRegister, onBack }) {
     <div style={styles.app}>
       <div style={{
         ...styles.bg,
-        ...bgAnimStyle,
-        background: "radial-gradient(circle at 30% 40%, rgba(15,118,110,0.85), transparent 60%), radial-gradient(circle at 75% 65%, rgba(30,58,138,0.75), transparent 55%)"
+        opacity: visible ? 1 : 0,
+        transition: "opacity 0.7s ease",
+        background: isRegister
+          ? "radial-gradient(circle at 20% 50%, rgba(37,99,235,0.5), transparent 55%), radial-gradient(circle at 80% 50%, rgba(124,58,237,0.4), transparent 55%)"
+          : "radial-gradient(circle at 30% 40%, rgba(15,118,110,0.85), transparent 60%), radial-gradient(circle at 75% 65%, rgba(30,58,138,0.75), transparent 55%)"
       }} />
 
-      <div style={styles.loginWrapper}>
-        <div style={{ ...styles.loginCard, ...cardAnimStyle }}>
+      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 2, padding: "20px" }}>
+        <div style={{
+          ...cardAnimStyle,
+          display: "flex", width: "min(860px, 100%)", minHeight: 520,
+          borderRadius: 24, overflow: "hidden",
+          boxShadow: "0 40px 80px rgba(0,0,0,0.6)",
+          border: "1px solid rgba(255,255,255,0.08)",
+        }}>
 
-          {/* ── Logo (più grande, gap ridotto) ── */}
-          <img
-            src="/logo.png"
-            style={{
-              ...fieldAnim(0),
-              width: 300,
-              height: "auto",
-              marginBottom: 4,
-            }}
-            alt="WealthFuture"
-            onError={(e) => { e.target.style.display = "none"; }}
-          />
-
+          {/* ── LEFT PANEL ── */}
           <div style={{
-  ...styles.loginSlogan,
-  ...fieldAnim(1),
-  fontStyle: "normal",
-  opacity: 1,
-  fontSize: 20,
-  fontWeight: 700,
-  letterSpacing: "-0.02em",
-  marginBottom: 20,
-  marginTop: 0,
-}}>
-  {isRegister ? "Crea il tuo account" : "Bentornato"}
-</div>
-
-          {/* ── Global error banner ── */}
-          
-            {error && (
-  <div style={{
-    width: "100%",
-    padding: "11px 14px",
-    borderRadius: 10,
-    background: "rgba(239,68,68,0.18)",
-    border: "1px solid rgba(239,68,68,0.55)",
-    color: "rgba(255,100,100,1)",
-    fontSize: 13,
-    fontWeight: 600,
-    lineHeight: 1.5,
-    textAlign: "center",
-    animation: "fadeInDown 0.3s cubic-bezier(0.22,1,0.36,1)",
-    textShadow: "0 0 12px rgba(239,68,68,0.4)",
-  }}>
-    {error}
-  </div>
-          )}
-
-          {/* ── Register-only fields ── */}
-          {isRegister && (
-            <>
-              <input
-                placeholder="Nome"
-                style={{ ...inputStyle("nome"), ...fieldAnim(2) }}
-                value={nome}
-                onChange={(e) => {
-                  setNome(e.target.value);
-                  setFieldErrors(p => ({ ...p, nome: false }));
-                  setFieldMessages(p => ({ ...p, nome: "" }));
-                }}
-                onBlur={handleBlurNome}
-              />
-              <FieldError field="nome" />
-
-              <input
-                placeholder="Cognome"
-                style={{ ...inputStyle("cognome"), ...fieldAnim(3) }}
-                value={cognome}
-                onChange={(e) => {
-                  setCognome(e.target.value);
-                  setFieldErrors(p => ({ ...p, cognome: false }));
-                  setFieldMessages(p => ({ ...p, cognome: "" }));
-                }}
-                onBlur={handleBlurCognome}
-              />
-              <FieldError field="cognome" />
-            </>
-          )}
-
-          {/* ── Email ── */}
-          <input
-            placeholder="Email"
-            type="email"
-            style={{ ...inputStyle("email"), ...fieldAnim(isRegister ? 4 : 2) }}
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setFieldErrors(p => ({ ...p, email: false }));
-              setFieldMessages(p => ({ ...p, email: "" }));
-            }}
-            onBlur={handleBlurEmail}
-          />
-          <FieldError field="email" />
-
-          {/* ── Password + strength bar ── */}
-          <input
-            placeholder="Password"
-            type="password"
-            style={{ ...inputStyle("password"), ...fieldAnim(isRegister ? 5 : 3), marginBottom: 6 }}
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setFieldErrors(p => ({ ...p, password: false }));
-              setFieldMessages(p => ({ ...p, password: "" }));
-            }}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
-          />
-
-          {/* Strength bar (always visible when typing) */}
-          {isRegister && password.length > 0 && (
-            <div style={{ ...fieldAnim(6), width: "100%", marginBottom: 6 }}>
-              {/* Track */}
-              <div style={{
-                width: "100%",
-                height: 4,
-                borderRadius: 99,
-                background: "rgba(255,255,255,0.08)",
-                overflow: "hidden",
-              }}>
-                {/* Fill */}
-                <div style={{
-                  height: "100%",
-                  borderRadius: 99,
-                  width: strength.width,
-                  background: strength.color,
-                  boxShadow: `0 0 8px ${strength.color}`,
-                  transition: "width 0.4s cubic-bezier(0.22,1,0.36,1), background 0.4s ease, box-shadow 0.4s ease",
-                }} />
+            flex: "0 0 320px",
+            background: isRegister
+              ? "linear-gradient(145deg,rgba(37,99,235,0.25),rgba(124,58,237,0.3))"
+              : "linear-gradient(145deg,rgba(15,118,110,0.3),rgba(30,58,138,0.35))",
+            borderRight: "1px solid rgba(255,255,255,0.07)",
+            padding: "44px 32px",
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 44 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#2563eb,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: "white" }}>W</span>
+                </div>
+                <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em", background: "linear-gradient(90deg,#3b82f6,#7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WealthFuture</span>
               </div>
-              {/* Label */}
-              <div style={{
-  marginTop: 4,
-  fontSize: 12,
-  color: strength.color,
-  textAlign: "right",
-  transition: "color 0.3s ease",
-  letterSpacing: "0.03em",
-  fontWeight: 700,
-  textShadow: `0 0 10px ${strength.color}`,
-}}>
-  {strength.label}
-</div>
-              {/* Requirements hint */}
-              {isRegister && (
-  <div style={{
-    marginTop: 3,
-    fontSize: 11,
-    color: "rgba(255,255,255,0.45)",
-    lineHeight: 1.6,
-  }}>
-    Richiesti: maiuscola · minuscola · numero · carattere speciale
-  </div>
-)}
+              <div style={{ fontSize: 22, fontWeight: 800, color: "white", letterSpacing: "-0.03em", lineHeight: 1.3, marginBottom: 14 }}>
+                {isRegister ? "Costruisci il tuo futuro finanziario" : "Bentornato su WealthFuture"}
+              </div>
+              <div style={{ fontSize: 14, color: "rgba(248,250,252,0.45)", lineHeight: 1.7 }}>
+                {isRegister
+                  ? "Simula crescita patrimonio, pensione e indipendenza finanziaria con analisi precise."
+                  : "Accedi al tuo profilo per vedere le proiezioni e i tuoi scenari salvati."}
+              </div>
             </div>
-          )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { icon: "📈", text: "Proiezioni a 30 anni" },
+                { icon: "🏦", text: "Simulazione pensione" },
+                { icon: "⚡", text: "Score FIRE personalizzato" },
+              ].map(f => (
+                <div key={f.text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{f.icon}</div>
+                  <span style={{ fontSize: 13, color: "rgba(248,250,252,0.55)", fontWeight: 500 }}>{f.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <FieldError field="password" />
+          {/* ── RIGHT PANEL (form) ── */}
+          <div style={{ flex: 1, background: "rgba(10,12,22,0.95)", backdropFilter: "blur(30px)", padding: "44px 36px", display: "flex", flexDirection: "column", justifyContent: "center", overflowY: "auto" }}>
 
-          {/* ── Submit ── */}
-          <button
-            style={{ ...styles.button, ...fieldAnim(isRegister ? 7 : 5) }}
-            onClick={handleSubmit}
-          >
-            {isRegister ? "Crea account" : "Accedi"}
-          </button>
+            {/* Header */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "white", letterSpacing: "-0.03em", marginBottom: 6 }}>
+                {isRegister ? "Crea il tuo account" : "Accedi al tuo account"}
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(248,250,252,0.4)" }}>
+                {isRegister ? "Gratis per sempre, nessuna carta richiesta." : "Inserisci le tue credenziali per continuare."}
+              </div>
+            </div>
 
-          <button
-            onClick={onBack}
-            style={{
-              ...fieldAnim(isRegister ? 8 : 6),
-              background: "none",
-              border: "none",
-              color: "rgba(255,255,255,0.4)",
-              fontSize: 13,
-              cursor: "pointer",
-              marginTop: 4,
-            }}
-          >
-            Torna indietro
-          </button>
+            {/* Global error */}
+            {error && (
+              <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 14, background: "rgba(239,68,68,0.18)", border: "1px solid rgba(239,68,68,0.55)", color: "rgba(255,100,100,1)", fontSize: 13, fontWeight: 600, animation: "fadeInDown 0.3s cubic-bezier(0.22,1,0.36,1)" }}>
+                {error}
+              </div>
+            )}
+
+            {/* Nome + Cognome */}
+            {isRegister && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Nome</label>
+                  <input placeholder="Mario" style={inputStyle("nome")} value={nome}
+                    onChange={(e) => { setNome(e.target.value); setFieldErrors(p => ({ ...p, nome: false })); setFieldMessages(p => ({ ...p, nome: "" })); }}
+                    onBlur={handleBlurNome} />
+                  <FieldError field="nome" />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Cognome</label>
+                  <input placeholder="Rossi" style={inputStyle("cognome")} value={cognome}
+                    onChange={(e) => { setCognome(e.target.value); setFieldErrors(p => ({ ...p, cognome: false })); setFieldMessages(p => ({ ...p, cognome: "" })); }}
+                    onBlur={handleBlurCognome} />
+                  <FieldError field="cognome" />
+                </div>
+              </div>
+            )}
+
+            {/* Email */}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Email</label>
+              <input placeholder="mario@esempio.com" type="email" style={inputStyle("email")} value={email}
+                onChange={(e) => { setEmail(e.target.value); setFieldErrors(p => ({ ...p, email: false })); setFieldMessages(p => ({ ...p, email: "" })); }}
+                onBlur={handleBlurEmail} />
+              <FieldError field="email" />
+            </div>
+
+            {/* Password */}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Password</label>
+              <input placeholder={isRegister ? "Min. 8 caratteri" : "La tua password"} type="password"
+                style={{ ...inputStyle("password"), marginBottom: 6 }} value={password}
+                onChange={(e) => { setPassword(e.target.value); setFieldErrors(p => ({ ...p, password: false })); setFieldMessages(p => ({ ...p, password: "" })); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }} />
+              {isRegister && password.length > 0 && (
+                <div style={{ marginBottom: 4 }}>
+                  <div style={{ width: "100%", height: 4, borderRadius: 99, background: "rgba(255,255,255,0.08)", overflow: "hidden", marginBottom: 4 }}>
+                    <div style={{ height: "100%", borderRadius: 99, width: strength.width, background: strength.color, boxShadow: `0 0 8px ${strength.color}`, transition: "width 0.4s cubic-bezier(0.22,1,0.36,1), background 0.4s ease" }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Maiuscola · minuscola · numero · spec.</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: strength.color }}>{strength.label}</span>
+                  </div>
+                </div>
+              )}
+              <FieldError field="password" />
+            </div>
+
+            {/* Submit */}
+            <button style={{
+              width: "100%", padding: "13px 20px", borderRadius: 12, border: "none",
+              background: isRegister ? "linear-gradient(90deg,#2563eb,#7c3aed)" : "linear-gradient(90deg,#0f766e,#1d4ed8)",
+              color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer",
+              marginTop: 8, marginBottom: 14, transition: "filter 0.15s",
+            }} onClick={handleSubmit}>
+              {isRegister ? "Crea account gratuito →" : "Accedi →"}
+            </button>
+
+            {/* Switch + back */}
+            <div style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+              {isRegister ? "Hai già un account? " : "Non hai un account? "}
+              <span onClick={onBack} style={{ color: "#3b82f6", fontWeight: 600, cursor: "pointer" }}>
+                {isRegister ? "Accedi" : "Registrati gratis"}
+              </span>
+            </div>
+
+          </div>
         </div>
       </div>
 
@@ -2321,8 +2313,10 @@ function TopBar({ page, setPage }) {
     <>
       <div style={{ position: "sticky", top: 0, zIndex: 1000, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", backdropFilter: "blur(20px)", background: "rgba(10,10,20,0.65)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <div onClick={() => setPage("home")} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-          <img src="/logo.png" alt="" style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; }} />
-          <span style={{ fontWeight: 800, fontSize: 15, background: "linear-gradient(90deg,#3b82f6,#ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WealthFuture</span>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#2563eb,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+  <span style={{ fontSize: 15, fontWeight: 900, color: "white" }}>W</span>
+</div>
+<span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em", background: "linear-gradient(90deg,#3b82f6,#7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WealthFuture</span>
         </div>
 
         {!isMobile && (
