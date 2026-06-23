@@ -857,7 +857,7 @@ const GlobalStyles = () => (
               padding: "14px 32px", borderRadius: 12, border: "none",
               background: C.blue, color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer",
               transition: "filter 0.15s",
-            }}>Crea account gratuito →</button>
+            }}>Crea account gratuito</button>
             <button onClick={onLogin} className="wf-btn-secondary" style={{
               padding: "14px 32px", borderRadius: 12,
               border: `1px solid ${C.border}`, background: "transparent",
@@ -1319,11 +1319,11 @@ const closeModal = () => {
               Simula la tua situazione finanziaria futura, pianifica obiettivi di vita e scopri il tuo potenziale economico.
             </p>
             <div style={{ display: "flex", gap: 12, marginTop: 28, justifyContent: "center", opacity: visible ? 1 : 0, transition: "opacity 1s ease 0.9s" }}>
-              <button style={{ padding: "12px 24px", borderRadius: 14, border: "none", background: "linear-gradient(90deg,#3b82f6,#ec4899)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(59,130,246,0.4)" }} onClick={() => setPage("scenario")}>
-                Inizia ora
+              <button style={{ padding: "13px 28px", borderRadius: 14, border: "none", background: "linear-gradient(90deg,#2563eb,#ec4899)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 28px rgba(37,99,235,0.45)", letterSpacing: "0.01em" }} onClick={() => setPage("scenario")}>
+                ⚡ Inizia ora
               </button>
-              <button style={{ padding: "12px 24px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.06)", color: "white", fontWeight: 600, fontSize: 15, cursor: "pointer", backdropFilter: "blur(10px)" }} onClick={() => setPage("dashboard")}>
-                Dashboard
+              <button style={{ padding: "13px 28px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.07)", color: "white", fontWeight: 600, fontSize: 15, cursor: "pointer", backdropFilter: "blur(10px)" }} onClick={() => setPage("dashboard")}>
+                Dashboard →
               </button>
             </div>
           </div>
@@ -1349,25 +1349,26 @@ const closeModal = () => {
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Novità & Aggiornamenti</h2>
           <div style={{ marginLeft: 8, background: "linear-gradient(90deg,#3b82f6,#ec4899)", borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, color: "white" }}>NUOVO</div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
           {news.map((item, i) => (
   <div
     key={i}
     onClick={() => openModal(item)}
     style={{
-      padding: "24px 20px",
-      borderTop: "1px solid rgba(255,255,255,0.08)",
-      transition: "background 0.2s",
+      padding: "24px 22px",
+      background: "rgba(255,255,255,0.04)",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 16,
+      transition: "background 0.2s, border-color 0.2s, transform 0.2s",
       cursor: "pointer",
-      borderRadius: 12,
     }}
-    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
-    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
   >
-    <div style={{ fontSize: 11, opacity: 0.4, marginBottom: 8, letterSpacing: "0.08em", textTransform: "uppercase" }}>{item.date}</div>
-    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8, color: "white" }}>{item.title}</div>
-    <div style={{ fontSize: 13, opacity: 0.55, lineHeight: 1.7 }}>{item.desc}</div>
-    <div style={{ marginTop: 10, fontSize: 12, color: "#60a5fa", opacity: 0.7 }}>Leggi di più →</div>
+    <div style={{ display: "inline-block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.25)", color: "#60a5fa", padding: "3px 10px", borderRadius: 20, marginBottom: 12 }}>{item.date}</div>
+    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 10, color: "white", lineHeight: 1.4 }}>{item.title}</div>
+    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>{item.desc}</div>
+    <div style={{ marginTop: 14, fontSize: 12, color: "#60a5fa", fontWeight: 600 }}>Leggi di più →</div>
   </div>
 ))}
         </div>
@@ -1535,34 +1536,42 @@ function Dashboard({ history, plan, setPage }) {
 
       <div style={styles.section}>
         <div style={styles.sectionHeader}>
-          <span style={styles.sectionTitle}>AI Coach Finanziario</span>
+          <span style={styles.sectionTitle}>🤖 AI Coach Finanziario</span>
           <span style={{ ...planBadgeStyle(plan), marginLeft: 10 }}>
             {PLAN_LIMITS[plan].aiCoach === "limitato" ? "Limitato" : PLAN_LIMITS[plan].aiCoach === "completo" ? "Completo" : "Avanzato"}
           </span>
         </div>
-        <div style={styles.dataRow}><span style={styles.dataLabel}>Trend reddito</span><span style={styles.dataValue}>{avgSalary > 3500 ? "Crescita stabile" : "Fase di accumulo"}</span></div>
+        <div style={styles.dataRow}><span style={styles.dataLabel}>Trend reddito</span><span style={styles.dataValue}>{avgSalary > 3500 ? "📈 Crescita stabile" : "📊 Fase di accumulo"}</span></div>
         <div style={styles.dataRow}><span style={styles.dataLabel}>Capacità risparmio</span><span style={styles.dataValue}>{avgSalary > 4000 ? "Alta capacità" : "Media capacità"}</span></div>
         {plan !== "free" && (<div style={styles.dataRow}><span style={styles.dataLabel}>Stabilità portfolio</span><span style={styles.dataValue}>{avgHealth > 70 ? "Portafoglio stabile" : "Alta volatilità"}</span></div>)}
         {plan !== "free" && (<div style={styles.dataRow}><span style={styles.dataLabel}>Scenario dominante</span><span style={styles.dataValue}>{last ? `${last.country} · ${last.sector}` : "Nessun dato"}</span></div>)}
-        {plan === "premium" && (<div style={styles.dataRow}><span style={styles.dataLabel}>Aggiornamento automatico dati</span><span style={{ ...styles.dataValue, color: "#22c55e" }}>Attivo</span></div>)}
-        {plan === "free" && (<div style={{ fontSize: 12, opacity: 0.4, marginTop: 12 }}>Sblocca insight avanzati con il piano Pro o Premium</div>)}
+        {plan === "premium" && (<div style={styles.dataRow}><span style={styles.dataLabel}>Aggiornamento automatico dati</span><span style={{ ...styles.dataValue, color: "#22c55e" }}>● Attivo</span></div>)}
+        {plan === "free" && (
+          <div style={{ marginTop: 14, padding: "12px 16px", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 12, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+            ✨ Sblocca insight avanzati con il piano Pro o Premium
+          </div>
+        )}
       </div>
 
       <div style={styles.divider} />
 
       <div style={styles.section}>
-        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Azioni rapide</span></div>
+        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>⚡ Azioni rapide</span></div>
         <div style={styles.dataRow}>
           <span style={styles.dataLabel}>Crea nuovo scenario</span>
-          <button style={styles.smallButton} onClick={() => setPage("scenario")}>Nuovo</button>
+          <button style={{ ...styles.smallButton, background: "rgba(37,99,235,0.2)", borderColor: "rgba(37,99,235,0.4)", color: "#60a5fa" }} onClick={() => setPage("scenario")}>+ Nuovo</button>
         </div>
         <div style={styles.dataRow}>
-          <span style={styles.dataLabel}>Report PDF {!PLAN_LIMITS[plan].reportPdf && <span style={{ opacity: 0.4, fontSize: 11 }}> — Pro+</span>}</span>
-          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].reportPdf ? 1 : 0.35, cursor: PLAN_LIMITS[plan].reportPdf ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].reportPdf}>Scarica</button>
+          <span style={styles.dataLabel}>Report PDF {!PLAN_LIMITS[plan].reportPdf && <span style={{ fontSize: 11, color: "#f59e0b", marginLeft: 6 }}>Pro+</span>}</span>
+          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].reportPdf ? 1 : 0.45, cursor: PLAN_LIMITS[plan].reportPdf ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].reportPdf}>
+            {PLAN_LIMITS[plan].reportPdf ? "Scarica" : "🔒 Scarica"}
+          </button>
         </div>
         <div style={styles.dataRow}>
-          <span style={styles.dataLabel}>Esporta Excel {!PLAN_LIMITS[plan].exportExcel && <span style={{ opacity: 0.4, fontSize: 11 }}> — Pro+</span>}</span>
-          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].exportExcel ? 1 : 0.35, cursor: PLAN_LIMITS[plan].exportExcel ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].exportExcel}>Esporta</button>
+          <span style={styles.dataLabel}>Esporta Excel {!PLAN_LIMITS[plan].exportExcel && <span style={{ fontSize: 11, color: "#f59e0b", marginLeft: 6 }}>Pro+</span>}</span>
+          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].exportExcel ? 1 : 0.45, cursor: PLAN_LIMITS[plan].exportExcel ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].exportExcel}>
+            {PLAN_LIMITS[plan].exportExcel ? "Esporta" : "🔒 Esporta"}
+          </button>
         </div>
       </div>
 
@@ -1570,13 +1579,13 @@ function Dashboard({ history, plan, setPage }) {
 
       <div style={styles.section}>
         <div style={styles.sectionHeader}>
-          <span style={styles.sectionTitle}>Attività recente</span>
-          <span style={{ fontSize: 12, opacity: 0.4 }}>
-            {PLAN_LIMITS[plan].dashboardStorica === 0 ? "Storico illimitato" : PLAN_LIMITS[plan].dashboardStorica >= 365 ? `Storico ${Math.round(PLAN_LIMITS[plan].dashboardStorica / 365)} anno` : `Storico ${PLAN_LIMITS[plan].dashboardStorica} giorni`}
+          <span style={styles.sectionTitle}>📅 Attività recente</span>
+          <span style={{ fontSize: 11, padding: "3px 10px", background: "rgba(255,255,255,0.06)", borderRadius: 20, color: "rgba(255,255,255,0.45)" }}>
+            {PLAN_LIMITS[plan].dashboardStorica === 0 ? "∞ Storico illimitato" : PLAN_LIMITS[plan].dashboardStorica >= 365 ? `Storico ${Math.round(PLAN_LIMITS[plan].dashboardStorica / 365)} anno` : `Storico ${PLAN_LIMITS[plan].dashboardStorica} giorni`}
           </span>
         </div>
         <div style={styles.dataRow}><span style={styles.dataLabel}>Ultimo scenario creato</span><span style={styles.dataValue}>{last ? last.date : "—"}</span></div>
-        <div style={styles.dataRow}><span style={styles.dataLabel}>Utilizzo piattaforma</span><span style={styles.dataValue}>{totalScenarios > 5 ? "Attivo" : "Iniziale"}</span></div>
+        <div style={styles.dataRow}><span style={styles.dataLabel}>Utilizzo piattaforma</span><span style={{ ...styles.dataValue, color: totalScenarios > 5 ? "#22c55e" : "rgba(255,255,255,0.7)" }}>{totalScenarios > 5 ? "● Attivo" : "○ Iniziale"}</span></div>
         <div style={styles.dataRow}><span style={styles.dataLabel}>Frequenza simulazioni</span><span style={styles.dataValue}>{totalScenarios > 10 ? "Alta" : "Bassa"}</span></div>
       </div>
     </div>
@@ -1772,21 +1781,45 @@ function Scenario({ history, setHistory, plan, setPage }) {
             </div>
           </div>
 
-          {[
-            { key: "age",      label: "Età",                        type: "number", min: 16, max: 100 },
-            { key: "salary",   label: "Stipendio netto mensile (€)", type: "number" },
-            { key: "savings",  label: "Risparmi attuali (€)",        type: "number" },
-            { key: "expenses", label: "Spese mensili (€)",           type: "number", min: 0, step: 50 },
-          ].map(({ key, label, type, min, max, step }) => (
-            <div key={key} style={styles.field}>
-              <label style={styles.label}>{label}</label>
-              <input type={type} min={min} max={max} step={step}
-                style={{ ...styles.input, borderColor: errors[key] ? "rgba(239,68,68,0.8)" : undefined }}
-                value={data[key] || ""}
-                onChange={(e) => setData({ ...data, [key]: e.target.value })} />
-              {errors[key] && <div style={styles.fieldError}>Campo obbligatorio</div>}
+          {/* ── Sezione: Dati personali ── */}
+          <div style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>📍 Dati personali</div>
+            <div style={styles.field}>
+              <label style={styles.label}>Età</label>
+              <input type="number" min={16} max={100}
+                style={{ ...styles.input, borderColor: errors.age ? "rgba(239,68,68,0.8)" : undefined }}
+                value={data.age || ""}
+                onChange={(e) => setData({ ...data, age: e.target.value })} />
+              {errors.age && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
             </div>
-          ))}
+          </div>
+
+          {/* ── Sezione: Situazione finanziaria ── */}
+          <div style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", marginBottom: 16, marginTop: 8 }}>💰 Situazione finanziaria</div>
+            {[
+              { key: "salary",   label: "Stipendio netto mensile (€)", type: "number" },
+              { key: "savings",  label: "Risparmi attuali (€)",        type: "number" },
+              { key: "expenses", label: "Spese mensili (€)",           type: "number", min: 0, step: 50 },
+            ].map(({ key, label, type, min, step }) => (
+              <div key={key} style={styles.field}>
+                <label style={styles.label}>{label}</label>
+                <input type={type} min={min} step={step}
+                  style={{ ...styles.input, borderColor: errors[key] ? "rgba(239,68,68,0.8)" : undefined }}
+                  value={data[key] || ""}
+                  onChange={(e) => setData({ ...data, [key]: e.target.value })} />
+                {errors[key] && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* ── Sezione: Contesto lavorativo ── */}
+          <div style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", marginBottom: 16, marginTop: 8 }}>💼 Contesto lavorativo</div>
+
+          {/* ── Sezione: Acquisti previsti ── */}
+          <div style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", marginBottom: 16, marginTop: 8 }}>🏠 Acquisti previsti</div>
 
           <div style={styles.field}>
             <label style={styles.label}>Possiedi una casa?</label>
@@ -1794,12 +1827,12 @@ function Scenario({ history, setHistory, plan, setPage }) {
               {["Sì", "No"].map((opt) => (
                 <button key={opt} type="button"
                   onClick={() => setData({ ...data, hasHome: opt === "Sì", homeAge: opt === "Sì" ? data.age : data.homeAge })}
-                  style={{ flex: 1, padding: "10px", borderRadius: 10, border: data.hasHome === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.12)", background: data.hasHome === (opt === "Sì") ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                  style={{ flex: 1, padding: "11px", borderRadius: 11, border: data.hasHome === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.15)", background: data.hasHome === (opt === "Sì") ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", transition: "all 0.2s" }}>
                   {opt}
                 </button>
               ))}
             </div>
-            {errors.hasHome && <div style={styles.fieldError}>Campo obbligatorio</div>}
+            {errors.hasHome && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
           </div>
 
           {data.hasHome === false && (
@@ -1809,7 +1842,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
                 style={{ ...styles.input, borderColor: errors.homeAge ? "rgba(239,68,68,0.8)" : undefined }}
                 value={data.homeAge || ""}
                 onChange={(e) => setData({ ...data, homeAge: e.target.value })} />
-              {errors.homeAge && <div style={styles.fieldError}>Campo obbligatorio</div>}
+              {errors.homeAge && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
             </div>
           )}
 
@@ -1819,12 +1852,12 @@ function Scenario({ history, setHistory, plan, setPage }) {
               {["Sì", "No"].map((opt) => (
                 <button key={opt} type="button"
                   onClick={() => setData({ ...data, hasCar: opt === "Sì", carAge: opt === "Sì" ? data.age : data.carAge })}
-                  style={{ flex: 1, padding: "10px", borderRadius: 10, border: data.hasCar === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.12)", background: data.hasCar === (opt === "Sì") ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                  style={{ flex: 1, padding: "11px", borderRadius: 11, border: data.hasCar === (opt === "Sì") ? "1px solid rgba(59,130,246,0.8)" : "1px solid rgba(255,255,255,0.15)", background: data.hasCar === (opt === "Sì") ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.05)", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", transition: "all 0.2s" }}>
                   {opt}
                 </button>
               ))}
             </div>
-            {errors.hasCar && <div style={styles.fieldError}>Campo obbligatorio</div>}
+            {errors.hasCar && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
           </div>
 
           {data.hasCar === false && (
@@ -1834,9 +1867,10 @@ function Scenario({ history, setHistory, plan, setPage }) {
                 style={{ ...styles.input, borderColor: errors.carAge ? "rgba(239,68,68,0.8)" : undefined }}
                 value={data.carAge || ""}
                 onChange={(e) => setData({ ...data, carAge: e.target.value })} />
-              {errors.carAge && <div style={styles.fieldError}>Campo obbligatorio</div>}
+              {errors.carAge && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
             </div>
           )}
+          </div>{/* chiude sezione acquisti previsti */}
 
           <div style={styles.field}>
             <label style={styles.label}>Paese di residenza</label>
@@ -1845,7 +1879,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
               <option style={{ color: "#000" }}></option>
               {countries.map((c) => <option key={c} value={c} style={{ color: "#000", background: "#fff" }}>{c}</option>)}
             </select>
-            {errors.country && <div style={styles.fieldError}>Campo obbligatorio</div>}
+            {errors.country && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
           </div>
 
           <div style={styles.field}>
@@ -1855,17 +1889,28 @@ function Scenario({ history, setHistory, plan, setPage }) {
               <option style={{ color: "#000" }}></option>
               {sectors.map((s) => <option key={s} value={s} style={{ color: "#000", background: "#fff" }}>{s}</option>)}
             </select>
-            {errors.sector && <div style={styles.fieldError}>Campo obbligatorio</div>}
+            {errors.sector && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
           </div>
+          </div>{/* chiude sezione contesto lavorativo */}
 
-          <button style={styles.button} onClick={run}>Calcola</button>
+          <button
+            style={{ ...styles.button, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            onClick={run}
+            onMouseEnter={e => { e.currentTarget.style.filter = "brightness(1.15)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.filter = "brightness(1)"; e.currentTarget.style.transform = "translateY(0)"; }}
+          >
+            ⚡ Calcola scenario
+          </button>
         </div>
 
       ) : (
         <div style={{ ...styles.narrowCard, maxWidth: 700 }}>
-          <div style={{ marginBottom: 28 }}>
-            <h2 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 700 }}>Risultato</h2>
-            <div style={{ fontSize: 13, opacity: 0.45 }}>{result.country} · {result.sector} · {result.age} anni</div>
+          <div style={{ marginBottom: 28, padding: "20px 22px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)", borderRadius: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Risultato simulazione</h2>
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{result.country} · {result.sector} · {result.age} anni</div>
           </div>
 
           {/* ── KPI strip ── */}
@@ -2014,11 +2059,11 @@ function Scenario({ history, setHistory, plan, setPage }) {
                   }} />
                   <Legend verticalAlign="bottom" height={40} wrapperStyle={{ paddingTop: 25 }} />
                   {allowedLines.includes("pessimistico") && (
-                    <Line type="monotone" dataKey="pessimistico" stroke="#ef4444" strokeWidth={2} activeDot={{ r: 7 }} onMouseEnter={() => setActiveLine("pessimistico")} />
+                    <Line type="monotone" dataKey="pessimistico" stroke="#f87171" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#f87171" }} onMouseEnter={() => setActiveLine("pessimistico")} />
                   )}
-                  <Line type="monotone" dataKey="normale" stroke="#9ca3af" strokeWidth={2} activeDot={{ r: 7 }} onMouseEnter={() => setActiveLine("normale")} />
+                  <Line type="monotone" dataKey="normale" stroke="#60a5fa" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#60a5fa" }} onMouseEnter={() => setActiveLine("normale")} />
                   {allowedLines.includes("ottimistico") && (
-                    <Line type="monotone" dataKey="ottimistico" stroke="#22c55e" strokeWidth={2} activeDot={{ r: 7 }} onMouseEnter={() => setActiveLine("ottimistico")} />
+                    <Line type="monotone" dataKey="ottimistico" stroke="#34d399" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#34d399" }} onMouseEnter={() => setActiveLine("ottimistico")} />
                   )}
                 </LineChart>
               </ResponsiveContainer>
@@ -2059,7 +2104,11 @@ function History({ history, setHistory }) {
       </div>
 
       {history.length === 0 && (
-        <div style={{ opacity: 0.4, fontSize: 14, padding: "40px 0" }}>Nessuno scenario ancora. Creane uno dalla sezione Nuovo Scenario.</div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 20px", textAlign: "center", gap: 16 }}>
+          <div style={{ fontSize: 48, opacity: 0.3 }}>📁</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>Nessuno scenario salvato</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", maxWidth: 320, lineHeight: 1.6 }}>Crea il tuo primo scenario per iniziare a tracciare la tua situazione finanziaria futura.</div>
+        </div>
       )}
 
       <div style={{ maxWidth: 680 }}>
@@ -2069,22 +2118,31 @@ function History({ history, setHistory }) {
           const pension = Number(h?.pension ?? 0);
           const mortgage = Number(h?.maxMortgageRate ?? 0);
           const health = Number(h?.health ?? 0);
+          const healthColor = health >= 70 ? "#34d399" : health >= 40 ? "#f59e0b" : "#f87171";
 
           return (
-            <div key={h.id} style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "18px 0" }}>
+            <div key={h.id} style={{ marginBottom: 10, background: open ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.03)", border: open ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "18px 20px", transition: "background 0.2s, border-color 0.2s" }}
+              onMouseEnter={e => { if (!open) { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}}
+              onMouseLeave={e => { if (!open) { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}}
+            >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2 }}>{h?.country || "—"} · {h?.sector || "—"}</div>
-                  <div style={{ fontSize: 12, opacity: 0.4 }}>{h?.date}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📊</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{h?.country || "—"} · {h?.sector || "—"}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>📅 {h?.date}</div>
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <span style={{ fontSize: 12, opacity: 0.5 }}>Score {health}/100</span>
-                  <div onClick={() => setOpenId(open ? null : h.id)} style={{ cursor: "pointer", opacity: 0.5, fontSize: 18, userSelect: "none", padding: "2px 6px" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: healthColor, background: `${healthColor}15`, padding: "4px 10px", borderRadius: 20, border: `1px solid ${healthColor}30` }}>Score {health}/100</span>
+                  <div onClick={() => setOpenId(open ? null : h.id)} style={{ cursor: "pointer", width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, userSelect: "none", color: "rgba(255,255,255,0.6)" }}>
                     {open ? "−" : "+"}
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); setHistory((prev) => prev.filter((s) => s.id !== h.id)); if (openId === h.id) setOpenId(null); }}
-                    style={{ padding: "5px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.35)", background: "rgba(239,68,68,0.08)", color: "rgba(239,68,68,0.8)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                    style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "rgba(239,68,68,0.85)", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "background 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.18)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.08)"}
                   >
                     Elimina
                   </button>
@@ -2194,29 +2252,37 @@ function Account({ history, plan, setPlan }) {
         <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Piano attivo</span></div>
         <p style={{ opacity: 0.45, fontSize: 13, margin: "0 0 24px" }}>Scegli il piano più adatto alle tue esigenze.</p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           {planDefs.map((p) => {
             const isActive = plan === p.id;
+            const accentColor = p.id === "premium" ? "#f59e0b" : p.id === "pro" ? "#3b82f6" : "rgba(255,255,255,0.4)";
+            const accentBg    = p.id === "premium" ? "rgba(245,158,11,0.08)" : p.id === "pro" ? "rgba(59,130,246,0.08)" : "rgba(255,255,255,0.03)";
             return (
-              <div key={p.id} onClick={() => setPlan(p.id)} style={{ padding: "24px 20px", background: isActive ? "rgba(59,130,246,0.08)" : "transparent", border: isActive ? "1px solid rgba(59,130,246,0.35)" : "1px solid rgba(255,255,255,0.06)", cursor: "pointer", position: "relative", transition: "all 0.2s", margin: 4, borderRadius: 12 }}>
+              <div key={p.id} onClick={() => setPlan(p.id)} style={{ padding: "24px 22px", background: isActive ? accentBg : "rgba(255,255,255,0.03)", border: isActive ? `1.5px solid ${accentColor}` : "1px solid rgba(255,255,255,0.08)", cursor: "pointer", position: "relative", transition: "all 0.25s", borderRadius: 16, boxShadow: isActive ? `0 0 24px ${accentColor}22` : "none" }}
+                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}}
+                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}}
+              >
                 {p.popular && (
-                  <div style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#3b82f6,#ec4899)", color: "white", fontSize: 10, padding: "3px 12px", borderRadius: 20, fontWeight: 700, whiteSpace: "nowrap", letterSpacing: "0.05em" }}>PIÙ POPOLARE</div>
+                  <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(90deg,#3b82f6,#ec4899)", color: "white", fontSize: 10, padding: "3px 14px", borderRadius: 20, fontWeight: 800, whiteSpace: "nowrap", letterSpacing: "0.06em" }}>PIÙ POPOLARE</div>
                 )}
                 {isActive && (
-                  <div style={{ position: "absolute", top: 12, right: 12, width: 18, height: 18, borderRadius: "50%", background: "rgba(59,130,246,0.8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>✓</div>
+                  <div style={{ position: "absolute", top: 14, right: 14, width: 20, height: 20, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#000" }}>✓</div>
                 )}
                 <span style={planBadgeStyle(p.id)}>{p.label}</span>
-                <div style={{ fontSize: 22, fontWeight: 800, margin: "10px 0 2px", letterSpacing: "-0.02em" }}>{p.price}</div>
-                <div style={{ fontSize: 12, opacity: 0.45, marginBottom: 16 }}>{p.priceNote}</div>
+                <div style={{ fontSize: 26, fontWeight: 900, margin: "12px 0 2px", letterSpacing: "-0.03em", color: isActive ? accentColor : "white" }}>{p.price}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 18 }}>{p.priceNote}</div>
                 {p.features.map((f, i) => (
-                  <div key={i} style={{ fontSize: 12, opacity: f.startsWith("—") ? 0.35 : 0.75, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{f}</div>
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, color: f.startsWith("—") ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.72)", padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{ flexShrink: 0, marginTop: 1 }}>{f.startsWith("—") ? "✗" : "✓"}</span>
+                    <span>{f.replace("—", "")}</span>
+                  </div>
                 ))}
                 {!isActive && (
-                  <button style={{ ...styles.smallButton, marginTop: 16, width: "100%" }} onClick={(e) => { e.stopPropagation(); setPlan(p.id); }}>
+                  <button style={{ ...styles.smallButton, marginTop: 18, width: "100%", borderColor: accentColor, color: accentColor }} onClick={(e) => { e.stopPropagation(); setPlan(p.id); }}>
                     {plan === "premium" && p.id !== "premium" ? "Passa a " + p.label : "Attiva " + p.label}
                   </button>
                 )}
-                {isActive && <div style={{ marginTop: 16, fontSize: 12, color: "#3b82f6", fontWeight: 600 }}>Piano attivo</div>}
+                {isActive && <div style={{ marginTop: 18, fontSize: 13, color: accentColor, fontWeight: 700 }}>✓ Piano attivo</div>}
               </div>
             );
           })}
@@ -2226,24 +2292,28 @@ function Account({ history, plan, setPlan }) {
       <div style={styles.divider} />
 
       <div style={styles.section}>
-        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Insights finanziari</span></div>
-        <div style={styles.dataRow}><span style={styles.dataLabel}>Miglior scenario</span><span style={styles.dataValue}>{bestScenario ? `€ ${bestScenario.pension.toFixed(0)}` : "—"}</span></div>
+        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>📈 Insights finanziari</span></div>
+        <div style={styles.dataRow}><span style={styles.dataLabel}>Miglior scenario</span><span style={{ ...styles.dataValue, color: "#34d399" }}>{bestScenario ? `€ ${bestScenario.pension.toFixed(0)}` : "—"}</span></div>
         <div style={styles.dataRow}><span style={styles.dataLabel}>Scenario dominante</span><span style={styles.dataValue}>{last ? `${last.country} · ${last.sector}` : "—"}</span></div>
-        <div style={styles.dataRow}><span style={styles.dataLabel}>Capacità finanziaria</span><span style={styles.dataValue}>{avgSalary > 4000 ? "Alta" : "Media"}</span></div>
-        <div style={styles.dataRow}><span style={styles.dataLabel}>Livello utente</span><span style={styles.dataValue}>{total > 10 ? "Power user" : "Base user"}</span></div>
+        <div style={styles.dataRow}><span style={styles.dataLabel}>Capacità finanziaria</span><span style={styles.dataValue}>{avgSalary > 4000 ? "🔥 Alta" : "📊 Media"}</span></div>
+        <div style={styles.dataRow}><span style={styles.dataLabel}>Livello utente</span><span style={{ ...styles.dataValue, color: total > 10 ? "#f59e0b" : "white" }}>{total > 10 ? "⭐ Power user" : "Base user"}</span></div>
       </div>
 
       <div style={styles.divider} />
 
       <div style={styles.section}>
-        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Azioni account</span></div>
+        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>⚙️ Azioni account</span></div>
         <div style={styles.dataRow}>
-          <span style={styles.dataLabel}>Esporta dati PDF {!PLAN_LIMITS[plan].reportPdf && <span style={{ opacity: 0.35, fontSize: 11 }}> — Pro+</span>}</span>
-          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].reportPdf ? 1 : 0.35, cursor: PLAN_LIMITS[plan].reportPdf ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].reportPdf}>PDF</button>
+          <span style={styles.dataLabel}>Esporta dati PDF {!PLAN_LIMITS[plan].reportPdf && <span style={{ fontSize: 11, color: "#f59e0b", marginLeft: 6 }}>Pro+</span>}</span>
+          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].reportPdf ? 1 : 0.45, cursor: PLAN_LIMITS[plan].reportPdf ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].reportPdf}>
+            {PLAN_LIMITS[plan].reportPdf ? "PDF" : "🔒 PDF"}
+          </button>
         </div>
         <div style={styles.dataRow}>
-          <span style={styles.dataLabel}>Esporta Excel {!PLAN_LIMITS[plan].exportExcel && <span style={{ opacity: 0.35, fontSize: 11 }}> — Pro+</span>}</span>
-          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].exportExcel ? 1 : 0.35, cursor: PLAN_LIMITS[plan].exportExcel ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].exportExcel}>Excel</button>
+          <span style={styles.dataLabel}>Esporta Excel {!PLAN_LIMITS[plan].exportExcel && <span style={{ fontSize: 11, color: "#f59e0b", marginLeft: 6 }}>Pro+</span>}</span>
+          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].exportExcel ? 1 : 0.45, cursor: PLAN_LIMITS[plan].exportExcel ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].exportExcel}>
+            {PLAN_LIMITS[plan].exportExcel ? "Excel" : "🔒 Excel"}
+          </button>
         </div>
         <div style={styles.dataRow}>
           <span style={styles.dataLabel}>Sicurezza account</span>
@@ -2258,6 +2328,15 @@ function Account({ history, plan, setPlan }) {
 
 //#region SETTINGS
 
+function Toggle({ defaultOn = false }) {
+  const [on, setOn] = useState(defaultOn);
+  return (
+    <div onClick={() => setOn(!on)} style={{ width: 44, height: 24, borderRadius: 99, background: on ? "#10b981" : "rgba(255,255,255,0.12)", border: on ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.15)", cursor: "pointer", position: "relative", transition: "background 0.25s, border-color 0.25s", flexShrink: 0, boxShadow: on ? "0 0 10px rgba(16,185,129,0.4)" : "none" }}>
+      <div style={{ position: "absolute", top: 2, left: on ? 22 : 2, width: 18, height: 18, borderRadius: "50%", background: "white", transition: "left 0.25s cubic-bezier(0.34,1.56,0.64,1)", boxShadow: "0 1px 4px rgba(0,0,0,0.3)" }} />
+    </div>
+  );
+}
+
 function Settings() {
   return (
     <div style={styles.page}>
@@ -2266,55 +2345,55 @@ function Settings() {
       </div>
 
       <div style={styles.section}>
-        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Interfaccia</span></div>
+        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🎨 Interfaccia</span></div>
         <div style={styles.dataRow}>
-          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Dark Mode avanzata</div><div style={{ opacity: 0.4, fontSize: 12, marginTop: 2 }}>Glass fintech UI</div></div>
-          <input type="checkbox" defaultChecked />
+          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Dark Mode avanzata</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Glass fintech UI</div></div>
+          <Toggle defaultOn={true} />
         </div>
         <div style={styles.dataRow}>
-          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Animazioni fluide</div><div style={{ opacity: 0.4, fontSize: 12, marginTop: 2 }}>Micro-interazioni stile banking</div></div>
-          <input type="checkbox" defaultChecked />
+          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Animazioni fluide</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Micro-interazioni stile banking</div></div>
+          <Toggle defaultOn={true} />
         </div>
         <div style={styles.dataRow}>
-          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Modalità compatta</div><div style={{ opacity: 0.4, fontSize: 12, marginTop: 2 }}>Riduce spacing UI</div></div>
-          <input type="checkbox" />
-        </div>
-      </div>
-
-      <div style={styles.divider} />
-
-      <div style={styles.section}>
-        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Motore di simulazione</span></div>
-        <div style={styles.dataRow}>
-          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Modello AI avanzato</div><div style={{ opacity: 0.4, fontSize: 12, marginTop: 2 }}>Crescita + rischio realistico</div></div>
-          <input type="checkbox" defaultChecked />
-        </div>
-        <div style={styles.dataRow}>
-          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Volatilità mercato</div><div style={{ opacity: 0.4, fontSize: 12, marginTop: 2 }}>Simulazione realistica</div></div>
-          <input type="checkbox" defaultChecked />
-        </div>
-        <div style={styles.dataRow}>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>Proiezione pensione</div>
-          <input type="checkbox" defaultChecked />
+          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Modalità compatta</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Riduce spacing UI</div></div>
+          <Toggle defaultOn={false} />
         </div>
       </div>
 
       <div style={styles.divider} />
 
       <div style={styles.section}>
-        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Notifiche</span></div>
-        <div style={styles.dataRow}><div style={{ fontWeight: 600, fontSize: 14 }}>Email report mensile</div><input type="checkbox" defaultChecked /></div>
-        <div style={styles.dataRow}><div style={{ fontWeight: 600, fontSize: 14 }}>Alert crescita patrimonio</div><input type="checkbox" defaultChecked /></div>
-        <div style={styles.dataRow}><div style={{ fontWeight: 600, fontSize: 14 }}>Riepilogo settimanale</div><input type="checkbox" /></div>
+        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🧠 Motore di simulazione</span></div>
+        <div style={styles.dataRow}>
+          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Modello AI avanzato</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Crescita + rischio realistico</div></div>
+          <Toggle defaultOn={true} />
+        </div>
+        <div style={styles.dataRow}>
+          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Volatilità mercato</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Simulazione realistica</div></div>
+          <Toggle defaultOn={true} />
+        </div>
+        <div style={styles.dataRow}>
+          <div><div style={{ fontWeight: 600, fontSize: 14 }}>Proiezione pensione</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Calcolo a 67 anni con SWR 4%</div></div>
+          <Toggle defaultOn={true} />
+        </div>
       </div>
 
       <div style={styles.divider} />
 
       <div style={styles.section}>
-        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Sicurezza</span></div>
-        <div style={styles.dataRow}><div style={{ fontWeight: 600, fontSize: 14 }}>Cambia password</div><button style={styles.smallButton}>Apri</button></div>
-        <div style={styles.dataRow}><div style={{ fontWeight: 600, fontSize: 14 }}>Autenticazione 2FA</div><button style={styles.smallButton}>Attiva</button></div>
-        <div style={styles.dataRow}><div style={{ fontWeight: 600, fontSize: 14 }}>Reset account</div><button style={{ ...styles.smallButton, background: "rgba(239,68,68,0.7)" }}>Reset</button></div>
+        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🔔 Notifiche</span></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Email report mensile</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Riepilogo del mese via email</div></div><Toggle defaultOn={true} /></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Alert crescita patrimonio</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Notifica quando raggiungi soglie</div></div><Toggle defaultOn={true} /></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Riepilogo settimanale</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Report ogni domenica</div></div><Toggle defaultOn={false} /></div>
+      </div>
+
+      <div style={styles.divider} />
+
+      <div style={styles.section}>
+        <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🔒 Sicurezza</span></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Cambia password</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Aggiorna le credenziali di accesso</div></div><button style={styles.smallButton}>Apri</button></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Autenticazione 2FA</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Protezione in due passaggi</div></div><button style={{ ...styles.smallButton, borderColor: "rgba(16,185,129,0.4)", color: "#34d399" }}>Attiva</button></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Reset account</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Elimina tutti i dati salvati</div></div><button style={{ ...styles.smallButton, borderColor: "rgba(239,68,68,0.4)", color: "rgba(239,68,68,0.9)", background: "rgba(239,68,68,0.08)" }}>Reset</button></div>
       </div>
     </div>
   );
@@ -2365,7 +2444,7 @@ function TopBar({ page, setPage }) {
     return (
       <div onClick={() => setPage(id)} style={{ display: "flex", alignItems: "center", padding: "6px 14px", cursor: "pointer", position: "relative", color: isActive ? "white" : "rgba(255,255,255,0.55)", fontWeight: isActive ? 600 : 400, fontSize: 13, whiteSpace: "nowrap", transition: "all .2s ease" }}>
         {label}
-        {isActive && <div style={{ position: "absolute", bottom: -6, left: 8, right: 8, height: 2, borderRadius: 999, background: underlineColors[id] }} />}
+        {isActive && <div style={{ position: "absolute", bottom: -6, left: 8, right: 8, height: 3, borderRadius: 999, background: underlineColors[id], boxShadow: `0 0 8px ${underlineColors[id]}` }} />}
       </div>
     );
   };
@@ -2392,7 +2471,11 @@ function TopBar({ page, setPage }) {
         )}
 
         {isMobile && (
-          <div onClick={() => setMobileMenu(!mobileMenu)} style={{ fontSize: 18, color: "white", cursor: "pointer", padding: "4px 8px", userSelect: "none" }}>☰</div>
+          <div onClick={() => setMobileMenu(!mobileMenu)} style={{ cursor: "pointer", padding: "6px 8px", userSelect: "none", display: "flex", flexDirection: "column", gap: 5 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width: 22, height: 2, borderRadius: 2, background: "rgba(255,255,255,0.8)", transition: "opacity 0.2s" }} />
+            ))}
+          </div>
         )}
       </div>
 
@@ -2440,51 +2523,51 @@ function planBadgeStyle(plan) {
 
 const styles = {
   app: { 
-  height: "100vh",        // ← era minHeight
-  overflow: "hidden",     // ← blocca tutto lo scroll sull'app
+  height: "100vh",
+  overflow: "hidden",
   background: "#000", 
   color: "white", 
   fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif", 
   overflowX: "hidden" 
 },
-  bg: { position: "fixed", inset: 0, filter: "blur(120px)", zIndex: 0 },
+  bg: { position: "fixed", inset: 0, filter: "blur(120px) saturate(1.3)", zIndex: 0, opacity: 0.75 },
   container: { 
   position: "relative", 
   zIndex: 2, 
   paddingTop: 70,
-  height: "calc(100vh - 70px)",   // ← altezza esatta rimanente
-  overflowY: "auto",              // ← unico punto di scroll
+  height: "calc(100vh - 70px)",
+  overflowY: "auto",
   overflowX: "hidden",
 },
-  page: { padding: "32px 20px 80px", maxWidth: 1100, margin: "0 auto" },
-  pageHeader: { marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.07)" },
-  pageTitle: { fontSize: 26, fontWeight: 700, margin: "0 0 12px", letterSpacing: "-0.02em" },
+  page: { padding: "36px 24px 100px", maxWidth: 1100, margin: "0 auto" },
+  pageHeader: { marginBottom: 36, paddingBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.08)" },
+  pageTitle: { fontSize: 32, fontWeight: 800, margin: "0 0 14px", letterSpacing: "-0.03em", background: "linear-gradient(135deg,#fff 60%,rgba(255,255,255,0.55))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
   planBar: { display: "flex", alignItems: "center", gap: 8, fontSize: 13 },
-  kpiStrip: { display: "flex", gap: 0, flexWrap: "wrap", margin: "24px 0" },
-  kpiItem: { flex: "1 1 120px", padding: "0 16px 0 0", borderRight: "1px solid rgba(255,255,255,0.07)", marginRight: 16, marginBottom: 20 },
-  kpiLabel: { fontSize: 11, opacity: 0.4, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 },
-  kpiValue: { fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", color: "white" },
-  kpiUnit: { fontSize: 14, fontWeight: 400, opacity: 0.5 },
-  divider: { height: 1, background: "rgba(255,255,255,0.06)", margin: "8px 0 24px" },
-  section: { marginBottom: 24 },
-  sectionHeader: { display: "flex", alignItems: "center", gap: 8, marginBottom: 16 },
-  sectionTitle: { fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.5 },
-  dataRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" },
-  dataLabel: { fontSize: 14, opacity: 0.75 },
-  dataValue: { fontSize: 14, fontWeight: 600, color: "white" },
+  kpiStrip: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, margin: "24px 0" },
+  kpiItem: { padding: "16px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, backdropFilter: "blur(8px)" },
+  kpiLabel: { fontSize: 11, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 },
+  kpiValue: { fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "white" },
+  kpiUnit: { fontSize: 13, fontWeight: 400, opacity: 0.45, marginLeft: 2 },
+  divider: { height: 1, background: "rgba(255,255,255,0.07)", margin: "4px 0 28px" },
+  section: { marginBottom: 28 },
+  sectionHeader: { display: "flex", alignItems: "center", gap: 10, marginBottom: 18 },
+  sectionTitle: { fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", gap: 6 },
+  dataRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", transition: "background 0.15s" },
+  dataLabel: { fontSize: 14, color: "rgba(255,255,255,0.7)" },
+  dataValue: { fontSize: 14, fontWeight: 700, color: "white" },
   center: { display: "flex", justifyContent: "center", alignItems: "flex-start", minHeight: "70vh", padding: "32px 20px" },
   narrowCard: { width: "100%", maxWidth: 520, padding: "32px 0" },
-  input: { width: "100%", height: 44, padding: "0 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#fff", boxSizing: "border-box", outline: "none", fontSize: 14, WebkitTextFillColor: "#fff", opacity: 1, transition: "border-color 0.2s" },
-  button: { width: "100%", marginTop: 12, padding: "13px 20px", borderRadius: 12, border: "none", background: "linear-gradient(90deg,#3b82f6,#8b5cf6)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", letterSpacing: "0.01em" },
+  input: { width: "100%", height: 46, padding: "0 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.06)", color: "#fff", boxSizing: "border-box", outline: "none", fontSize: 14, WebkitTextFillColor: "#fff", opacity: 1, transition: "border-color 0.2s, background 0.2s" },
+  button: { width: "100%", marginTop: 14, padding: "14px 20px", borderRadius: 14, border: "none", background: "linear-gradient(90deg,#2563eb,#7c3aed)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", letterSpacing: "0.01em", boxShadow: "0 4px 24px rgba(37,99,235,0.35)", transition: "filter 0.15s, transform 0.1s" },
   topBar: { position: "fixed", top: 0, width: "100%", height: 60, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)", zIndex: 10, boxSizing: "border-box", gap: 16 },
-  smallButton: { padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.07)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em", transition: "background 0.2s" },
+  smallButton: { padding: "8px 16px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 700, letterSpacing: "0.02em", transition: "background 0.2s, border-color 0.2s" },
   loginWrapper: { height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", position: "relative", zIndex: 2 },
   loginCard: { width: "min(400px, 92vw)", padding: "44px 32px", borderRadius: 20, background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(24px)", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" },
   loginLogo: { width: 120, height: 120, objectFit: "contain", marginBottom: 8 },
   loginSlogan: { fontStyle: "italic", opacity: 0.55, fontSize: 14, textAlign: "center", marginBottom: 8 },
-  field: { display: "flex", flexDirection: "column", width: "100%", marginBottom: 16 },
-  label: { color: "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: 600, marginBottom: 7, textTransform: "uppercase", letterSpacing: "0.06em" },
-  fieldError: { color: "rgba(239,68,68,0.9)", fontSize: 11, marginTop: 5 },
+  field: { display: "flex", flexDirection: "column", width: "100%", marginBottom: 18 },
+  label: { color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.07em" },
+  fieldError: { display: "flex", alignItems: "center", gap: 5, color: "rgba(239,68,68,0.9)", fontSize: 11, marginTop: 6 },
 };
 
 //#endregion
