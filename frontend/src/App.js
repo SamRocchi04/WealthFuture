@@ -1323,7 +1323,7 @@ const closeModal = () => {
                 ⚡ Inizia ora
               </button>
               <button style={{ padding: "13px 28px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.07)", color: "white", fontWeight: 600, fontSize: 15, cursor: "pointer", backdropFilter: "blur(10px)" }} onClick={() => setPage("dashboard")}>
-                Dashboard →
+                Dashboard
               </button>
             </div>
           </div>
