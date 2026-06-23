@@ -373,6 +373,111 @@ function BarChart() {
   );
 }
 
+
+function CombinedChart() {
+  const data = [
+    { yr: 0,  val: 20000  },
+    { yr: 5,  val: 52000  },
+    { yr: 10, val: 112000 },
+    { yr: 15, val: 214000 },
+    { yr: 20, val: 286000 },
+    { yr: 25, val: 374000 },
+    { yr: 30, val: 436000 },
+  ];
+
+  const w = 280, h = 140;
+  const maxV = 436000, minV = 0;
+  const pad = { l: 8, r: 8, t: 12, b: 24 };
+  const chartW = w - pad.l - pad.r;
+  const chartH = h - pad.t - pad.b;
+
+  const px = (i) => pad.l + (i / (data.length - 1)) * chartW;
+  const py = (v) => pad.t + chartH - ((v - minV) / (maxV - minV)) * chartH;
+
+  const linePts = data.map((d, i) => `${px(i)},${py(d.val)}`).join(" ");
+  const areaPts = `${px(0)},${pad.t + chartH} ` + data.map((d, i) => `${px(i)},${py(d.val)}`).join(" ") + ` ${px(data.length - 1)},${pad.t + chartH} Z`;
+
+  return (
+    <div style={{ padding: "18px 22px" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.hint, marginBottom: 12 }}>
+        Crescita patrimoniale
+      </div>
+      <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block", overflow: "visible" }}>
+        <defs>
+          <linearGradient id="cgGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#10b981" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
+          </linearGradient>
+          <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#2563eb" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0.5" />
+          </linearGradient>
+        </defs>
+
+        {/* Grid lines */}
+        {[0.25, 0.5, 0.75, 1].map(t => {
+          const y = pad.t + chartH * (1 - t);
+          return (
+            <line key={t}
+              x1={pad.l} y1={y} x2={pad.l + chartW} y2={y}
+              stroke="rgba(255,255,255,0.05)" strokeWidth="1"
+            />
+          );
+        })}
+
+        {/* Barre */}
+        {data.map((d, i) => {
+          const bw = 14;
+          const bx = px(i) - bw / 2;
+          const bh = ((d.val - minV) / (maxV - minV)) * chartH;
+          const by = pad.t + chartH - bh;
+          return (
+            <rect key={i}
+              x={bx} y={by} width={bw} height={bh}
+              rx="3"
+              fill={i === data.length - 1 ? "url(#barGrad)" : `rgba(37,99,235,${0.18 + i * 0.08})`}
+            />
+          );
+        })}
+
+        {/* Area */}
+        <path d={`M${areaPts}`} fill="url(#cgGrad)" />
+
+        {/* Line */}
+        <polyline points={linePts} fill="none" stroke="#10b981" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Dot finale */}
+        <circle cx={px(data.length - 1)} cy={py(436000)} r="4" fill="#10b981" />
+        <circle cx={px(data.length - 1)} cy={py(436000)} r="8" fill="#10b981" fillOpacity="0.18" />
+
+        {/* Labels anni */}
+        {data.map((d, i) => (
+          <text key={i}
+            x={px(i)} y={h - 2}
+            textAnchor="middle" fontSize="8"
+            fill="rgba(248,250,252,0.28)"
+            fontFamily="monospace"
+          >{d.yr}a</text>
+        ))}
+
+        {/* Labels valori sopra le barre */}
+        {data.map((d, i) => (
+          <text key={`v${i}`}
+            x={px(i)} y={py(d.val) - 6}
+            textAnchor="middle" fontSize="7.5"
+            fill="rgba(248,250,252,0.35)"
+            fontFamily="monospace"
+          >
+            {d.val >= 1000 ? `€${Math.round(d.val / 1000)}k` : `€${d.val}`}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+
 // ── DASHBOARD PREVIEW ─────────────────────────────────────────
 function DashboardPreview() {
   const spark1 = [20, 25, 22, 35, 40, 38, 55, 60, 58, 72, 80, 90];
@@ -711,48 +816,7 @@ const GlobalStyles = () => (
                 </div>
               ))}
             </div>
-            <div style={{ padding: "16px 22px", borderBottom: `1px solid ${C.border}`, background: C.greenDim }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.green, marginBottom: 6 }}>Patrimonio stimato a 30 anni</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: C.green, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>€ 436.000</div>
-              <div style={{ marginTop: 14 }}>
-  {(() => {
-    const data = [20000,26000,33000,42000,52000,64000,78000,94000,112000,133000,157000,184000,214000,248000,286000,328000,374000,424000,436000];
-    const w = 260, h = 72, maxV = 436000, minV = 20000;
-    const pts = data.map((v, i) => {
-      const x = (i / (data.length - 1)) * w;
-      const y = h - ((v - minV) / (maxV - minV)) * (h - 6) - 3;
-      return `${x},${y}`;
-    }).join(" ");
-    const area = `M0,${h} ` + data.map((v, i) => {
-      const x = (i / (data.length - 1)) * w;
-      const y = h - ((v - minV) / (maxV - minV)) * (h - 6) - 3;
-      return `L${x},${y}`;
-    }).join(" ") + ` L${w},${h} Z`;
-    return (
-      <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block", overflow: "visible" }}>
-        <defs>
-          <linearGradient id="wgGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill="url(#wgGrad)" />
-        <polyline points={pts} fill="none" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx={w} cy={3} r="3.5" fill="#10b981" />
-        {[0, 10, 20, 30].map((yr) => {
-          const idx = Math.round((yr / 30) * (data.length - 1));
-          const x = (idx / (data.length - 1)) * w;
-          return <text key={yr} x={x} y={h + 12} textAnchor="middle" fontSize="8" fill="rgba(248,250,252,0.3)" fontFamily="monospace">{yr}a</text>;
-        })}
-      </svg>
-    );
-  })()}
-</div>
-            </div>
-            <div style={{ padding: "18px 22px" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: C.hint, marginBottom: 14 }}>Crescita patrimoniale</div>
-              <BarChart />
-            </div>
+            <CombinedChart />
           </div>
         </div>
       </section>
