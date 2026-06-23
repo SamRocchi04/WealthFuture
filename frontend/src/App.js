@@ -993,27 +993,36 @@ function Login({ mode, onLogin, onRegister, onBack }) {
     transition: `opacity 0.45s cubic-bezier(0.22,1,0.36,1) ${0.18 + index * 0.07}s, transform 0.45s cubic-bezier(0.22,1,0.36,1) ${0.18 + index * 0.07}s`,
   });
 
-  const FieldError = ({ field }) =>
-  fieldMessages[field] ? (
+  const FieldError = ({ field }) => {
+  if (!fieldErrors[field] || !fieldMessages[field]) return null;
+  return (
     <div style={{
       display: "flex",
       alignItems: "center",
-      gap: 5,
-      fontSize: 12,
-      color: "rgba(255,255,255,0.92)",
-      background: "rgba(239,68,68,0.22)",
-      border: "1px solid rgba(239,68,68,0.4)",
-      borderRadius: 7,
-      padding: "5px 10px",
-      marginTop: -4,
-      marginBottom: 2,
-      lineHeight: 1.4,
+      gap: 6,
+      marginTop: 5,
+      padding: "6px 10px",
+      borderRadius: 8,
+      background: "rgba(239,68,68,0.08)",
+      border: "1px solid rgba(239,68,68,0.2)",
       animation: "fadeInDown 0.25s cubic-bezier(0.22,1,0.36,1)",
     }}>
-      <span style={{ fontSize: 13 }}>⚠️</span>
-      {fieldMessages[field]}
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="7" stroke="rgba(239,68,68,0.8)" strokeWidth="1.5"/>
+        <path d="M8 4.5v4" stroke="rgba(239,68,68,0.8)" strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="8" cy="11" r="0.8" fill="rgba(239,68,68,0.8)"/>
+      </svg>
+      <span style={{
+        fontSize: 12,
+        color: "rgba(239,100,100,0.85)",
+        fontWeight: 500,
+        letterSpacing: "0.01em",
+      }}>
+        {fieldMessages[field]}
+      </span>
     </div>
-    ) : null;
+  );
+};
 
   return (
     <div style={styles.app}>
@@ -1088,13 +1097,6 @@ function Login({ mode, onLogin, onRegister, onBack }) {
               </div>
             </div>
 
-            {/* Global error */}
-            {error && (
-              <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 14, background: "rgba(239,68,68,0.18)", border: "1px solid rgba(239,68,68,0.55)", color: "rgba(255,100,100,1)", fontSize: 13, fontWeight: 600, animation: "fadeInDown 0.3s cubic-bezier(0.22,1,0.36,1)" }}>
-                {error}
-              </div>
-            )}
-
             {/* Nome + Cognome */}
             {isRegister && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
@@ -1152,7 +1154,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
               color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer",
               marginTop: 8, marginBottom: 14, transition: "filter 0.15s",
             }} onClick={handleSubmit}>
-              {isRegister ? "Crea account gratuito →" : "Accedi →"}
+              {isRegister ? "Crea account gratuito →" : "Accedi"}
             </button>
 
             {/* Switch + back */}
