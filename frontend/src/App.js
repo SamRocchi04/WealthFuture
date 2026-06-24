@@ -1910,186 +1910,309 @@ function Scenario({ history, setHistory, plan, setPage }) {
 
       ) : (
         <div style={{ ...styles.narrowCard, maxWidth: 700 }}>
-          <div style={{ marginBottom: 28, padding: "20px 22px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)", borderRadius: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
-              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Risultato simulazione</h2>
+          {/* ── Header risultato ── */}
+<div style={{ marginBottom: 24, padding: "20px 22px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)", borderRadius: 16 }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
+    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Risultato simulazione</h2>
+  </div>
+  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{result.country} · {result.sector} · {result.age} anni</div>
+</div>
+
+{/* ── Insight card ── */}
+{(() => {
+  const h = result.health;
+  const sr = result.savingsRate ?? 0;
+  let msg, color, bg, border;
+  if (h >= 80 && sr >= 30) {
+    msg = "🔥 Profilo eccellente — sei sulla strada giusta per l'indipendenza finanziaria.";
+    color = "#34d399"; bg = "rgba(16,185,129,0.07)"; border = "rgba(16,185,129,0.22)";
+  } else if (h >= 60) {
+    msg = "📈 Buon profilo — ottimizza le spese mensili per accelerare la crescita del patrimonio.";
+    color = "#60a5fa"; bg = "rgba(37,99,235,0.07)"; border = "rgba(37,99,235,0.22)";
+  } else if (h >= 40) {
+    msg = "⚠️ Profilo medio — considera di aumentare il tasso di risparmio per migliorare la proiezione.";
+    color = "#fbbf24"; bg = "rgba(245,158,11,0.07)"; border = "rgba(245,158,11,0.22)";
+  } else {
+    msg = "🚨 Profilo a rischio — le spese superano la soglia consigliata. Rivedi il budget mensile.";
+    color = "#f87171"; bg = "rgba(239,68,68,0.07)"; border = "rgba(239,68,68,0.22)";
+  }
+  return (
+    <div style={{ marginBottom: 20, padding: "14px 18px", background: bg, border: `1px solid ${border}`, borderRadius: 12, fontSize: 13, color, fontWeight: 600, lineHeight: 1.6 }}>
+      {msg}
+    </div>
+  );
+})()}
+
+{/* ── KPI strip ── */}
+<div style={styles.kpiStrip}>
+  {/* Score con colore semantico */}
+  <div style={{ ...styles.kpiItem, borderColor: result.health >= 70 ? "rgba(16,185,129,0.35)" : result.health >= 40 ? "rgba(245,158,11,0.35)" : "rgba(239,68,68,0.35)" }}>
+    <div style={styles.kpiLabel}>Score finanziario</div>
+    <div style={{ ...styles.kpiValue, color: result.health >= 70 ? "#34d399" : result.health >= 40 ? "#fbbf24" : "#f87171" }}>
+      {result.health}<span style={styles.kpiUnit}>/100</span>
+    </div>
+    <div style={{ marginTop: 8, height: 3, borderRadius: 99, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+      <div style={{ height: "100%", width: `${result.health}%`, borderRadius: 99, background: result.health >= 70 ? "#34d399" : result.health >= 40 ? "#fbbf24" : "#f87171", transition: "width 1s ease" }} />
+    </div>
+    <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>
+      {plan === "free" ? "Base" : plan === "pro" ? "Avanzato" : "Professionale"}
+    </div>
+  </div>
+
+  {/* Surplus mensile */}
+  <div style={styles.kpiItem}>
+    <div style={styles.kpiLabel}>Surplus mensile</div>
+    <div style={{ ...styles.kpiValue, color: result.monthlySurplus >= 0 ? "#34d399" : "#f87171" }}>
+      € {result.monthlySurplus.toLocaleString("it-IT")}
+    </div>
+    <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>
+      {result.savingsRate ?? 0}% del reddito
+    </div>
+  </div>
+
+  {!result.hasHome && (
+    <div style={styles.kpiItem}>
+      <div style={styles.kpiLabel}>Rata mutuo max</div>
+      <div style={styles.kpiValue}>€ {result.maxMortgageRate.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
+      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>30% del reddito netto</div>
+    </div>
+  )}
+  {!result.hasCar && (
+    <div style={styles.kpiItem}>
+      <div style={styles.kpiLabel}>Rata auto max</div>
+      <div style={styles.kpiValue}>€ {result.maxLoanRate.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
+      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>15% del reddito netto</div>
+    </div>
+  )}
+
+  {/* Anni al FIRE */}
+  {result.yearsToFinancialIndependence && (
+    <div style={{ ...styles.kpiItem, borderColor: "rgba(37,99,235,0.30)" }}>
+      <div style={styles.kpiLabel}>Anni al FIRE</div>
+      <div style={{ ...styles.kpiValue, color: "#60a5fa" }}>{result.yearsToFinancialIndependence}<span style={styles.kpiUnit}> anni</span></div>
+      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>indipendenza finanziaria</div>
+    </div>
+  )}
+</div>
+
+<div style={styles.divider} />
+
+{/* ── Pensione ── */}
+{PLAN_LIMITS[plan].simulazionePensione ? (
+  <div style={styles.section}>
+    <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🏦 Pensione stimata</span></div>
+    <div style={styles.dataRow}>
+      <span style={styles.dataLabel}>Capitale accumulato a 67 anni</span>
+      <span style={{ ...styles.dataValue, color: "#22c55e" }}>€ {result.pension.toLocaleString("it-IT")}</span>
+    </div>
+    <div style={styles.dataRow}>
+      <span style={styles.dataLabel}>Rendita mensile (SWR 4%)</span>
+      <span style={{ ...styles.dataValue, color: "#22c55e" }}>€ {result.pensioneMensile.toLocaleString("it-IT")} / mese</span>
+    </div>
+    {plan !== "free" && (
+      <div style={styles.dataRow}>
+        <span style={styles.dataLabel}>Copertura pensione</span>
+        <span style={styles.dataValue}>
+          {result.breakEvenRetirement}% stipendio attuale
+          <span style={{ fontSize: 11, opacity: 0.45, marginLeft: 6 }}>
+            {result.breakEvenRetirement >= 80 ? "· ottima" : result.breakEvenRetirement >= 60 ? "· adeguata" : result.breakEvenRetirement >= 40 ? "· insufficiente" : "· critica"}
+          </span>
+        </span>
+      </div>
+    )}
+  </div>
+) : (
+  <div style={{ fontSize: 13, opacity: 0.4, padding: "12px 0", marginBottom: 20 }}>
+    Simulazione pensione disponibile dal piano Pro
+  </div>
+)}
+
+<div style={styles.divider} />
+
+{/* ── Sezione investimenti ── */}
+{(() => {
+  const sr = result.savingsRate ?? 0;
+  const surplus = Math.max(result.monthlySurplus, 0);
+
+  // Allocazione consigliata in base al profilo
+  let alloc;
+  if (plan === "free") {
+    alloc = [
+      { label: "Liquidità / Fondo emergenza", pct: 60, color: "#60a5fa", desc: `€ ${Math.round(surplus * 0.60).toLocaleString("it-IT")}/mese` },
+      { label: "ETF azionari globali", pct: 40, color: "#34d399", desc: `€ ${Math.round(surplus * 0.40).toLocaleString("it-IT")}/mese` },
+    ];
+  } else if (sr >= 30) {
+    alloc = [
+      { label: "ETF azionari globali (MSCI World)", pct: 50, color: "#34d399", desc: `€ ${Math.round(surplus * 0.50).toLocaleString("it-IT")}/mese` },
+      { label: "ETF obbligazionari", pct: 20, color: "#60a5fa", desc: `€ ${Math.round(surplus * 0.20).toLocaleString("it-IT")}/mese` },
+      { label: "Liquidità / Fondo emergenza", pct: 15, color: "#a78bfa", desc: `€ ${Math.round(surplus * 0.15).toLocaleString("it-IT")}/mese` },
+      { label: "ETF tematici / Small cap", pct: 10, color: "#fbbf24", desc: `€ ${Math.round(surplus * 0.10).toLocaleString("it-IT")}/mese` },
+      { label: "Criptovalute (opzionale)", pct: 5, color: "#f97316", desc: `€ ${Math.round(surplus * 0.05).toLocaleString("it-IT")}/mese` },
+    ];
+  } else if (sr >= 15) {
+    alloc = [
+      { label: "ETF azionari globali (MSCI World)", pct: 40, color: "#34d399", desc: `€ ${Math.round(surplus * 0.40).toLocaleString("it-IT")}/mese` },
+      { label: "ETF obbligazionari", pct: 25, color: "#60a5fa", desc: `€ ${Math.round(surplus * 0.25).toLocaleString("it-IT")}/mese` },
+      { label: "Liquidità / Fondo emergenza", pct: 25, color: "#a78bfa", desc: `€ ${Math.round(surplus * 0.25).toLocaleString("it-IT")}/mese` },
+      { label: "ETF tematici", pct: 10, color: "#fbbf24", desc: `€ ${Math.round(surplus * 0.10).toLocaleString("it-IT")}/mese` },
+    ];
+  } else {
+    alloc = [
+      { label: "Liquidità / Fondo emergenza", pct: 50, color: "#a78bfa", desc: `€ ${Math.round(surplus * 0.50).toLocaleString("it-IT")}/mese` },
+      { label: "ETF obbligazionari (basso rischio)", pct: 30, color: "#60a5fa", desc: `€ ${Math.round(surplus * 0.30).toLocaleString("it-IT")}/mese` },
+      { label: "ETF azionari globali", pct: 20, color: "#34d399", desc: `€ ${Math.round(surplus * 0.20).toLocaleString("it-IT")}/mese` },
+    ];
+  }
+
+  return (
+    <div style={styles.section}>
+      <div style={styles.sectionHeader}>
+        <span style={styles.sectionTitle}>📊 Allocazione investimenti consigliata</span>
+        {plan === "free" && <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(255,255,255,0.06)", borderRadius: 20, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>Base</span>}
+      </div>
+
+      <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, fontSize: 12, color: "rgba(255,255,255,0.40)", lineHeight: 1.6 }}>
+        Surplus mensile disponibile: <span style={{ color: "#f8fafc", fontWeight: 700 }}>€ {surplus.toLocaleString("it-IT")}</span>
+        {plan === "free" && " · Upgrade a Pro per un'analisi completa del portafoglio"}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {alloc.map((a, i) => (
+          <div key={i}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>{a.label}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.40)" }}>{a.desc}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: a.color, minWidth: 32, textAlign: "right" }}>{a.pct}%</span>
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{result.country} · {result.sector} · {result.age} anni</div>
+            <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 99, width: `${a.pct}%`, background: a.color, opacity: 0.85, transition: `width 0.8s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.1}s` }} />
+            </div>
           </div>
+        ))}
+      </div>
 
-          {/* ── KPI strip ── */}
-          <div style={styles.kpiStrip}>
-            <div style={styles.kpiItem}>
-              <div style={styles.kpiLabel}>Score finanziario</div>
-              <div style={styles.kpiValue}>{result.health}<span style={styles.kpiUnit}>/100</span></div>
-              <div style={{ fontSize: 11, opacity: 0.4, marginTop: 2 }}>
-                {plan === "free" ? "Base" : plan === "pro" ? "Avanzato" : "Professionale"}
-              </div>
-            </div>
-            {!result.hasHome && (
-              <div style={styles.kpiItem}>
-                <div style={styles.kpiLabel}>Rata mutuo max</div>
-                <div style={styles.kpiValue}>€ {result.maxMortgageRate.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
-              </div>
-            )}
-            {!result.hasCar && (
-              <div style={styles.kpiItem}>
-                <div style={styles.kpiLabel}>Rata auto max</div>
-                <div style={styles.kpiValue}>€ {result.maxLoanRate.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
-              </div>
-            )}
+      {plan !== "free" && (
+        <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.18)", borderRadius: 10, fontSize: 12, color: "rgba(248,250,252,0.50)", lineHeight: 1.7 }}>
+          💡 Allocazione calcolata in base al tuo tasso di risparmio ({sr}%) e al profilo di rischio dedotto dallo score finanziario. Non costituisce consulenza finanziaria.
+        </div>
+      )}
+    </div>
+  );
+})()}
+
+<div style={styles.divider} />
+
+{/* ── Analisi Pro / Premium ── */}
+{plan !== "free" && (
+  <>
+    <div style={styles.section}>
+      <div style={styles.sectionHeader}>
+        <span style={styles.sectionTitle}>{plan === "premium" ? "📋 Analisi Premium" : "📋 Analisi Pro"}</span>
+      </div>
+      <div style={styles.dataRow}>
+        <span style={styles.dataLabel}>Tasso di risparmio</span>
+        <span style={styles.dataValue}>{result.savingsRate}%
+          <span style={{ fontSize: 11, opacity: 0.45, marginLeft: 6 }}>
+            {result.savingsRate >= 35 ? "· eccellente" : result.savingsRate >= 20 ? "· buono" : result.savingsRate >= 10 ? "· nella media" : "· basso"}
+          </span>
+        </span>
+      </div>
+      {PLAN_LIMITS[plan].confrontoScelte && (
+        <>
+          <div style={styles.dataRow}>
+            <span style={styles.dataLabel}>Casa acquistabile (stima)</span>
+            <span style={styles.dataValue}>€ {result.affordableHousePrice?.toLocaleString("it-IT") ?? "—"}</span>
           </div>
-
-          <div style={styles.divider} />
-
-          {/* ── Pensione ── */}
-          {PLAN_LIMITS[plan].simulazionePensione ? (
-            <div style={styles.section}>
-              <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Pensione stimata</span></div>
-              <div style={styles.dataRow}>
-                <span style={styles.dataLabel}>Capitale accumulato a 67 anni</span>
-                <span style={{ ...styles.dataValue, color: "#22c55e", fontWeight: 700 }}>
-                  € {result.pension.toLocaleString("it-IT")}
-                </span>
-              </div>
-              <div style={styles.dataRow}>
-                <span style={styles.dataLabel}>Rendita mensile stimata (SWR 4%)</span>
-                <span style={{ ...styles.dataValue, color: "#22c55e", fontWeight: 700 }}>
-                  € {result.pensioneMensile.toLocaleString("it-IT")} / mese
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div style={{ fontSize: 13, opacity: 0.4, padding: "12px 0" }}>
-              Simulazione pensione disponibile dal piano Pro
-            </div>
-          )}
-
-          {/* ── Analisi Pro / Premium ── */}
-          {plan !== "free" && (
-            <>
-              <div style={styles.divider} />
-              <div style={styles.section}>
-                <div style={styles.sectionHeader}>
-                  <span style={styles.sectionTitle}>{plan === "premium" ? "Analisi Premium" : "Analisi Pro"}</span>
-                </div>
-                <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Surplus mensile</span>
-                  <span style={styles.dataValue}>€ {result.monthlySurplus.toLocaleString("it-IT")}</span>
-                </div>
-                <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Tasso di risparmio</span>
-                  <span style={styles.dataValue}>{result.savingsRate}%
-                    <span style={{ fontSize: 11, opacity: 0.45, marginLeft: 6 }}>
-                      {result.savingsRate >= 35 ? "· eccellente" : result.savingsRate >= 20 ? "· buono" : result.savingsRate >= 10 ? "· nella media" : "· basso"}
-                    </span>
-                  </span>
-                </div>
-                {PLAN_LIMITS[plan].confrontoScelte && (
-                  <>
-                    <div style={styles.dataRow}>
-                      <span style={styles.dataLabel}>Casa acquistabile (stima)</span>
-                      <span style={styles.dataValue}>€ {result.affordableHousePrice?.toLocaleString("it-IT") ?? "—"}</span>
-                    </div>
-                    <div style={styles.dataRow}>
-                      <span style={styles.dataLabel}>Mutuo erogabile totale</span>
-                      <span style={styles.dataValue}>€ {result.mortgageCapacity.toLocaleString("it-IT")}</span>
-                    </div>
-                    <div style={styles.dataRow}>
-                      <span style={styles.dataLabel}>Auto finanziabile (totale)</span>
-                      <span style={styles.dataValue}>€ {result.carLoanCapacity.toLocaleString("it-IT")}</span>
-                    </div>
-                  </>
-                )}
-                <div style={styles.dataRow}>
-                  <span style={styles.dataLabel}>Copertura pensione</span>
-                  <span style={styles.dataValue}>{result.breakEvenRetirement}% stipendio attuale
-                    <span style={{ fontSize: 11, opacity: 0.45, marginLeft: 6 }}>
-                      {result.breakEvenRetirement >= 80 ? "· ottima" : result.breakEvenRetirement >= 60 ? "· adeguata" : result.breakEvenRetirement >= 40 ? "· insufficiente" : "· critica"}
-                    </span>
-                  </span>
-                </div>
-                {result.yearsToFinancialIndependence && (
-                  <div style={styles.dataRow}>
-                    <span style={styles.dataLabel}>Anni all'indipendenza finanziaria (FIRE)</span>
-                    <span style={styles.dataValue}>{result.yearsToFinancialIndependence} anni</span>
-                  </div>
-                )}
-                {!result.yearsToFinancialIndependence && (
-                  <div style={styles.dataRow}>
-                    <span style={styles.dataLabel}>Anni all'indipendenza finanziaria (FIRE)</span>
-                    <span style={{ ...styles.dataValue, opacity: 0.4 }}>Non raggiungibile con risparmio attuale</span>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          <div style={styles.divider} />
-
-          {/* ── Grafico patrimonio ── */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={styles.sectionHeader}>
-              <span style={styles.sectionTitle}>Patrimonio stimato</span>
-              <span style={{ fontSize: 12, opacity: 0.4 }}>fino a {orizzonteAnni} anni</span>
-            </div>
-            {plan === "free" && (
-              <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 8 }}>
-                Scenari pessimistico e ottimistico disponibili dal piano Pro
-              </div>
-            )}
-            <div style={{ width: "100%", height: 320 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="years" type="number" domain={[10, orizzonteAnni]}
-                    ticks={allChartPoints.filter(p => p.years <= orizzonteAnni).map(p => p.years)}
-                    label={{ value: "Anni", position: "insideBottom", offset: -10 }}
-                    stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-                  <YAxis
-                    tickFormatter={(v) => new Intl.NumberFormat("it-IT", { notation: "compact", maximumFractionDigits: 1 }).format(v)}
-                    stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-                  <Tooltip content={({ active, payload, label }) => {
-                    if (!active || !payload || payload.length === 0) return null;
-                    const item = payload.find((p) => p.dataKey === activeLine);
-                    if (!item) return null;
-                    return (
-                      <div style={{ background: "rgba(10,10,20,0.95)", border: "1px solid rgba(255,255,255,0.1)", padding: "10px 14px", borderRadius: 10, color: "white" }}>
-                        <div style={{ color: item.stroke, fontWeight: 700, marginBottom: 4, fontSize: 12 }}>{item.dataKey}</div>
-                        <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toLocaleString("it-IT")}</div>
-                        <div style={{ opacity: 0.45, marginTop: 4, fontSize: 11 }}>{label} anni</div>
-                      </div>
-                    );
-                  }} />
-                  <Legend verticalAlign="bottom" height={40} wrapperStyle={{ paddingTop: 25 }} />
-                  {allowedLines.includes("pessimistico") && (
-                    <Line type="monotone" dataKey="pessimistico" stroke="#f87171" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#f87171" }} onMouseEnter={() => setActiveLine("pessimistico")} />
-                  )}
-                  <Line type="monotone" dataKey="normale" stroke="#60a5fa" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#60a5fa" }} onMouseEnter={() => setActiveLine("normale")} />
-                  {allowedLines.includes("ottimistico") && (
-                    <Line type="monotone" dataKey="ottimistico" stroke="#34d399" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#34d399" }} onMouseEnter={() => setActiveLine("ottimistico")} />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+          <div style={styles.dataRow}>
+            <span style={styles.dataLabel}>Mutuo erogabile totale</span>
+            <span style={styles.dataValue}>€ {result.mortgageCapacity.toLocaleString("it-IT")}</span>
           </div>
+          <div style={styles.dataRow}>
+            <span style={styles.dataLabel}>Auto finanziabile (totale)</span>
+            <span style={styles.dataValue}>€ {result.carLoanCapacity.toLocaleString("it-IT")}</span>
+          </div>
+        </>
+      )}
+      {!result.yearsToFinancialIndependence && (
+        <div style={styles.dataRow}>
+          <span style={styles.dataLabel}>Anni all'indipendenza finanziaria (FIRE)</span>
+          <span style={{ ...styles.dataValue, opacity: 0.4 }}>Non raggiungibile con risparmio attuale</span>
+        </div>
+      )}
+    </div>
+  </>
+)}
 
-          {(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
-            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-              {PLAN_LIMITS[plan].reportPdf   && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
-              {PLAN_LIMITS[plan].exportExcel && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
-            </div>
-          )}
-          {plan === "free" && (
-            <div style={{ fontSize: 12, opacity: 0.35, marginBottom: 12 }}>
-              Report PDF ed Esportazione Excel disponibili dal piano Pro
-            </div>
-          )}
+<div style={styles.divider} />
 
-          <button style={styles.button} onClick={() => { setResult(null); setData({}); setErrors({}); }}>
-            Nuovo Scenario
-          </button>
+{/* ── Grafico patrimonio ── */}
+<div style={{ marginBottom: 20 }}>
+  <div style={styles.sectionHeader}>
+    <span style={styles.sectionTitle}>📈 Patrimonio stimato</span>
+    <span style={{ fontSize: 12, opacity: 0.4 }}>fino a {orizzonteAnni} anni</span>
+  </div>
+  {plan === "free" && (
+    <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 8 }}>
+      Scenari pessimistico e ottimistico disponibili dal piano Pro
+    </div>
+  )}
+  <div style={{ width: "100%", height: 320 }}>
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+        <XAxis dataKey="years" type="number" domain={[10, orizzonteAnni]}
+          ticks={allChartPoints.filter(p => p.years <= orizzonteAnni).map(p => p.years)}
+          label={{ value: "Anni", position: "insideBottom", offset: -10 }}
+          stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
+        <YAxis
+          tickFormatter={(v) => new Intl.NumberFormat("it-IT", { notation: "compact", maximumFractionDigits: 1 }).format(v)}
+          stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
+        <Tooltip content={({ active, payload, label }) => {
+          if (!active || !payload || payload.length === 0) return null;
+          const item = payload.find((p) => p.dataKey === activeLine);
+          if (!item) return null;
+          return (
+            <div style={{ background: "rgba(10,10,20,0.95)", border: "1px solid rgba(255,255,255,0.1)", padding: "10px 14px", borderRadius: 10, color: "white" }}>
+              <div style={{ color: item.stroke, fontWeight: 700, marginBottom: 4, fontSize: 12 }}>{item.dataKey}</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toLocaleString("it-IT")}</div>
+              <div style={{ opacity: 0.45, marginTop: 4, fontSize: 11 }}>{label} anni</div>
+            </div>
+          );
+        }} />
+        <Legend verticalAlign="bottom" height={40} wrapperStyle={{ paddingTop: 25 }} />
+        {allowedLines.includes("pessimistico") && (
+          <Line type="monotone" dataKey="pessimistico" stroke="#f87171" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#f87171" }} onMouseEnter={() => setActiveLine("pessimistico")} />
+        )}
+        <Line type="monotone" dataKey="normale" stroke="#60a5fa" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#60a5fa" }} onMouseEnter={() => setActiveLine("normale")} />
+        {allowedLines.includes("ottimistico") && (
+          <Line type="monotone" dataKey="ottimistico" stroke="#34d399" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#34d399" }} onMouseEnter={() => setActiveLine("ottimistico")} />
+        )}
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+</div>
+
+{(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
+  <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+    {PLAN_LIMITS[plan].reportPdf   && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
+    {PLAN_LIMITS[plan].exportExcel && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
+  </div>
+)}
+{plan === "free" && (
+  <div style={{ fontSize: 12, opacity: 0.35, marginBottom: 12 }}>
+    Report PDF ed Esportazione Excel disponibili dal piano Pro
+  </div>
+)}
+
+<button style={styles.button} onClick={() => { setResult(null); setData({}); setErrors({}); }}>
+  Nuovo Scenario
+</button>
         </div>
       )}
     </div>
