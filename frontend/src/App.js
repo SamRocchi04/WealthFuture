@@ -221,6 +221,7 @@ export default function App() {
         }
       `}</style>
       <Background page={page} />
+      <TopBar page={page} setPage={setPage} />
 
       <div style={styles.container}>
         {page === "home" && (
