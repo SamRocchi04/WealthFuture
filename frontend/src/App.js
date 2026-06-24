@@ -1790,6 +1790,13 @@ function Scenario({ history, setHistory, plan, setPage }) {
       pensioneNettaMensile,
       ralLordaAnnua: Math.round(ralLordaAnnua),
       yearsToRetirement,
+      // Crescita salariale attesa (solo Premium)
+      salaryProjections: plan === "premium" ? {
+        y10: Math.round(salary * Math.pow(1 + growth, 10)),
+        y20: Math.round(salary * Math.pow(1 + growth, 20)),
+        y30: Math.round(salary * Math.pow(1 + growth, 30)),
+        growthPct: Math.round(growth * 100 * 10) / 10,
+      } : null,
     };
 
     setResult(res);
@@ -2179,18 +2186,24 @@ function Scenario({ history, setHistory, plan, setPage }) {
       </div>
       {PLAN_LIMITS[plan].confrontoScelte && (
         <>
-          <div style={styles.dataRow}>
-            <span style={styles.dataLabel}>Casa acquistabile (stima)</span>
-            <span style={styles.dataValue}>€ {result.affordableHousePrice?.toLocaleString("it-IT") ?? "—"}</span>
-          </div>
-          <div style={styles.dataRow}>
-            <span style={styles.dataLabel}>Mutuo erogabile totale</span>
-            <span style={styles.dataValue}>€ {result.mortgageCapacity.toLocaleString("it-IT")}</span>
-          </div>
-          <div style={styles.dataRow}>
-            <span style={styles.dataLabel}>Auto finanziabile (totale)</span>
-            <span style={styles.dataValue}>€ {result.carLoanCapacity.toLocaleString("it-IT")}</span>
-          </div>
+          {!result.hasHome && (
+            <>
+              <div style={styles.dataRow}>
+                <span style={styles.dataLabel}>Casa acquistabile (stima)</span>
+                <span style={styles.dataValue}>€ {result.affordableHousePrice?.toLocaleString("it-IT") ?? "—"}</span>
+              </div>
+              <div style={styles.dataRow}>
+                <span style={styles.dataLabel}>Mutuo erogabile totale</span>
+                <span style={styles.dataValue}>€ {result.mortgageCapacity.toLocaleString("it-IT")}</span>
+              </div>
+            </>
+          )}
+          {!result.hasCar && (
+            <div style={styles.dataRow}>
+              <span style={styles.dataLabel}>Auto finanziabile (totale)</span>
+              <span style={styles.dataValue}>€ {result.carLoanCapacity.toLocaleString("it-IT")}</span>
+            </div>
+          )}
         </>
       )}
       {!result.yearsToFinancialIndependence && (
@@ -2205,51 +2218,71 @@ function Scenario({ history, setHistory, plan, setPage }) {
 
 <div style={styles.divider} />
 
-{/* ── Grafico patrimonio ── */}
-<div style={{ marginBottom: 20 }}>
-  <div style={styles.sectionHeader}>
-    <span style={styles.sectionTitle}>📈 Patrimonio stimato</span>
-    <span style={{ fontSize: 12, opacity: 0.4 }}>fino a {orizzonteAnni} anni</span>
-  </div>
-  {plan === "free" && (
-    <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 8 }}>
-      Scenari pessimistico e ottimistico disponibili dal piano Pro
+<div style={styles.divider} />
+
+{/* ── Crescita salariale (solo Premium) ── */}
+{plan === "premium" && result.salaryProjections && (
+  <div style={styles.section}>
+    <div style={styles.sectionHeader}>
+      <span style={styles.sectionTitle}>📈 Crescita salariale attesa</span>
+      <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 20, color: "#fcd34d", marginLeft: 6 }}>Premium</span>
     </div>
-  )}
-  <div style={{ width: "100%", height: 320 }}>
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-        <XAxis dataKey="years" type="number" domain={[10, orizzonteAnni]}
-          ticks={allChartPoints.filter(p => p.years <= orizzonteAnni).map(p => p.years)}
-          label={{ value: "Anni", position: "insideBottom", offset: -10 }}
-          stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-        <YAxis
-          tickFormatter={(v) => new Intl.NumberFormat("it-IT", { notation: "compact", maximumFractionDigits: 1 }).format(v)}
-          stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-        <Tooltip content={({ active, payload, label }) => {
-          if (!active || !payload || payload.length === 0) return null;
-          const item = payload.find((p) => p.dataKey === activeLine);
-          if (!item) return null;
-          return (
-            <div style={{ background: "rgba(10,10,20,0.95)", border: "1px solid rgba(255,255,255,0.1)", padding: "10px 14px", borderRadius: 10, color: "white" }}>
-              <div style={{ color: item.stroke, fontWeight: 700, marginBottom: 4, fontSize: 12 }}>{item.dataKey}</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toLocaleString("it-IT")}</div>
-              <div style={{ opacity: 0.45, marginTop: 4, fontSize: 11 }}>{label} anni</div>
+    <div style={{ marginBottom: 12, padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, fontSize: 12, color: "rgba(255,255,255,0.40)", lineHeight: 1.6 }}>
+      Proiezione basata su crescita settoriale <span style={{ color: "#f8fafc", fontWeight: 700 }}>{result.salaryProjections.growthPct}%/anno</span> — {result.sector} · {result.country}
+    </div>
+    <div style={styles.dataRow}>
+      <span style={styles.dataLabel}>Stipendio attuale (netto/mese)</span>
+      <span style={styles.dataValue}>€ {result.salary.toLocaleString("it-IT")}</span>
+    </div>
+    <div style={styles.dataRow}>
+      <span style={styles.dataLabel}>Tra 10 anni (stima netto/mese)</span>
+      <span style={{ ...styles.dataValue, color: "#60a5fa" }}>
+        € {result.salaryProjections.y10.toLocaleString("it-IT")}
+        <span style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>+{Math.round((result.salaryProjections.y10 / result.salary - 1) * 100)}%</span>
+      </span>
+    </div>
+    <div style={styles.dataRow}>
+      <span style={styles.dataLabel}>Tra 20 anni (stima netto/mese)</span>
+      <span style={{ ...styles.dataValue, color: "#a78bfa" }}>
+        € {result.salaryProjections.y20.toLocaleString("it-IT")}
+        <span style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>+{Math.round((result.salaryProjections.y20 / result.salary - 1) * 100)}%</span>
+      </span>
+    </div>
+    <div style={styles.dataRow}>
+      <span style={styles.dataLabel}>Tra 30 anni (stima netto/mese)</span>
+      <span style={{ ...styles.dataValue, color: "#34d399" }}>
+        € {result.salaryProjections.y30.toLocaleString("it-IT")}
+        <span style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>+{Math.round((result.salaryProjections.y30 / result.salary - 1) * 100)}%</span>
+      </span>
+    </div>
+    <div style={{ marginTop: 12 }}>
+      {[
+        { label: "Oggi", val: result.salary, color: "rgba(255,255,255,0.5)" },
+        { label: "+10a", val: result.salaryProjections.y10, color: "#60a5fa" },
+        { label: "+20a", val: result.salaryProjections.y20, color: "#a78bfa" },
+        { label: "+30a", val: result.salaryProjections.y30, color: "#34d399" },
+      ].map((bar, i) => {
+        const maxVal = result.salaryProjections.y30;
+        const pct = Math.round((bar.val / maxVal) * 100);
+        return (
+          <div key={i} style={{ marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{bar.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: bar.color }}>€ {bar.val.toLocaleString("it-IT")}</span>
             </div>
-          );
-        }} />
-        <Legend verticalAlign="bottom" height={40} wrapperStyle={{ paddingTop: 25 }} />
-        {allowedLines.includes("pessimistico") && (
-          <Line type="monotone" dataKey="pessimistico" stroke="#f87171" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#f87171" }} onMouseEnter={() => setActiveLine("pessimistico")} />
-        )}
-        <Line type="monotone" dataKey="normale" stroke="#60a5fa" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#60a5fa" }} onMouseEnter={() => setActiveLine("normale")} />
-        {allowedLines.includes("ottimistico") && (
-          <Line type="monotone" dataKey="ottimistico" stroke="#34d399" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#34d399" }} onMouseEnter={() => setActiveLine("ottimistico")} />
-        )}
-      </LineChart>
-    </ResponsiveContainer>
+            <div style={{ height: 4, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: bar.color, transition: `width 0.9s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.12}s` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   </div>
+)}
+
+<div style={styles.divider} />
+
+{/* ── Grafico liquidità stimata ── */}
 </div>
 
 {(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
