@@ -210,8 +210,17 @@ export default function App() {
 
   return (
     <div style={styles.app}>
+      <style>{`
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+      `}</style>
       <Background page={page} />
-      <TopBar page={page} setPage={setPage} />
 
       <div style={styles.container}>
         {page === "home" && (
