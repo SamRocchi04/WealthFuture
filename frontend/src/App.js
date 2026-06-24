@@ -1656,11 +1656,62 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const growth = sectorGrowth[data.sector] ?? 0.025;
     const INFLATION = 0.021; // inflazione media italiana storica
 
-    // ── 1. SCORE FINANZIARIO (0–100) ────────────────────────────
-    const monthlySurplus = salary - expenses;
+    // ── RATE MENSILI CASA E AUTO ─────────────────────────────────
+    // Mutuo: 3.5% annuo, 25 anni, 80% LTV
+    const MORTGAGE_RATE_Y  = 0.035;
+    const MORTGAGE_YEARS   = 25;
+    const mortgageRateM    = MORTGAGE_RATE_Y / 12;
+    const mortgageMonths   = MORTGAGE_YEARS * 12;
+    const pvMortgage       = (1 - Math.pow(1 + mortgageRateM, -mortgageMonths)) / mortgageRateM;
+    // Rata mutuo = 30% stipendio ATTUALE (al momento dell'acquisto, stimato con crescita)
+    // Per semplicità usiamo lo stipendio proiettato all'anno di acquisto
+    const yearsToHome      = data.hasHome ? 0 : Math.max(0, homeAge - age);
+    const salAtHomeYear    = salary * Math.pow(1 + growth, yearsToHome);
+    const monthlyMortgage  = data.hasHome ? 0 : Math.round(salAtHomeYear * 0.28); // 28% del reddito
+    const mortgageCapacity = Math.round(monthlyMortgage * pvMortgage);
+    const affordableHousePrice = Math.round(mortgageCapacity / 0.80 + savings * 0.50);
+    const maxMortgageRate  = Math.round(salary * 0.30); // KPI "rata max attuale"
+
+    // Auto: 6% annuo, 5 anni
+    const CAR_RATE_Y   = 0.06;
+    const CAR_YEARS    = 5;
+    const carRateM     = CAR_RATE_Y / 12;
+    const carMonthsN   = CAR_YEARS * 12;
+    const pvCar        = (1 - Math.pow(1 + carRateM, -carMonthsN)) / carRateM;
+    const yearsToCarP  = data.hasCar ? 0 : Math.max(0, carAge - age);
+    const salAtCarYear = salary * Math.pow(1 + growth, yearsToCarP);
+    const monthlyCar   = data.hasCar ? 0 : Math.round(salAtCarYear * 0.12); // 12% del reddito
+    const carLoanCapacity = Math.round(monthlyCar * pvCar);
+    const maxLoanRate  = Math.round(salary * 0.15); // KPI "rata auto max attuale"
+
+    // Anni in cui le rate sono attive (calcolati dall'anno 0 = oggi)
+    const homeStartYear = data.hasHome ? -1 : yearsToHome;   // -1 = già pagata (non aggiungiamo rata)
+    const homeEndYear   = data.hasHome ? -1 : yearsToHome + MORTGAGE_YEARS;
+    const carStartYear  = data.hasCar  ? -1 : yearsToCarP;
+    const carEndYear    = data.hasCar  ? -1 : yearsToCarP + CAR_YEARS;
+
+    // ── Helper: spese mensili effettive all'anno i (0-based) ────
+    // Le spese base crescono con inflazione.
+    // Dal anno di acquisto in poi si aggiungono le rate (anche le rate
+    // crescono lievemente con l'inflazione per approssimare costi fissi reali).
+    function expensesAtYear(i, baseExp) {
+      let exp = baseExp * Math.pow(1 + INFLATION, i);
+      if (homeStartYear >= 0 && i >= homeStartYear && i < homeEndYear) {
+        exp += monthlyMortgage * Math.pow(1 + INFLATION, homeStartYear);
+      }
+      if (carStartYear >= 0 && i >= carStartYear && i < carEndYear) {
+        exp += monthlyCar * Math.pow(1 + INFLATION, carStartYear);
+      }
+      return exp;
+    }
+
+    // ── 1. SCORE FINANZIARIO (0–100) ─────────────────────────────
+    // Calcolato sulla situazione OGGI (anno 0), incluso impatto rate se già presenti
+    const expNow         = expensesAtYear(0, expenses);
+    const monthlySurplus = salary - expNow;
     const surplusRate    = salary > 0 ? monthlySurplus / salary : 0;
-    const emergencyMonths = expenses > 0 ? savings / expenses : 0;
-    const debtCapacity   = salary > 0 ? Math.max(1 - expenses / salary, 0) : 0;
+    const emergencyMonths = expNow > 0 ? savings / expNow : 0;
+    const debtCapacity   = salary > 0 ? Math.max(1 - expNow / salary, 0) : 0;
     const ageBonus       = age < 35 ? 10 : age < 50 ? 5 : 0;
     const surplusScore   = Math.min(surplusRate / 0.50, 1) * 40;
     const emergencyScore = (Math.min(emergencyMonths, 12) / 12) * 30;
@@ -1669,36 +1720,20 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const savingsRate    = salary > 0 ? Math.round((monthlySurplus / salary) * 100) : 0;
 
     // ── Helper principale: simulazione anno per anno ─────────────
-    // Usa il surplus REALE (salary - expenses), non un % fisso.
-    // Lo stipendio cresce per settore, le spese crescono con l'inflazione.
-    // Il capitale è al netto: accumula solo ciò che avanza davvero.
-    function simulate(years, annualReturn) {
+    // Stipendio cresce per settore; spese base crescono con inflazione;
+    // Rate mutuo/auto si aggiungono negli anni corretti.
+    function simulate(years, annualReturn, salGrowthOverride) {
+      const g = salGrowthOverride ?? growth;
       let sal = salary;
-      let exp = expenses;
       let cap = savings;
       for (let i = 0; i < years; i++) {
-        sal = sal * (1 + growth);
-        exp = exp * (1 + INFLATION);
-        const surplus = Math.max(sal - exp, 0); // non accumula se in deficit
+        sal = sal * (1 + g);
+        const exp = expensesAtYear(i, expenses);
+        const surplus = Math.max(sal - exp, 0);
         cap = cap * (1 + annualReturn) + surplus * 12;
       }
       return Math.round(cap);
     }
-
-    // ── 2. MUTUO MAX ─────────────────────────────────────────────
-    const maxMortgageRate      = Math.round(salary * 0.30);
-    const mortgageRate         = 0.035 / 12;
-    const mortgageMonths       = 25 * 12;
-    const pvMortgage           = (1 - Math.pow(1 + mortgageRate, -mortgageMonths)) / mortgageRate;
-    const mortgageCapacity     = Math.round(maxMortgageRate * pvMortgage);
-    const affordableHousePrice = Math.round(mortgageCapacity / 0.80 + savings * 0.50);
-
-    // ── 3. FINANZIAMENTO AUTO ────────────────────────────────────
-    const maxLoanRate     = Math.round(salary * 0.15);
-    const carRate         = 0.06 / 12;
-    const carMonths       = 5 * 12;
-    const pvCar           = (1 - Math.pow(1 + carRate, -carMonths)) / carRate;
-    const carLoanCapacity = Math.round(maxLoanRate * pvCar);
 
     // ── 4. PENSIONE PUBBLICA (sistema contributivo italiano) ─────
     // Input: stipendio netto → stima RAL lorda (inversa IRPEF semplificata)
@@ -1755,18 +1790,16 @@ function Scenario({ history, setHistory, plan, setPage }) {
       : 0;
 
     // ── 7. ANNI AL FIRE ───────────────────────────────────────────
-    // Target FIRE = spese annue correnti × 25 (regola del 4%)
-    // Simulazione iterativa con rendimento 6%, surplus reale che cresce
-    const targetFIRE = expenses * 12 * 25;
+    // Target FIRE = spese annue (anno 0, incluse rate se presenti) × 25
+    const targetFIRE = expNow * 12 * 25;
     let anniFIRE = null;
     if (monthlySurplus > 0) {
       let cap = savings;
       let sal2 = salary;
-      let exp2 = expenses;
       let anni = 0;
       while (cap < targetFIRE && anni < 100) {
         sal2 = sal2 * (1 + growth);
-        exp2 = exp2 * (1 + INFLATION);
+        const exp2 = expensesAtYear(anni, expenses);
         const surplusAnno = Math.max(sal2 - exp2, 0) * 12;
         cap = cap * 1.06 + surplusAnno;
         anni++;
@@ -1790,6 +1823,13 @@ function Scenario({ history, setHistory, plan, setPage }) {
       pensioneNettaMensile,
       ralLordaAnnua: Math.round(ralLordaAnnua),
       yearsToRetirement,
+      // Parametri rate per uso nel grafico liquidità
+      monthlyMortgage,
+      monthlyCar,
+      homeStartYear,
+      homeEndYear,
+      carStartYear,
+      carEndYear,
       // Crescita salariale attesa (solo Premium)
       salaryProjections: plan === "premium" ? {
         y10: Math.round(salary * Math.pow(1 + growth, 10)),
@@ -1818,13 +1858,39 @@ function Scenario({ history, setHistory, plan, setPage }) {
   }
 
   const orizzonteAnni = PLAN_LIMITS[plan].orizzonteAnni;
+
+  // Ricostruisce le spese mensili effettive all'anno i usando i parametri del risultato
+  function chartExpensesAtYear(i) {
+    if (!result) return 0;
+    const { monthlyExpenses, monthlyMortgage: mm, monthlyCar: mc,
+            homeStartYear: hsy, homeEndYear: hey, carStartYear: csy, carEndYear: cey,
+            growth: g } = result;
+    const INFL = 0.021;
+    let exp = (monthlyExpenses ?? 0) * Math.pow(1 + INFL, i);
+    if (hsy >= 0 && i >= hsy && i < hey) {
+      exp += (mm ?? 0) * Math.pow(1 + INFL, hsy);
+    }
+    if (csy >= 0 && i >= csy && i < cey) {
+      exp += (mc ?? 0) * Math.pow(1 + INFL, csy);
+    }
+    return exp;
+  }
+
+  function liquiditaAdAnno(years, salGrowthFactor) {
+    if (!result) return 0;
+    const g = (result.growth ?? 0.025) * salGrowthFactor;
+    const sal = (result.salary ?? 0) * Math.pow(1 + g, years);
+    const exp = chartExpensesAtYear(years);
+    return Math.round((sal - exp) * 12);
+  }
+
   const allChartPoints = [5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80]
     .filter(y => result?.wealth[y])
     .map(y => ({
       years: y,
-      pessimistico: result?.wealth[y].pess,
-      normale:      result?.wealth[y].norm,
-      ottimistico:  result?.wealth[y].real,
+      pessimistico: liquiditaAdAnno(y, 0.6),
+      normale:      liquiditaAdAnno(y, 1.0),
+      ottimistico:  liquiditaAdAnno(y, 1.4),
     }));
   const chartData = allChartPoints.filter(p => p.years <= orizzonteAnni);
 
@@ -2026,18 +2092,22 @@ function Scenario({ history, setHistory, plan, setPage }) {
     </div>
   </div>
 
-  {!result.hasHome && (
+  {!result.hasHome && result.monthlyMortgage > 0 && (
     <div style={styles.kpiItem}>
-      <div style={styles.kpiLabel}>Rata mutuo max</div>
-      <div style={styles.kpiValue}>€ {result.maxMortgageRate.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
-      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>30% del reddito netto</div>
+      <div style={styles.kpiLabel}>Rata mutuo stimata</div>
+      <div style={styles.kpiValue}>€ {result.monthlyMortgage.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
+      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>
+        da età {result.homeAge} · 25 anni
+      </div>
     </div>
   )}
-  {!result.hasCar && (
+  {!result.hasCar && result.monthlyCar > 0 && (
     <div style={styles.kpiItem}>
-      <div style={styles.kpiLabel}>Rata auto max</div>
-      <div style={styles.kpiValue}>€ {result.maxLoanRate.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
-      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>15% del reddito netto</div>
+      <div style={styles.kpiLabel}>Rata auto stimata</div>
+      <div style={styles.kpiValue}>€ {result.monthlyCar.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
+      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>
+        da età {result.carAge} · 5 anni
+      </div>
     </div>
   )}
 
@@ -2050,6 +2120,80 @@ function Scenario({ history, setHistory, plan, setPage }) {
     </div>
   )}
 </div>
+
+<div style={styles.divider} />
+
+{/* ── Timeline spese ── */}
+{((!result.hasHome && result.monthlyMortgage > 0) || (!result.hasCar && result.monthlyCar > 0)) && (
+  <div style={{ marginBottom: 24 }}>
+    <div style={styles.sectionHeader}>
+      <span style={styles.sectionTitle}>📅 Timeline spese previste</span>
+    </div>
+    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginBottom: 10 }}>
+      Liquidità, FIRE e patrimonio tengono conto di queste variazioni anno per anno.
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+      {/* Spese base ora */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "right" }}>Oggi</div>
+        <div style={{ flex: 1, padding: "8px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>Spese base mensili</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>€ {result.monthlyExpenses.toLocaleString("it-IT")} / mese</span>
+          </div>
+        </div>
+      </div>
+      {/* Casa — inizio rata */}
+      {!result.hasHome && result.monthlyMortgage > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#60a5fa", textAlign: "right" }}>+{result.homeStartYear}a</div>
+          <div style={{ flex: 1, padding: "8px 12px", background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.22)", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🏠 Acquisto casa (età {result.homeAge}) · mutuo 25 anni</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#60a5fa" }}>+€ {result.monthlyMortgage.toLocaleString("it-IT")} / mese</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Casa — fine rata */}
+      {!result.hasHome && result.monthlyMortgage > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#34d399", textAlign: "right" }}>+{result.homeEndYear}a</div>
+          <div style={{ flex: 1, padding: "8px 12px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🏠 Mutuo estinto (età {result.homeAge + 25})</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>−€ {result.monthlyMortgage.toLocaleString("it-IT")} / mese</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Auto — inizio rata */}
+      {!result.hasCar && result.monthlyCar > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#fbbf24", textAlign: "right" }}>+{result.carStartYear}a</div>
+          <div style={{ flex: 1, padding: "8px 12px", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🚗 Acquisto auto (età {result.carAge}) · finanziamento 5 anni</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>+€ {result.monthlyCar.toLocaleString("it-IT")} / mese</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Auto — fine rata */}
+      {!result.hasCar && result.monthlyCar > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#34d399", textAlign: "right" }}>+{result.carEndYear}a</div>
+          <div style={{ flex: 1, padding: "8px 12px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)", borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🚗 Finanziamento estinto (età {result.carAge + 5})</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>−€ {result.monthlyCar.toLocaleString("it-IT")} / mese</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
 <div style={styles.divider} />
 
@@ -2286,8 +2430,11 @@ function Scenario({ history, setHistory, plan, setPage }) {
 {/* ── Grafico liquidità stimata ── */}
 <div style={{ marginBottom: 20 }}>
   <div style={styles.sectionHeader}>
-    <span style={styles.sectionTitle}>💧 Liquidità stimata</span>
+    <span style={styles.sectionTitle}>💧 Liquidità annua stimata</span>
     <span style={{ fontSize: 12, opacity: 0.4 }}>fino a {orizzonteAnni} anni dall'oggi</span>
+  </div>
+  <div style={{ marginBottom: 8, padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, fontSize: 11, color: "rgba(255,255,255,0.35)", lineHeight: 1.6 }}>
+    Liquidità = (stipendio annuo − spese annue) proiettati nel tempo. Lo stipendio cresce per settore, le spese crescono con l'inflazione.
   </div>
   {plan === "free" && (
     <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 8 }}>
@@ -2312,7 +2459,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
           return (
             <div style={{ background: "rgba(10,10,20,0.95)", border: "1px solid rgba(255,255,255,0.1)", padding: "10px 14px", borderRadius: 10, color: "white" }}>
               <div style={{ color: item.stroke, fontWeight: 700, marginBottom: 4, fontSize: 12 }}>{item.dataKey}</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toLocaleString("it-IT")}</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toLocaleString("it-IT")} / anno</div>
               <div style={{ opacity: 0.45, marginTop: 4, fontSize: 11 }}>+{label} anni dall'oggi</div>
             </div>
           );
@@ -2501,9 +2648,63 @@ function Account({ history, plan, setPlan }) {
     },
     {
       id: "premium", label: "Premium", price: "€ 19,99", priceNote: "/ mese",
-      features: ["20 simulazioni / mese","Orizzonte 70 anni","Ottimistico, realistico, pessimistico","Score finanziario professionale","Dashboard storica illimitata","AI Coach avanzato","Simulazione pensione","Report PDF & Excel","Confronto scelte di vita","Aggiornamento automatico dati"],
+      features: ["20 simulazioni / mese","Orizzonte 70 anni","Ottimistico, realistico, pessimistico","Score finanziario professionale","Dashboard storica illimitata","AI Coach avanzato","Simulazione pensione","Report PDF & Excel","Confronto scelte di vita","Aggiornamento automatico dati","📈 Crescita salariale attesa"],
     },
   ];
+
+  // Output dinamici da mostrare nei box piano, calcolati dall'ultimo scenario
+  function getPlanOutputs(planId) {
+    if (!last) return null;
+    const salary = last.salary ?? 0;
+    const expenses = last.monthlyExpenses ?? 0;
+    const surplus = Math.max(salary - expenses, 0);
+    const growth = last.growth ?? 0.025;
+    const INFL = 0.021;
+
+    if (planId === "free") {
+      // Mostra solo dati 10 anni, scenario normale
+      const sal10 = salary * Math.pow(1 + growth, 10);
+      const exp10 = expenses * Math.pow(1 + INFL, 10);
+      const liq10 = Math.round((sal10 - exp10) * 12);
+      return [
+        { label: "Score finanziario", value: `${last.health}/100`, color: last.health >= 70 ? "#34d399" : last.health >= 40 ? "#fbbf24" : "#f87171" },
+        { label: "Surplus mensile attuale", value: `€ ${surplus.toLocaleString("it-IT")} / mese` },
+        { label: "Liquidità annua a +10 anni", value: `€ ${liq10.toLocaleString("it-IT")} / anno`, color: "#60a5fa" },
+      ];
+    }
+
+    if (planId === "pro") {
+      const sal10 = salary * Math.pow(1 + growth, 10);
+      const exp10 = expenses * Math.pow(1 + INFL, 10);
+      const liq10 = Math.round((sal10 - exp10) * 12);
+      const sal30 = salary * Math.pow(1 + growth, 30);
+      const exp30 = expenses * Math.pow(1 + INFL, 30);
+      const liq30 = Math.round((sal30 - exp30) * 12);
+      return [
+        { label: "Pensione netta stimata", value: `€ ${(last.pensioneNettaMensile ?? 0).toLocaleString("it-IT")} / mese`, color: "#22c55e" },
+        { label: "Liquidità annua a +10 anni", value: `€ ${liq10.toLocaleString("it-IT")} / anno`, color: "#60a5fa" },
+        { label: "Liquidità annua a +30 anni", value: `€ ${liq30.toLocaleString("it-IT")} / anno`, color: "#34d399" },
+        { label: "FIRE in", value: last.yearsToFinancialIndependence ? `${last.yearsToFinancialIndependence} anni` : "Non raggiungibile" },
+      ];
+    }
+
+    if (planId === "premium") {
+      const sal10 = Math.round(salary * Math.pow(1 + growth, 10));
+      const sal20 = Math.round(salary * Math.pow(1 + growth, 20));
+      const sal30 = Math.round(salary * Math.pow(1 + growth, 30));
+      const exp70 = expenses * Math.pow(1 + INFL, 70);
+      const sal70 = salary * Math.pow(1 + growth, 70);
+      const liq70 = Math.round((sal70 - exp70) * 12);
+      return [
+        { label: "Stipendio tra 10 anni", value: `€ ${sal10.toLocaleString("it-IT")} / mese`, color: "#60a5fa" },
+        { label: "Stipendio tra 20 anni", value: `€ ${sal20.toLocaleString("it-IT")} / mese`, color: "#a78bfa" },
+        { label: "Stipendio tra 30 anni", value: `€ ${sal30.toLocaleString("it-IT")} / mese`, color: "#34d399" },
+        { label: "Liquidità annua a +70 anni", value: liq70 > 0 ? `€ ${liq70.toLocaleString("it-IT")} / anno` : "n.d.", color: "#fbbf24" },
+        { label: "Pensione netta stimata", value: `€ ${(last.pensioneNettaMensile ?? 0).toLocaleString("it-IT")} / mese`, color: "#22c55e" },
+      ];
+    }
+    return null;
+  }
 
   return (
     <div style={styles.page}>
@@ -2558,6 +2759,25 @@ function Account({ history, plan, setPlan }) {
                     <span>{f.replace("—", "")}</span>
                   </div>
                 ))}
+                {/* Output dinamici basati sull'ultimo scenario */}
+                {getPlanOutputs(p.id) && (
+                  <div style={{ marginTop: 14, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.30)", marginBottom: 8 }}>
+                      Output dal tuo scenario
+                    </div>
+                    {getPlanOutputs(p.id).map((out, oi) => (
+                      <div key={oi} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: oi < getPlanOutputs(p.id).length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.42)" }}>{out.label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: out.color ?? "rgba(255,255,255,0.85)" }}>{out.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!last && (
+                  <div style={{ marginTop: 14, padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 10, fontSize: 11, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
+                    Crea uno scenario per vedere i tuoi output
+                  </div>
+                )}
                 {!isActive && (
                   <button style={{ ...styles.smallButton, marginTop: 18, width: "100%", borderColor: accentColor, color: accentColor }} onClick={(e) => { e.stopPropagation(); setPlan(p.id); }}>
                     {plan === "premium" && p.id !== "premium" ? "Passa a " + p.label : "Attiva " + p.label}
@@ -3021,4 +3241,3 @@ const styles = {
   },
   fieldError: { display: "flex", alignItems: "center", gap: 5, color: "rgba(239,68,68,0.9)", fontSize: 11, marginTop: 6 },
 };
-  
