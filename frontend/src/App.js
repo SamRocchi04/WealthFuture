@@ -2283,6 +2283,50 @@ function Scenario({ history, setHistory, plan, setPage }) {
 <div style={styles.divider} />
 
 {/* ── Grafico liquidità stimata ── */}
+<div style={{ marginBottom: 20 }}>
+  <div style={styles.sectionHeader}>
+    <span style={styles.sectionTitle}>💧 Liquidità stimata</span>
+    <span style={{ fontSize: 12, opacity: 0.4 }}>fino a {orizzonteAnni} anni dall'oggi</span>
+  </div>
+  {plan === "free" && (
+    <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 8 }}>
+      Scenari pessimistico e ottimistico disponibili dal piano Pro
+    </div>
+  )}
+  <div style={{ width: "100%", height: 320 }}>
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+        <XAxis dataKey="years" type="number" domain={[5, orizzonteAnni]}
+          ticks={allChartPoints.filter(p => p.years <= orizzonteAnni).map(p => p.years)}
+          label={{ value: "Anni dall'oggi", position: "insideBottom", offset: -10 }}
+          stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
+        <YAxis
+          tickFormatter={(v) => new Intl.NumberFormat("it-IT", { notation: "compact", maximumFractionDigits: 1 }).format(v)}
+          stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
+        <Tooltip content={({ active, payload, label }) => {
+          if (!active || !payload || payload.length === 0) return null;
+          const item = payload.find((p) => p.dataKey === activeLine) || payload[0];
+          if (!item) return null;
+          return (
+            <div style={{ background: "rgba(10,10,20,0.95)", border: "1px solid rgba(255,255,255,0.1)", padding: "10px 14px", borderRadius: 10, color: "white" }}>
+              <div style={{ color: item.stroke, fontWeight: 700, marginBottom: 4, fontSize: 12 }}>{item.dataKey}</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toLocaleString("it-IT")}</div>
+              <div style={{ opacity: 0.45, marginTop: 4, fontSize: 11 }}>+{label} anni dall'oggi</div>
+            </div>
+          );
+        }} />
+        <Legend verticalAlign="bottom" height={40} wrapperStyle={{ paddingTop: 25 }} />
+        {allowedLines.includes("pessimistico") && (
+          <Line type="monotone" dataKey="pessimistico" stroke="#f87171" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#f87171" }} onMouseEnter={() => setActiveLine("pessimistico")} />
+        )}
+        <Line type="monotone" dataKey="normale" stroke="#60a5fa" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#60a5fa" }} onMouseEnter={() => setActiveLine("normale")} />
+        {allowedLines.includes("ottimistico") && (
+          <Line type="monotone" dataKey="ottimistico" stroke="#34d399" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#34d399" }} onMouseEnter={() => setActiveLine("ottimistico")} />
+        )}
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
 </div>
 
 {(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
