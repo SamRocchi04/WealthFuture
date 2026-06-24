@@ -1700,12 +1700,43 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const pvCar           = (1 - Math.pow(1 + carRate, -carMonths)) / carRate;
     const carLoanCapacity = Math.round(maxLoanRate * pvCar);
 
-    // ── 4. PENSIONE ───────────────────────────────────────────────
-    // Simula anno per anno fino a 67 anni con rendimento reale 5%
+    // ── 4. PENSIONE PUBBLICA (sistema contributivo italiano) ─────
+    // Input: stipendio netto → stima RAL lorda (inversa IRPEF semplificata)
+    // Aliquota contributiva INPS: 33% della RAL
+    // Rivalutazione montante: 1.5% reale annuo (media storica PIL)
+    // Coefficiente di trasformazione a 67 anni: 5.7%
+    // Tassazione pensione: aliquota media ~25% (IRPEF progressiva)
+
     const retirementAge     = 67;
     const yearsToRetirement = Math.max(0, retirementAge - age);
-    const pension           = simulate(yearsToRetirement, 0.05);
-    const pensioneMensile   = Math.round((pension * 0.04) / 12);
+
+    // Stima RAL lorda dal netto mensile (approssimazione IRPEF + contributi dipendente ~10%)
+    // netto ≈ RAL × 0.72 (cuneo fiscale medio italiano)
+    const ralLordaAnnua = (salary * 12) / 0.72;
+
+    // Simula il montante contributivo anno per anno
+    // Lo stipendio lordo cresce con il settore, il montante si rivaluta all'1.5%
+    const ALIQUOTA_CONTRIBUTIVA = 0.33;
+    const RIVALUTAZIONE_MONTANTE = 0.015;
+    const COEFFICIENTE_TRASFORMAZIONE = 0.057;
+
+    let montante = 0;
+    let ralCorrente = ralLordaAnnua;
+    for (let i = 0; i < yearsToRetirement; i++) {
+      ralCorrente = ralCorrente * (1 + growth);
+      const contributiAnno = ralCorrente * ALIQUOTA_CONTRIBUTIVA;
+      montante = montante * (1 + RIVALUTAZIONE_MONTANTE) + contributiAnno;
+    }
+
+    const pensioneLordaAnnua  = Math.round(montante * COEFFICIENTE_TRASFORMAZIONE);
+    const pensioneLordaMensile = Math.round(pensioneLordaAnnua / 13); // 13 mensilità
+    // Tassazione media stimata sulla pensione (~25% per pensioni medie)
+    const aliquotaTassazione = pensioneLordaAnnua > 50000 ? 0.30 : pensioneLordaAnnua > 28000 ? 0.25 : 0.20;
+    const pensioneNettaMensile = Math.round(pensioneLordaMensile * (1 - aliquotaTassazione));
+
+    // Alias per compatibilità con il resto del codice
+    const pension        = montante;
+    const pensioneMensile = pensioneNettaMensile;
 
     // ── 5. PATRIMONIO NEL TEMPO (grafico) ─────────────────────────
     // Calcola ogni 5 anni fino a 80, simulazione reale anno per anno
@@ -1753,6 +1784,12 @@ function Scenario({ history, setHistory, plan, setPage }) {
       breakEvenRetirement,
       yearsToFinancialIndependence: anniFIRE,
       hasHome: data.hasHome, hasCar: data.hasCar,
+      // Dati pensione dettagliati
+      montanteContributivo: Math.round(montante),
+      pensioneLordaMensile,
+      pensioneNettaMensile,
+      ralLordaAnnua: Math.round(ralLordaAnnua),
+      yearsToRetirement,
     };
 
     setResult(res);
@@ -2012,27 +2049,33 @@ function Scenario({ history, setHistory, plan, setPage }) {
 {/* ── Pensione ── */}
 {PLAN_LIMITS[plan].simulazionePensione ? (
   <div style={styles.section}>
-    <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🏦 Pensione stimata</span></div>
-    <div style={styles.dataRow}>
-      <span style={styles.dataLabel}>Capitale accumulato a 67 anni</span>
-      <span style={{ ...styles.dataValue, color: "#22c55e" }}>€ {result.pension.toLocaleString("it-IT")}</span>
-    </div>
-    <div style={styles.dataRow}>
-      <span style={styles.dataLabel}>Rendita mensile (SWR 4%)</span>
-      <span style={{ ...styles.dataValue, color: "#22c55e" }}>€ {result.pensioneMensile.toLocaleString("it-IT")} / mese</span>
-    </div>
-    {plan !== "free" && (
-      <div style={styles.dataRow}>
-        <span style={styles.dataLabel}>Copertura pensione</span>
-        <span style={styles.dataValue}>
-          {result.breakEvenRetirement}% stipendio attuale
-          <span style={{ fontSize: 11, opacity: 0.45, marginLeft: 6 }}>
-            {result.breakEvenRetirement >= 80 ? "· ottima" : result.breakEvenRetirement >= 60 ? "· adeguata" : result.breakEvenRetirement >= 40 ? "· insufficiente" : "· critica"}
-          </span>
-        </span>
-      </div>
-    )}
+  <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🏦 Pensione pubblica stimata (INPS)</span></div>
+  <div style={styles.dataRow}>
+    <span style={styles.dataLabel}>RAL lorda stimata attuale</span>
+    <span style={styles.dataValue}>€ {result.ralLordaAnnua.toLocaleString("it-IT")} / anno</span>
   </div>
+  <div style={styles.dataRow}>
+    <span style={styles.dataLabel}>Anni di contribuzione stimati</span>
+    <span style={styles.dataValue}>{result.yearsToRetirement} anni</span>
+  </div>
+  <div style={styles.dataRow}>
+    <span style={styles.dataLabel}>Montante contributivo a 67 anni</span>
+    <span style={styles.dataValue}>€ {result.montanteContributivo.toLocaleString("it-IT")}</span>
+  </div>
+  <div style={styles.dataRow}>
+    <span style={styles.dataLabel}>Pensione lorda mensile (13ª inclusa)</span>
+    <span style={styles.dataValue}>€ {result.pensioneLordaMensile.toLocaleString("it-IT")} / mese</span>
+  </div>
+  <div style={styles.dataRow}>
+    <span style={styles.dataLabel}>Pensione netta mensile stimata</span>
+    <span style={{ ...styles.dataValue, color: "#22c55e", fontSize: 16 }}>
+      € {result.pensioneNettaMensile.toLocaleString("it-IT")} / mese
+    </span>
+  </div>
+  <div style={{ marginTop: 10, padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, fontSize: 11, color: "rgba(255,255,255,0.35)", lineHeight: 1.7 }}>
+    Calcolo basato sul sistema contributivo italiano (aliquota 33%, rivalutazione 1.5%/anno, coeff. trasformazione 5.7% a 67 anni). Stima semplificata a scopo educativo.
+  </div>
+</div>
 ) : (
   <div style={{ fontSize: 13, opacity: 0.4, padding: "12px 0", marginBottom: 20 }}>
     Simulazione pensione disponibile dal piano Pro
