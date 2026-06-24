@@ -811,7 +811,7 @@ input[type="number"] {
                 ))}
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>+12.000 utenti attivi</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>+200 utenti attivi</div>
                 <div style={{ fontSize: 12, color: C.muted }}>★★★★★ 4.9/5</div>
               </div>
             </div>
@@ -1362,25 +1362,25 @@ function Home({ setPage, openModal }) {
   const news = [
   {
     title: "Nuovo motore di simulazione v2.0",
-    date: "Giugno 2025",
+    date: "Settmbre 2025",
     desc: "Algoritmi aggiornati con dati di mercato reali.",
     longDesc: "La versione 2.0 introduce un nuovo motore di simulazione finanziaria basato su dati storici di mercato, crescita salariale dinamica e modelli di investimento più accurati. Le proiezioni sono ora più realistiche sia nel breve che nel lungo periodo."
   },
   {
     title: "Scenari multi-paese disponibili",
-    date: "Maggio 2025",
+    date: "Dicembre 2025",
     desc: "Simulazioni disponibili in oltre 20 paesi.",
     longDesc: "È ora possibile confrontare il proprio futuro finanziario in differenti paesi. Il sistema tiene conto di stipendi medi, costo della vita e fiscalità locale per offrire proiezioni personalizzate e confrontabili."
   },
   {
     title: "Piano Premium: nuova analisi indipendenza finanziaria",
-    date: "Aprile 2025",
+    date: "Gennaio 2026",
     desc: "I nuovi insight premium includono il calcolo degli anni all'indipendenza finanziaria e la copertura pensione.",
     longDesc: "Il piano Premium introduce strumenti avanzati per calcolare quanti anni mancano alla tua indipendenza finanziaria, basandosi sul tasso di risparmio attuale, rendimento degli investimenti e spese previste. Inclusa anche un'analisi dettagliata della copertura pensionistica."
   },
   {
     title: "Sicurezza avanzata: autenticazione 2FA",
-    date: "Marzo 2025",
+    date: "Aprile 2026",
     desc: "Proteggi il tuo account con la verifica in due passaggi disponibile nelle Impostazioni.",
     longDesc: "Abbiamo introdotto l'autenticazione a due fattori (2FA) per proteggere al meglio il tuo account. Puoi attivare la verifica tramite app authenticator o SMS direttamente dalla sezione Impostazioni del tuo profilo."
   },
@@ -1482,7 +1482,7 @@ function Home({ setPage, openModal }) {
       <div style={{ fontSize: 12, color: "rgba(248,250,252,0.35)", lineHeight: 1.75 }}>L'uso della piattaforma implica l'accettazione dei termini di servizio. I risultati sono a puro scopo illustrativo.</div>
     </div>
     <div style={{ gridColumn: "1 / -1", fontSize: 11, color: "rgba(248,250,252,0.20)", paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-      © 2025 WealthFuture — Piattaforma di simulazione finanziaria. Tutti i diritti riservati.
+      © 2026 WealthFuture — Piattaforma di simulazione finanziaria. Tutti i diritti riservati.
     </div>
   </div>
 </div>
