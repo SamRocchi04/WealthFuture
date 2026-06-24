@@ -681,6 +681,15 @@ const GlobalStyles = () => (
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+    
+    input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
   `}</style>
 );
 
@@ -1798,10 +1807,6 @@ function Scenario({ history, setHistory, plan, setPage }) {
             ))}
           </div>
 
-          {/* ── Sezione: Contesto lavorativo ── */}
-          <div style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", marginBottom: 16, marginTop: 8 }}>💼 Contesto lavorativo</div>
-
           {/* ── Sezione: Acquisti previsti ── */}
           <div style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
             <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", marginBottom: 16, marginTop: 8 }}>🏠 Acquisti previsti</div>
@@ -1866,6 +1871,11 @@ function Scenario({ history, setHistory, plan, setPage }) {
             </select>
             {errors.country && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
           </div>
+
+{/* ── Sezione: Contesto lavorativo ── */}
+          <div style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", marginBottom: 16, marginTop: 8 }}>💼 Contesto lavorativo</div>
+
 
           <div style={styles.field}>
             <label style={styles.label}>Settore lavorativo</label>
