@@ -123,6 +123,10 @@ export default function App() {
   const [authPage, setAuthPage] = useState(null);
   const [history, setHistory] = useState([]);
   const [plan, setPlan] = useState("free");
+  const [selectedNews, setSelectedNews] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const openModal = (item) => { setSelectedNews(item); setTimeout(() => setModalVisible(true), 10); };
+  const closeModal = () => { setModalVisible(false); setTimeout(() => setSelectedNews(null), 300); };
   useEffect(() => {
   localStorage.setItem(
     "wealthfuture_users",
@@ -193,7 +197,7 @@ export default function App() {
       <div style={styles.container}>
         {page === "home" && (
           <PageTransition key="home">
-            <Home setPage={setPage} />
+            <Home setPage={setPage} openModal={openModal} />
           </PageTransition>
         )}
         {page === "dashboard" && (
@@ -222,6 +226,58 @@ export default function App() {
           </PageTransition>
         )}
       </div>
+
+      {/* Modal montato FUORI dal container scrollabile per evitare lo stacking context */}
+      {selectedNews && (
+        <div
+          onClick={closeModal}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: modalVisible ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0)",
+            backdropFilter: modalVisible ? "blur(12px)" : "blur(0px)",
+            WebkitBackdropFilter: modalVisible ? "blur(12px)" : "blur(0px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 99999,
+            transition: "background 0.3s ease, backdrop-filter 0.3s ease",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "640px",
+              maxWidth: "90vw",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              background: "linear-gradient(135deg, #0f0f1e 0%, #151525 100%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              padding: "40px",
+              borderRadius: "24px",
+              boxShadow: "0 0 80px rgba(59,130,246,0.2), 0 32px 64px rgba(0,0,0,0.6)",
+              position: "relative",
+              opacity: modalVisible ? 1 : 0,
+              transform: modalVisible ? "translateY(0) scale(1)" : "translateY(40px) scale(0.95)",
+              transition: "opacity 0.35s cubic-bezier(0.34,1.56,0.64,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+          >
+            <div style={{ display: "inline-block", background: "linear-gradient(90deg,#3b82f6,#ec4899)", borderRadius: 20, padding: "3px 12px", fontSize: 11, fontWeight: 700, color: "white", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 16 }}>
+              {selectedNews.date}
+            </div>
+            <h2 style={{ margin: "0 0 16px 0", fontSize: 24, fontWeight: 800, color: "white", lineHeight: 1.3, letterSpacing: "-0.01em" }}>
+              {selectedNews.title}
+            </h2>
+            <div style={{ height: 1, background: "rgba(255,255,255,0.08)", marginBottom: 20 }} />
+            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.8, color: "rgba(255,255,255,0.65)" }}>
+              {selectedNews.longDesc}
+            </p>
+            <button onClick={closeModal} style={{ marginTop: 32, padding: "10px 24px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.07)", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer", backdropFilter: "blur(10px)" }}>
+              Chiudi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1246,19 +1302,8 @@ function Login({ mode, onLogin, onRegister, onBack }) {
 
 //#region HOME
 
-function Home({ setPage }) {
+function Home({ setPage, openModal }) {
   const [visible, setVisible] = useState(false);
-  const [selectedNews, setSelectedNews] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const openModal = (item) => {
-  setSelectedNews(item);
-  setTimeout(() => setModalVisible(true), 10);
-};
-
-const closeModal = () => {
-  setModalVisible(false);
-  setTimeout(() => setSelectedNews(null), 300);
-};
   const [barHeights, setBarHeights] = useState([0, 0, 0, 0, 0]);
 
   useState(() => {
@@ -1372,101 +1417,6 @@ const closeModal = () => {
   </div>
 ))}
         </div>
-        {selectedNews && (
-  <div
-    onClick={closeModal}
-    style={{
-      position: "fixed",
-      inset: 0,
-      background: modalVisible ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0)",
-      backdropFilter: modalVisible ? "blur(12px)" : "blur(0px)",
-      WebkitBackdropFilter: modalVisible ? "blur(12px)" : "blur(0px)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "flex-start",
-      paddingTop: "5vh",
-      paddingBottom: "5vh",
-      overflowY: "auto",
-      zIndex: 9999,
-      transition: "background 0.3s ease, backdrop-filter 0.3s ease",
-    }}
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        width: "640px",
-        maxWidth: "90%",
-        maxHeight: "90vh",
-        overflowY: "auto",
-        background: "linear-gradient(135deg, #0f0f1e 0%, #151525 100%)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        padding: "40px",
-        borderRadius: "24px",
-        boxShadow: "0 0 80px rgba(59,130,246,0.2), 0 32px 64px rgba(0,0,0,0.6)",
-        position: "relative",
-        flexShrink: 0,
-        opacity: modalVisible ? 1 : 0,
-        transform: modalVisible ? "translateY(0) scale(1)" : "translateY(40px) scale(0.95)",
-        transition: "opacity 0.35s cubic-bezier(0.34,1.56,0.64,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1)",
-      }}
-    >
-      <div style={{
-        display: "inline-block",
-        background: "linear-gradient(90deg,#3b82f6,#ec4899)",
-        borderRadius: 20,
-        padding: "3px 12px",
-        fontSize: 11,
-        fontWeight: 700,
-        color: "white",
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
-        marginBottom: 16,
-      }}>
-        {selectedNews.date}
-      </div>
-
-      <h2 style={{
-        margin: "0 0 16px 0",
-        fontSize: 24,
-        fontWeight: 800,
-        color: "white",
-        lineHeight: 1.3,
-        letterSpacing: "-0.01em",
-      }}>
-        {selectedNews.title}
-      </h2>
-
-      <div style={{ height: 1, background: "rgba(255,255,255,0.08)", marginBottom: 20 }} />
-
-      <p style={{
-        margin: 0,
-        fontSize: 15,
-        lineHeight: 1.8,
-        color: "rgba(255,255,255,0.65)",
-      }}>
-        {selectedNews.longDesc}
-      </p>
-
-      <button
-        onClick={closeModal}
-        style={{
-          marginTop: 32,
-          padding: "10px 24px",
-          borderRadius: 12,
-          border: "1px solid rgba(255,255,255,0.15)",
-          background: "rgba(255,255,255,0.07)",
-          color: "white",
-          fontWeight: 600,
-          fontSize: 14,
-          cursor: "pointer",
-          backdropFilter: "blur(10px)",
-        }}
-      >
-        Chiudi
-      </button>
-    </div>
-  </div>
-)}
       </div>
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px" }}>
