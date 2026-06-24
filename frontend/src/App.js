@@ -1636,6 +1636,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
     if (carAge  < age || carAge  > 100) { alert("L'età acquisto auto deve essere ≥ età attuale"); return; }
 
     // ── Crescita stipendio per settore ──────────────────────────
+    // ── Crescita stipendio per settore ──────────────────────────
     const sectorGrowth = {
       "IT e Software":         0.050,
       "Banche e Finanza":      0.045,
@@ -1653,31 +1654,38 @@ function Scenario({ history, setHistory, plan, setPage }) {
       "Altro":                 0.025,
     };
     const growth = sectorGrowth[data.sector] ?? 0.025;
+    const INFLATION = 0.021; // inflazione media italiana storica
 
     // ── 1. SCORE FINANZIARIO (0–100) ────────────────────────────
-    const surplusRate     = salary > 0 ? (salary - expenses) / salary : 0;
+    const monthlySurplus = salary - expenses;
+    const surplusRate    = salary > 0 ? monthlySurplus / salary : 0;
     const emergencyMonths = expenses > 0 ? savings / expenses : 0;
-    const debtCapacity    = salary > 0 ? Math.max(1 - expenses / salary, 0) : 0;
-    const ageBonus        = age < 35 ? 10 : age < 50 ? 5 : 0;
-    // Normalizzazione: evita che surplus altissimi (es. 89%) gonfino lo score
-    const surplusScore  = Math.min(surplusRate / 0.50, 1) * 40;
+    const debtCapacity   = salary > 0 ? Math.max(1 - expenses / salary, 0) : 0;
+    const ageBonus       = age < 35 ? 10 : age < 50 ? 5 : 0;
+    const surplusScore   = Math.min(surplusRate / 0.50, 1) * 40;
     const emergencyScore = (Math.min(emergencyMonths, 12) / 12) * 30;
-    const debtScore     = Math.min(debtCapacity / 0.50, 1) * 20;
-    const health        = Math.round(Math.min(surplusScore + emergencyScore + debtScore + ageBonus, 100));
+    const debtScore      = Math.min(debtCapacity / 0.50, 1) * 20;
+    const health         = Math.round(Math.min(surplusScore + emergencyScore + debtScore + ageBonus, 100));
+    const savingsRate    = salary > 0 ? Math.round((monthlySurplus / salary) * 100) : 0;
 
-    // ── Helper: interesse composto + contributi fissi al 20% ────
-    // contribRate fisso: evita che surplus irrisori o altissimi distorcano
-    function projectCapital(years, annualReturn, contribRate = 0.20) {
+    // ── Helper principale: simulazione anno per anno ─────────────
+    // Usa il surplus REALE (salary - expenses), non un % fisso.
+    // Lo stipendio cresce per settore, le spese crescono con l'inflazione.
+    // Il capitale è al netto: accumula solo ciò che avanza davvero.
+    function simulate(years, annualReturn) {
       let sal = salary;
+      let exp = expenses;
       let cap = savings;
       for (let i = 0; i < years; i++) {
-        sal *= 1 + growth;
-        cap  = cap * (1 + annualReturn) + sal * 12 * contribRate;
+        sal = sal * (1 + growth);
+        exp = exp * (1 + INFLATION);
+        const surplus = Math.max(sal - exp, 0); // non accumula se in deficit
+        cap = cap * (1 + annualReturn) + surplus * 12;
       }
       return Math.round(cap);
     }
 
-    // ── 2. MUTUO MAX (stipendio attuale, non proiettato) ────────
+    // ── 2. MUTUO MAX ─────────────────────────────────────────────
     const maxMortgageRate      = Math.round(salary * 0.30);
     const mortgageRate         = 0.035 / 12;
     const mortgageMonths       = 25 * 12;
@@ -1685,46 +1693,51 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const mortgageCapacity     = Math.round(maxMortgageRate * pvMortgage);
     const affordableHousePrice = Math.round(mortgageCapacity / 0.80 + savings * 0.50);
 
-    // ── 3. FINANZIAMENTO AUTO (stipendio attuale) ───────────────
+    // ── 3. FINANZIAMENTO AUTO ────────────────────────────────────
     const maxLoanRate     = Math.round(salary * 0.15);
     const carRate         = 0.06 / 12;
     const carMonths       = 5 * 12;
     const pvCar           = (1 - Math.pow(1 + carRate, -carMonths)) / carRate;
     const carLoanCapacity = Math.round(maxLoanRate * pvCar);
 
-    // ── 4. PENSIONE (contribuzione fissa 20%, SWR 4%) ───────────
+    // ── 4. PENSIONE ───────────────────────────────────────────────
+    // Simula anno per anno fino a 67 anni con rendimento reale 5%
     const retirementAge     = 67;
     const yearsToRetirement = Math.max(0, retirementAge - age);
-    const pension           = projectCapital(yearsToRetirement, 0.05, 0.20);
+    const pension           = simulate(yearsToRetirement, 0.05);
     const pensioneMensile   = Math.round((pension * 0.04) / 12);
 
-    // ── 5. PATRIMONIO OGNI 10 ANNI (contribuzione fissa 20%) ────
-    const wealth = {
-      10: { pess: projectCapital(10, 0.03, 0.20), norm: projectCapital(10, 0.05, 0.20), real: projectCapital(10, 0.08, 0.20) },
-      20: { pess: projectCapital(20, 0.03, 0.20), norm: projectCapital(20, 0.05, 0.20), real: projectCapital(20, 0.08, 0.20) },
-      30: { pess: projectCapital(30, 0.03, 0.20), norm: projectCapital(30, 0.05, 0.20), real: projectCapital(30, 0.08, 0.20) },
-    };
+    // ── 5. PATRIMONIO NEL TEMPO (grafico) ─────────────────────────
+    // Calcola ogni 5 anni fino a 80, simulazione reale anno per anno
+    const wealthPoints = {};
+    [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80].forEach(y => {
+      wealthPoints[y] = {
+        pess: simulate(y, 0.03),
+        norm: simulate(y, 0.05),
+        real: simulate(y, 0.08),
+      };
+    });
 
-    // ── 6. TASSO DI RISPARMIO ────────────────────────────────────
-    const monthlySurplus = salary - expenses;
-    const savingsRate    = salary > 0 ? Math.round((monthlySurplus / salary) * 100) : 0;
-
-    // ── 7. COPERTURA PENSIONE ────────────────────────────────────
-    // rendita mensile / stipendio attuale × 100
+    // ── 6. COPERTURA PENSIONE ────────────────────────────────────
     const breakEvenRetirement = salary > 0
       ? Math.round((pensioneMensile / salary) * 100)
       : 0;
 
-    // ── 8. ANNI AL FIRE ──────────────────────────────────────────
-    // target = spese annue × 25 (regola del 4%)
-    // simulazione iterativa con rendimento 6%
-    const targetFIRE   = expenses * 12 * 25;
-    const surplusAnnuo = monthlySurplus * 12;
+    // ── 7. ANNI AL FIRE ───────────────────────────────────────────
+    // Target FIRE = spese annue correnti × 25 (regola del 4%)
+    // Simulazione iterativa con rendimento 6%, surplus reale che cresce
+    const targetFIRE = expenses * 12 * 25;
     let anniFIRE = null;
     if (monthlySurplus > 0) {
-      let cap = savings, anni = 0;
+      let cap = savings;
+      let sal2 = salary;
+      let exp2 = expenses;
+      let anni = 0;
       while (cap < targetFIRE && anni < 100) {
-        cap = cap * 1.06 + surplusAnnuo;
+        sal2 = sal2 * (1 + growth);
+        exp2 = exp2 * (1 + INFLATION);
+        const surplusAnno = Math.max(sal2 - exp2, 0) * 12;
+        cap = cap * 1.06 + surplusAnno;
         anni++;
       }
       anniFIRE = cap >= targetFIRE ? anni : null;
@@ -1733,7 +1746,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const res = {
       id: Date.now(), date: new Date().toLocaleDateString(),
       age, country: data.country, sector: data.sector, salary, savings,
-      growth, health, pension, pensioneMensile, wealth,
+      growth, health, pension, pensioneMensile, wealth: wealthPoints,
       homeAge, carAge, maxMortgageRate, mortgageCapacity, affordableHousePrice,
       maxLoanRate, carLoanCapacity,
       monthlyExpenses: expenses, monthlySurplus, savingsRate,
@@ -1761,16 +1774,14 @@ function Scenario({ history, setHistory, plan, setPage }) {
   }
 
   const orizzonteAnni = PLAN_LIMITS[plan].orizzonteAnni;
-  const allChartPoints = [
-    { years: 10, pessimistico: result?.wealth[10].pess, normale: result?.wealth[10].norm, ottimistico: result?.wealth[10].real },
-    { years: 20, pessimistico: result?.wealth[20].pess, normale: result?.wealth[20].norm, ottimistico: result?.wealth[20].real },
-    { years: 30, pessimistico: result?.wealth[30].pess, normale: result?.wealth[30].norm, ottimistico: result?.wealth[30].real },
-    { years: 40, pessimistico: result?.wealth[30].pess * 1.10, normale: result?.wealth[30].norm * 1.20, ottimistico: result?.wealth[30].real * 1.50 },
-    { years: 50, pessimistico: result?.wealth[30].pess * 1.20, normale: result?.wealth[30].norm * 1.35, ottimistico: result?.wealth[30].real * 1.70 },
-    { years: 60, pessimistico: result?.wealth[30].pess * 1.25, normale: result?.wealth[30].norm * 1.50, ottimistico: result?.wealth[30].real * 2.00 },
-    { years: 70, pessimistico: result?.wealth[30].pess * 1.30, normale: result?.wealth[30].norm * 1.70, ottimistico: result?.wealth[30].real * 2.30 },
-    { years: 80, pessimistico: result?.wealth[30].pess * 1.35, normale: result?.wealth[30].norm * 2.00, ottimistico: result?.wealth[30].real * 2.80 },
-  ];
+  const allChartPoints = [5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80]
+    .filter(y => result?.wealth[y])
+    .map(y => ({
+      years: y,
+      pessimistico: result?.wealth[y].pess,
+      normale:      result?.wealth[y].norm,
+      ottimistico:  result?.wealth[y].real,
+    }));
   const chartData = allChartPoints.filter(p => p.years <= orizzonteAnni);
 
   return (
