@@ -2738,4 +2738,12 @@ const styles = {
     boxShadow: "0 32px 80px rgba(0,0,0,0.55)",
   },
   loginLogo: { width: 120, height: 120, objectFit: "contain", marginBottom: 8 },
-  loginSlogan: { fontStyle: "italic", opacity: 0.45, fontSize: 14,
+  loginSlogan: { fontStyle: "italic", opacity: 0.45, fontSize: 14, textAlign: "center", marginBottom: 8 },
+  field: { display: "flex", flexDirection: "column", width: "100%", marginBottom: 18 },
+  label: {
+    color: T.hint, fontSize: 10, fontWeight: 700,
+    marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em",
+  },
+  fieldError: { display: "flex", alignItems: "center", gap: 5, color: "rgba(239,68,68,0.9)", fontSize: 11, marginTop: 6 },
+};
+  
