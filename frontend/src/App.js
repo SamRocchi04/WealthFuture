@@ -2282,6 +2282,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
 
 <div style={styles.divider} />
 
+
 {/* ── Grafico liquidità stimata ── */}
 <div style={{ marginBottom: 20 }}>
   <div style={styles.sectionHeader}>
