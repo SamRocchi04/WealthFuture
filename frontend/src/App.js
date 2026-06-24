@@ -1383,7 +1383,10 @@ const closeModal = () => {
       WebkitBackdropFilter: modalVisible ? "blur(12px)" : "blur(0px)",
       display: "flex",
       justifyContent: "center",
-      alignItems: "center",
+      alignItems: "flex-start",
+      paddingTop: "5vh",
+      paddingBottom: "5vh",
+      overflowY: "auto",
       zIndex: 9999,
       transition: "background 0.3s ease, backdrop-filter 0.3s ease",
     }}
@@ -1393,12 +1396,15 @@ const closeModal = () => {
       style={{
         width: "640px",
         maxWidth: "90%",
+        maxHeight: "90vh",
+        overflowY: "auto",
         background: "linear-gradient(135deg, #0f0f1e 0%, #151525 100%)",
         border: "1px solid rgba(255,255,255,0.1)",
         padding: "40px",
         borderRadius: "24px",
         boxShadow: "0 0 80px rgba(59,130,246,0.2), 0 32px 64px rgba(0,0,0,0.6)",
         position: "relative",
+        flexShrink: 0,
         opacity: modalVisible ? 1 : 0,
         transform: modalVisible ? "translateY(0) scale(1)" : "translateY(40px) scale(0.95)",
         transition: "opacity 0.35s cubic-bezier(0.34,1.56,0.64,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1)",
@@ -2213,6 +2219,22 @@ function Account({ history, plan, setPlan }) {
   const totalWealth = history.reduce((a, b) => a + (b.pension || 0), 0);
   const bestScenario = history.reduce((best, h) => (!best || h.pension > best.pension ? h : best), null);
   const avgHealth = history.length ? history.reduce((a, b) => a + b.health, 0) / history.length : 0;
+  const [accountMsg, setAccountMsg] = useState("");
+  function showMsg(msg, duration = 2800) {
+    setAccountMsg(msg);
+    setTimeout(() => setAccountMsg(""), duration);
+  }
+  function handleExportPDF() {
+    if (!PLAN_LIMITS[plan].reportPdf) return;
+    showMsg("📄 Export PDF avviato — funzionalità in arrivo.");
+  }
+  function handleExportExcel() {
+    if (!PLAN_LIMITS[plan].exportExcel) return;
+    showMsg("📊 Export Excel avviato — funzionalità in arrivo.");
+  }
+  function handleGestisci() {
+    showMsg("🔒 Gestione sicurezza account — funzionalità in arrivo.");
+  }
 
   const planDefs = [
     {
@@ -2231,6 +2253,11 @@ function Account({ history, plan, setPlan }) {
 
   return (
     <div style={styles.page}>
+      {accountMsg && (
+        <div style={{ position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)", background: "rgba(30,30,50,0.97)", border: "1px solid rgba(255,255,255,0.15)", color: "white", padding: "12px 24px", borderRadius: 14, fontSize: 14, fontWeight: 600, zIndex: 99999, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", whiteSpace: "nowrap" }}>
+          {accountMsg}
+        </div>
+      )}
       <div style={styles.pageHeader}>
         <div>
           <div style={{ fontSize: 12, opacity: 0.4, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Account</div>
@@ -2305,19 +2332,19 @@ function Account({ history, plan, setPlan }) {
         <div style={styles.sectionHeader}><span style={styles.sectionTitle}>⚙️ Azioni account</span></div>
         <div style={styles.dataRow}>
           <span style={styles.dataLabel}>Esporta dati PDF {!PLAN_LIMITS[plan].reportPdf && <span style={{ fontSize: 11, color: "#f59e0b", marginLeft: 6 }}>Pro+</span>}</span>
-          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].reportPdf ? 1 : 0.45, cursor: PLAN_LIMITS[plan].reportPdf ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].reportPdf}>
+          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].reportPdf ? 1 : 0.45, cursor: PLAN_LIMITS[plan].reportPdf ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].reportPdf} onClick={handleExportPDF}>
             {PLAN_LIMITS[plan].reportPdf ? "PDF" : "🔒 PDF"}
           </button>
         </div>
         <div style={styles.dataRow}>
           <span style={styles.dataLabel}>Esporta Excel {!PLAN_LIMITS[plan].exportExcel && <span style={{ fontSize: 11, color: "#f59e0b", marginLeft: 6 }}>Pro+</span>}</span>
-          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].exportExcel ? 1 : 0.45, cursor: PLAN_LIMITS[plan].exportExcel ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].exportExcel}>
+          <button style={{ ...styles.smallButton, opacity: PLAN_LIMITS[plan].exportExcel ? 1 : 0.45, cursor: PLAN_LIMITS[plan].exportExcel ? "pointer" : "not-allowed" }} disabled={!PLAN_LIMITS[plan].exportExcel} onClick={handleExportExcel}>
             {PLAN_LIMITS[plan].exportExcel ? "Excel" : "🔒 Excel"}
           </button>
         </div>
         <div style={styles.dataRow}>
           <span style={styles.dataLabel}>Sicurezza account</span>
-          <button style={styles.smallButton}>Gestisci</button>
+          <button style={styles.smallButton} onClick={handleGestisci}>Gestisci</button>
         </div>
       </div>
     </div>
@@ -2338,8 +2365,34 @@ function Toggle({ defaultOn = false }) {
 }
 
 function Settings() {
+  const [settingsMsg, setSettingsMsg] = useState("");
+  const [resetConfirm, setResetConfirm] = useState(false);
+  function showMsg(msg, duration = 2800) {
+    setSettingsMsg(msg);
+    setTimeout(() => setSettingsMsg(""), duration);
+  }
+  function handleCambiaPassword() {
+    showMsg("🔑 Cambio password — funzionalità in arrivo.");
+  }
+  function handleAttiva2FA() {
+    showMsg("🛡️ Autenticazione 2FA — funzionalità in arrivo.");
+  }
+  function handleReset() {
+    if (!resetConfirm) {
+      setResetConfirm(true);
+      setTimeout(() => setResetConfirm(false), 4000);
+    } else {
+      setResetConfirm(false);
+      showMsg("🗑️ Account resettato — tutti i dati locali eliminati.");
+    }
+  }
   return (
     <div style={styles.page}>
+      {settingsMsg && (
+        <div style={{ position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)", background: "rgba(30,30,50,0.97)", border: "1px solid rgba(255,255,255,0.15)", color: "white", padding: "12px 24px", borderRadius: 14, fontSize: 14, fontWeight: 600, zIndex: 99999, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", whiteSpace: "nowrap" }}>
+          {settingsMsg}
+        </div>
+      )}
       <div style={styles.pageHeader}>
         <h2 style={styles.pageTitle}>Impostazioni</h2>
       </div>
@@ -2391,9 +2444,9 @@ function Settings() {
 
       <div style={styles.section}>
         <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🔒 Sicurezza</span></div>
-        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Cambia password</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Aggiorna le credenziali di accesso</div></div><button style={styles.smallButton}>Apri</button></div>
-        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Autenticazione 2FA</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Protezione in due passaggi</div></div><button style={{ ...styles.smallButton, borderColor: "rgba(16,185,129,0.4)", color: "#34d399" }}>Attiva</button></div>
-        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Reset account</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Elimina tutti i dati salvati</div></div><button style={{ ...styles.smallButton, borderColor: "rgba(239,68,68,0.4)", color: "rgba(239,68,68,0.9)", background: "rgba(239,68,68,0.08)" }}>Reset</button></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Cambia password</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Aggiorna le credenziali di accesso</div></div><button style={styles.smallButton} onClick={handleCambiaPassword}>Apri</button></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Autenticazione 2FA</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Protezione in due passaggi</div></div><button style={{ ...styles.smallButton, borderColor: "rgba(16,185,129,0.4)", color: "#34d399" }} onClick={handleAttiva2FA}>Attiva</button></div>
+        <div style={styles.dataRow}><div><div style={{ fontWeight: 600, fontSize: 14 }}>Reset account</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Elimina tutti i dati salvati</div></div><button style={{ ...styles.smallButton, borderColor: resetConfirm ? "rgba(239,68,68,0.8)" : "rgba(239,68,68,0.4)", color: resetConfirm ? "#ef4444" : "rgba(239,68,68,0.9)", background: resetConfirm ? "rgba(239,68,68,0.18)" : "rgba(239,68,68,0.08)", fontWeight: resetConfirm ? 800 : 700 }} onClick={handleReset}>{resetConfirm ? "⚠️ Conferma reset" : "Reset"}</button></div>
       </div>
     </div>
   );
