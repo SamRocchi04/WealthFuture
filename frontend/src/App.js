@@ -110,6 +110,25 @@ const PLAN_LIMITS = {
 
 //#endregion
 
+// ── DESIGN TOKENS (Landing-aligned) ─────────────────────────────
+const T = {
+  base:      "#07091a",
+  surface:   "#0c1023",
+  card:      "#111827",
+  cardHover: "#141e30",
+  border:    "rgba(255,255,255,0.07)",
+  borderHi:  "rgba(255,255,255,0.13)",
+  blue:      "#2563eb",
+  blueDim:   "rgba(37,99,235,0.12)",
+  blueGlow:  "rgba(37,99,235,0.22)",
+  violet:    "#7c3aed",
+  green:     "#10b981",
+  amber:     "#f59e0b",
+  text:      "#f8fafc",
+  muted:     "rgba(248,250,252,0.50)",
+  hint:      "rgba(248,250,252,0.28)",
+};
+
 //#region APP
 
 export default function App() {
@@ -652,6 +671,16 @@ const GlobalStyles = () => (
       section { padding-left: 16px !important; padding-right: 16px !important; }
       nav > div { padding-left: 16px !important; padding-right: 16px !important; }
     }
+    
+    input, select, textarea {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    input::placeholder { color: rgba(248,250,252,0.28); }
+    select option { background: #111827; color: #f8fafc; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
   `}</style>
 );
 
@@ -1388,56 +1417,56 @@ function Home({ setPage, openModal }) {
           </div>
         </div>
       </div>
-
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px 40px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Novità & Aggiornamenti</h2>
-          <div style={{ marginLeft: 8, background: "linear-gradient(90deg,#3b82f6,#ec4899)", borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, color: "white" }}>NUOVO</div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-          {news.map((item, i) => (
-  <div
-    key={i}
-    onClick={() => openModal(item)}
-    style={{
-      padding: "24px 22px",
-      background: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 16,
-      transition: "background 0.2s, border-color 0.2s, transform 0.2s",
-      cursor: "pointer",
-    }}
-    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
-  >
-    <div style={{ display: "inline-block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.25)", color: "#60a5fa", padding: "3px 10px", borderRadius: 20, marginBottom: 12 }}>{item.date}</div>
-    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 10, color: "white", lineHeight: 1.4 }}>{item.title}</div>
-    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>{item.desc}</div>
-    <div style={{ marginTop: 14, fontSize: 12, color: "#60a5fa", fontWeight: 600 }}>Leggi di più →</div>
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 24px 48px" }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", color: "#f8fafc" }}>Novità & Aggiornamenti</h2>
+    <div style={{ background: "linear-gradient(90deg,#2563eb,#7c3aed)", borderRadius: 20, padding: "2px 10px", fontSize: 10, fontWeight: 800, color: "white", letterSpacing: "0.06em", textTransform: "uppercase" }}>NUOVO</div>
   </div>
-))}
-        </div>
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+    {news.map((item, i) => (
+      <div
+        key={i}
+        onClick={() => openModal(item)}
+        style={{
+          padding: "22px 20px",
+          background: "rgba(12,16,35,0.80)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 14,
+          transition: "background 0.2s, border-color 0.2s, transform 0.2s",
+          cursor: "pointer",
+          backdropFilter: "blur(10px)",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,30,60,0.90)"; e.currentTarget.style.borderColor = "rgba(37,99,235,0.30)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(12,16,35,0.80)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.transform = "translateY(0)"; }}
+      >
+        <div style={{ display: "inline-block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", background: "rgba(37,99,235,0.12)", border: "1px solid rgba(37,99,235,0.22)", color: "#60a5fa", padding: "3px 10px", borderRadius: 20, marginBottom: 12 }}>{item.date}</div>
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: "#f8fafc", lineHeight: 1.45 }}>{item.title}</div>
+        <div style={{ fontSize: 13, color: "rgba(248,250,252,0.45)", lineHeight: 1.7 }}>{item.desc}</div>
+        <div style={{ marginTop: 14, fontSize: 12, color: "#60a5fa", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>Leggi di più <span style={{ fontSize: 14 }}>→</span></div>
       </div>
+    ))}
+  </div>
+</div>
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 20px" }}>
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 32, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 8, color: "#60a5fa", textTransform: "uppercase", letterSpacing: "0.06em" }}>Solo simulazioni</div>
-            <div style={{ fontSize: 12, opacity: 0.45, lineHeight: 1.7 }}>Tutti i dati, i calcoli e le proiezioni mostrati su questa piattaforma sono puramente simulativi e a scopo educativo. Non costituiscono consulenza finanziaria, fiscale o legale.</div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 8, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>Privacy & Cookie</div>
-            <div style={{ fontSize: 12, opacity: 0.45, lineHeight: 1.7 }}>I dati inseriti non vengono condivisi con terze parti. Utilizziamo cookie tecnici essenziali per il funzionamento del servizio. Non utilizziamo cookie di profilazione.</div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 8, color: "#f472b6", textTransform: "uppercase", letterSpacing: "0.06em" }}>Termini d'uso</div>
-            <div style={{ fontSize: 12, opacity: 0.45, lineHeight: 1.7 }}>L'uso della piattaforma implica l'accettazione dei termini di servizio. I risultati delle simulazioni hanno finalità esclusivamente illustrativa e non hanno valore legale o contrattuale.</div>
-          </div>
-          <div style={{ gridColumn: "1 / -1", fontSize: 11, opacity: 0.25, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-            © 2025 WealthFuture — Piattaforma di simulazione finanziaria. Tutti i diritti riservati. I rendimenti passati non garantiscono quelli futuri.
-          </div>
-        </div>
-      </div>
+<div style={{ maxWidth: 920, margin: "0 auto", padding: "0 24px" }}>
+  <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 28, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+    <div>
+      <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 6, color: "#60a5fa", textTransform: "uppercase", letterSpacing: "0.07em" }}>Solo simulazioni</div>
+      <div style={{ fontSize: 12, color: "rgba(248,250,252,0.35)", lineHeight: 1.75 }}>Tutti i dati mostrati sono puramente simulativi e a scopo educativo. Non costituiscono consulenza finanziaria, fiscale o legale.</div>
+    </div>
+    <div>
+      <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 6, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.07em" }}>Privacy & Cookie</div>
+      <div style={{ fontSize: 12, color: "rgba(248,250,252,0.35)", lineHeight: 1.75 }}>I dati inseriti non vengono condivisi con terze parti. Utilizziamo solo cookie tecnici essenziali.</div>
+    </div>
+    <div>
+      <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 6, color: "#f9a8d4", textTransform: "uppercase", letterSpacing: "0.07em" }}>Termini d'uso</div>
+      <div style={{ fontSize: 12, color: "rgba(248,250,252,0.35)", lineHeight: 1.75 }}>L'uso della piattaforma implica l'accettazione dei termini di servizio. I risultati sono a puro scopo illustrativo.</div>
+    </div>
+    <div style={{ gridColumn: "1 / -1", fontSize: 11, color: "rgba(248,250,252,0.20)", paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+      © 2025 WealthFuture — Piattaforma di simulazione finanziaria. Tutti i diritti riservati.
+    </div>
+  </div>
+</div>
     </div>
   );
 }
@@ -2408,12 +2437,12 @@ function Settings() {
 
 function Background({ page }) {
   const themes = {
-    home:      "radial-gradient(circle at 15% 40%, rgba(59,130,246,0.85), transparent 55%), radial-gradient(circle at 85% 65%, rgba(139,92,246,0.7), transparent 55%)",
-    dashboard: "radial-gradient(circle at 10% 20%, rgba(16,185,129,0.8), transparent 55%), radial-gradient(circle at 80% 80%, rgba(6,182,212,0.65), transparent 55%)",
-    scenario:  "radial-gradient(circle at 70% 20%, rgba(245,158,11,0.8), transparent 55%), radial-gradient(circle at 20% 75%, rgba(239,68,68,0.6), transparent 55%)",
-    history:   "radial-gradient(circle at 20% 20%, rgba(99,102,241,0.8), transparent 55%), radial-gradient(circle at 75% 70%, rgba(168,85,247,0.65), transparent 55%)",
-    account:   "radial-gradient(circle at 80% 25%, rgba(234,179,8,0.8), transparent 55%), radial-gradient(circle at 20% 70%, rgba(249,115,22,0.65), transparent 55%)",
-    settings:  "radial-gradient(circle at 50% 20%, rgba(100,116,139,0.7), transparent 55%), radial-gradient(circle at 50% 80%, rgba(71,85,105,0.6), transparent 55%)",
+    home:      "radial-gradient(ellipse 70% 55% at 15% 35%, rgba(37,99,235,0.30), transparent 60%), radial-gradient(ellipse 60% 50% at 85% 70%, rgba(124,58,237,0.22), transparent 60%)",
+    dashboard: "radial-gradient(ellipse 70% 55% at 10% 20%, rgba(16,185,129,0.22), transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(6,182,212,0.18), transparent 60%)",
+    scenario:  "radial-gradient(ellipse 65% 50% at 75% 20%, rgba(245,158,11,0.22), transparent 60%), radial-gradient(ellipse 55% 50% at 20% 75%, rgba(239,68,68,0.18), transparent 60%)",
+    history:   "radial-gradient(ellipse 65% 55% at 20% 20%, rgba(99,102,241,0.24), transparent 60%), radial-gradient(ellipse 60% 50% at 75% 70%, rgba(168,85,247,0.18), transparent 60%)",
+    account:   "radial-gradient(ellipse 65% 55% at 80% 25%, rgba(234,179,8,0.22), transparent 60%), radial-gradient(ellipse 55% 50% at 20% 70%, rgba(249,115,22,0.18), transparent 60%)",
+    settings:  "radial-gradient(ellipse 60% 55% at 50% 20%, rgba(100,116,139,0.22), transparent 60%), radial-gradient(ellipse 55% 55% at 50% 80%, rgba(71,85,105,0.18), transparent 60%)",
   };
   return <div style={{ ...styles.bg, background: themes[page] || themes.home }} />;
 }
@@ -2421,7 +2450,6 @@ function Background({ page }) {
 //#endregion
 
 //#region TOPBAR
-
 function TopBar({ page, setPage }) {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -2437,87 +2465,145 @@ function TopBar({ page, setPage }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const underlineColors = {
-    home: "#1f427d", dashboard: "#074f39", scenario: "#7a4c06",
-    history: "#452569", account: "#bd8f19", settings: "#272e37",
-  };
-
-  const NavItem = ({ id, label }) => {
-    const isActive = page === id;
-    return (
-      <div onClick={() => setPage(id)} style={{ display: "flex", alignItems: "center", padding: "6px 14px", cursor: "pointer", position: "relative", color: isActive ? "white" : "rgba(255,255,255,0.55)", fontWeight: isActive ? 600 : 400, fontSize: 13, whiteSpace: "nowrap", transition: "all .2s ease" }}>
-        {label}
-        {isActive && <div style={{ position: "absolute", bottom: -6, left: 8, right: 8, height: 3, borderRadius: 999, background: underlineColors[id], boxShadow: `0 0 8px ${underlineColors[id]}` }} />}
-      </div>
-    );
-  };
-
   const menuItems = [
     ["home", "Home"], ["dashboard", "Dashboard"], ["scenario", "Nuovo Scenario"],
     ["history", "Storico"], ["account", "Account"], ["settings", "Impostazioni"],
   ];
 
+  const NavItem = ({ id, label }) => {
+    const isActive = page === id;
+    return (
+      <div
+        onClick={() => setPage(id)}
+        style={{
+          display: "flex", alignItems: "center",
+          padding: "6px 13px", cursor: "pointer", position: "relative",
+          borderRadius: 8,
+          color: isActive ? "#f8fafc" : "rgba(248,250,252,0.45)",
+          fontWeight: isActive ? 600 : 400,
+          fontSize: 13, whiteSpace: "nowrap",
+          background: isActive ? "rgba(37,99,235,0.12)" : "transparent",
+          border: isActive ? "1px solid rgba(37,99,235,0.25)" : "1px solid transparent",
+          transition: "all .2s ease",
+        }}
+        onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = "rgba(248,250,252,0.8)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}}
+        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = "rgba(248,250,252,0.45)"; e.currentTarget.style.background = "transparent"; }}}
+      >
+        {label}
+      </div>
+    );
+  };
+
   return (
     <>
-      <div style={{ position: "sticky", top: 0, zIndex: 1000, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", backdropFilter: "blur(20px)", background: "rgba(10,10,20,0.65)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <div onClick={() => setPage("home")} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#2563eb,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-  <span style={{ fontSize: 15, fontWeight: 900, color: "white" }}>W</span>
-</div>
-<span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em", background: "linear-gradient(90deg,#3b82f6,#7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WealthFuture</span>
+      <div style={{
+        position: "sticky", top: 0, zIndex: 1000,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        padding: "0 20px", height: 62,
+        backdropFilter: "blur(24px)",
+        background: "rgba(5,8,16,0.90)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div onClick={() => setPage("home")} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 8,
+            background: "linear-gradient(135deg,#2563eb,#7c3aed)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ fontSize: 14, fontWeight: 900, color: "white" }}>W</span>
+          </div>
+          <span style={{
+            fontWeight: 800, fontSize: 15, letterSpacing: "-0.02em",
+            background: "linear-gradient(90deg,#60a5fa,#a78bfa)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          }}>WealthFuture</span>
         </div>
 
         {!isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             {menuItems.map(([id, label]) => <NavItem key={id} id={id} label={label} />)}
           </div>
         )}
 
         {isMobile && (
-          <div onClick={() => setMobileMenu(!mobileMenu)} style={{ cursor: "pointer", padding: "6px 8px", userSelect: "none", display: "flex", flexDirection: "column", gap: 5 }}>
-            {[0,1,2].map(i => (
-              <div key={i} style={{ width: 22, height: 2, borderRadius: 2, background: "rgba(255,255,255,0.8)", transition: "opacity 0.2s" }} />
-            ))}
+          <div
+            onClick={() => setMobileMenu(!mobileMenu)}
+            style={{ cursor: "pointer", padding: "8px", userSelect: "none", display: "flex", flexDirection: "column", gap: 5, borderRadius: 8, background: mobileMenu ? "rgba(255,255,255,0.08)" : "transparent", transition: "background 0.2s" }}
+          >
+            <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", transition: "transform 0.25s, opacity 0.25s", transform: mobileMenu ? "translateY(6.5px) rotate(45deg)" : "none" }} />
+            <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", opacity: mobileMenu ? 0 : 1, transition: "opacity 0.2s" }} />
+            <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", transition: "transform 0.25s, opacity 0.25s", transform: mobileMenu ? "translateY(-6.5px) rotate(-45deg)" : "none" }} />
           </div>
         )}
       </div>
 
-      <div onClick={() => setMobileMenu(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)", zIndex: 9998, opacity: mobileMenu ? 1 : 0, visibility: mobileMenu ? "visible" : "hidden", transition: "opacity .3s ease, visibility .3s ease" }} />
+      {/* Overlay */}
+      <div onClick={() => setMobileMenu(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", zIndex: 9998, opacity: mobileMenu ? 1 : 0, visibility: mobileMenu ? "visible" : "hidden", transition: "opacity .3s ease, visibility .3s ease" }} />
 
-      <div style={{ position: "fixed", top: 0, right: mobileMenu ? 0 : -280, width: 260, height: "100vh", background: "linear-gradient(180deg, rgba(12,12,20,0.98), rgba(8,8,14,0.98))", borderLeft: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", zIndex: 9999, opacity: mobileMenu ? 1 : 0, transform: mobileMenu ? "translateX(0)" : "translateX(30px)", transition: "right .35s cubic-bezier(.4,0,.2,1), opacity .35s ease, transform .35s ease", paddingTop: 80 }}>
-        <div style={{ padding: "0 24px 24px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 10 }}>
-          <div style={{ fontSize: 11, opacity: 0.4, textTransform: "uppercase", letterSpacing: "0.08em" }}>Navigazione</div>
-          <div style={{ marginTop: 6, fontWeight: 700, fontSize: 18, color: "white" }}>WealthFuture</div>
+      {/* Drawer */}
+      <div style={{
+        position: "fixed", top: 0,
+        right: mobileMenu ? 0 : -300,
+        width: 270, height: "100vh",
+        background: "linear-gradient(180deg, rgba(7,9,26,0.99), rgba(5,7,18,0.99))",
+        borderLeft: "1px solid rgba(255,255,255,0.07)",
+        backdropFilter: "blur(24px)",
+        zIndex: 9999,
+        opacity: mobileMenu ? 1 : 0,
+        transform: mobileMenu ? "translateX(0)" : "translateX(24px)",
+        transition: "right .35s cubic-bezier(.4,0,.2,1), opacity .3s ease, transform .3s ease",
+        paddingTop: 72,
+      }}>
+        <div style={{ padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 8 }}>
+          <div style={{ fontSize: 10, opacity: 0.35, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 4 }}>Navigazione</div>
+          <div style={{ fontWeight: 800, fontSize: 17, color: "white" }}>WealthFuture</div>
         </div>
 
         {menuItems.map(([id, label], index) => (
-          <div key={id} onClick={() => { setPage(id); setMobileMenu(false); }} style={{ padding: "14px 22px", margin: "4px 12px", cursor: "pointer", position: "relative", color: page === id ? "white" : "rgba(255,255,255,0.65)", fontWeight: page === id ? 600 : 400, fontSize: 14, transition: `all .3s ease ${index * 0.05}s` }}>
+          <div
+            key={id}
+            onClick={() => { setPage(id); setMobileMenu(false); }}
+            style={{
+              padding: "13px 20px", margin: "3px 10px", cursor: "pointer",
+              borderRadius: 10,
+              color: page === id ? "#f8fafc" : "rgba(248,250,252,0.55)",
+              fontWeight: page === id ? 600 : 400,
+              fontSize: 14,
+              background: page === id ? "rgba(37,99,235,0.12)" : "transparent",
+              border: page === id ? "1px solid rgba(37,99,235,0.22)" : "1px solid transparent",
+              transition: `all .25s ease ${index * 0.04}s`,
+            }}
+          >
             {label}
-            {page === id && <div style={{ position: "absolute", bottom: 6, left: 22, right: 22, height: 2, borderRadius: 999, background: underlineColors[id] }} />}
           </div>
         ))}
 
-        <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <img src="/logo.png" alt="" style={{ width: 44, height: 44, objectFit: "contain", marginBottom: 10 }} onError={(e) => { e.target.style.display = "none"; }} />
-          <span style={{ fontWeight: 800, fontSize: 16, background: "linear-gradient(90deg,#3b82f6,#ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WealthFuture</span>
+        <div style={{ position: "absolute", bottom: 36, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#2563eb,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 16, fontWeight: 900, color: "white" }}>W</span>
+          </div>
+          <span style={{ fontWeight: 800, fontSize: 13, background: "linear-gradient(90deg,#60a5fa,#a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WealthFuture</span>
         </div>
       </div>
     </>
   );
 }
-
 //#endregion
 
 //#region Helpers
 
 function planBadgeStyle(plan) {
   const colors = {
-    free:    { bg: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)" },
-    pro:     { bg: "rgba(59,130,246,0.2)",   color: "#60a5fa" },
-    premium: { bg: "rgba(234,179,8,0.2)",    color: "#fbbf24" },
+    free:    { bg: "rgba(255,255,255,0.07)", border: "rgba(255,255,255,0.12)", color: "rgba(248,250,252,0.50)" },
+    pro:     { bg: "rgba(37,99,235,0.12)",   border: "rgba(37,99,235,0.28)",   color: "#93c5fd" },
+    premium: { bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.28)",  color: "#fcd34d" },
   };
   const c = colors[plan] || colors.free;
-  return { background: c.bg, color: c.color, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20, letterSpacing: "0.07em", textTransform: "uppercase" };
+  return {
+    background: c.bg, border: `1px solid ${c.border}`, color: c.color,
+    fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
+    letterSpacing: "0.07em", textTransform: "uppercase", display: "inline-block",
+  };
 }
 
 //#endregion
@@ -2525,52 +2611,131 @@ function planBadgeStyle(plan) {
 //#region STYLES
 
 const styles = {
-  app: { 
-  height: "100vh",
-  overflow: "hidden",
-  background: "#000", 
-  color: "white", 
-  fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif", 
-  overflowX: "hidden" 
-},
-  bg: { position: "fixed", inset: 0, filter: "blur(120px) saturate(1.3)", zIndex: 0, opacity: 0.75 },
-  container: { 
-  position: "relative", 
-  zIndex: 2, 
-  paddingTop: 70,
-  height: "calc(100vh - 70px)",
-  overflowY: "auto",
-  overflowX: "hidden",
-},
-  page: { padding: "36px 24px 100px", maxWidth: 1100, margin: "0 auto" },
-  pageHeader: { marginBottom: 36, paddingBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.08)" },
-  pageTitle: { fontSize: 32, fontWeight: 800, margin: "0 0 14px", letterSpacing: "-0.03em", background: "linear-gradient(135deg,#fff 60%,rgba(255,255,255,0.55))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
+  app: {
+    height: "100vh",
+    overflow: "hidden",
+    background: T.base,
+    color: T.text,
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+    overflowX: "hidden",
+  },
+  bg: {
+    position: "fixed", inset: 0,
+    filter: "blur(140px) saturate(1.2)",
+    zIndex: 0, opacity: 0.55,
+  },
+  container: {
+    position: "relative", zIndex: 2,
+    paddingTop: 62,
+    height: "calc(100vh - 62px)",
+    overflowY: "auto", overflowX: "hidden",
+  },
+  page: {
+    padding: "40px 28px 120px",
+    maxWidth: 1100, margin: "0 auto",
+  },
+  pageHeader: {
+    marginBottom: 32, paddingBottom: 24,
+    borderBottom: `1px solid ${T.border}`,
+  },
+  pageTitle: {
+    fontSize: 28, fontWeight: 800, margin: "0 0 12px",
+    letterSpacing: "-0.03em",
+    background: "linear-gradient(135deg,#fff 55%,rgba(255,255,255,0.45))",
+    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+  },
   planBar: { display: "flex", alignItems: "center", gap: 8, fontSize: 13 },
-  kpiStrip: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, margin: "24px 0" },
-  kpiItem: { padding: "16px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, backdropFilter: "blur(8px)" },
-  kpiLabel: { fontSize: 11, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 },
-  kpiValue: { fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "white" },
-  kpiUnit: { fontSize: 13, fontWeight: 400, opacity: 0.45, marginLeft: 2 },
-  divider: { height: 1, background: "rgba(255,255,255,0.07)", margin: "4px 0 28px" },
-  section: { marginBottom: 28 },
-  sectionHeader: { display: "flex", alignItems: "center", gap: 10, marginBottom: 18 },
-  sectionTitle: { fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", gap: 6 },
-  dataRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", transition: "background 0.15s" },
-  dataLabel: { fontSize: 14, color: "rgba(255,255,255,0.7)" },
-  dataValue: { fontSize: 14, fontWeight: 700, color: "white" },
-  center: { display: "flex", justifyContent: "center", alignItems: "flex-start", minHeight: "70vh", padding: "32px 20px" },
+  kpiStrip: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(155px, 1fr))",
+    gap: 10, margin: "20px 0",
+  },
+  kpiItem: {
+    padding: "18px 20px",
+    background: T.card,
+    border: `1px solid ${T.border}`,
+    borderRadius: 14,
+    backdropFilter: "blur(12px)",
+    transition: "border-color 0.2s, background 0.2s",
+  },
+  kpiLabel: {
+    fontSize: 10, color: T.hint,
+    textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10,
+    fontWeight: 700,
+  },
+  kpiValue: { fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em", color: T.text },
+  kpiUnit:  { fontSize: 12, fontWeight: 400, opacity: 0.38, marginLeft: 2 },
+  divider:  { height: 1, background: T.border, margin: "6px 0 28px" },
+  section:  { marginBottom: 28 },
+  sectionHeader: { display: "flex", alignItems: "center", gap: 10, marginBottom: 16 },
+  sectionTitle: {
+    fontSize: 10, fontWeight: 800,
+    textTransform: "uppercase", letterSpacing: "0.1em",
+    color: T.hint,
+    display: "flex", alignItems: "center", gap: 6,
+  },
+  dataRow: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: "13px 0",
+    borderBottom: `1px solid ${T.border}`,
+    transition: "background 0.15s",
+  },
+  dataLabel: { fontSize: 14, color: T.muted },
+  dataValue: { fontSize: 14, fontWeight: 700, color: T.text },
+  center: {
+    display: "flex", justifyContent: "center", alignItems: "flex-start",
+    minHeight: "70vh", padding: "32px 20px",
+  },
   narrowCard: { width: "100%", maxWidth: 520, padding: "32px 0" },
-  input: { width: "100%", height: 46, padding: "0 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.06)", color: "#fff", boxSizing: "border-box", outline: "none", fontSize: 14, WebkitTextFillColor: "#fff", opacity: 1, transition: "border-color 0.2s, background 0.2s" },
-  button: { width: "100%", marginTop: 14, padding: "14px 20px", borderRadius: 14, border: "none", background: "linear-gradient(90deg,#2563eb,#7c3aed)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer", letterSpacing: "0.01em", boxShadow: "0 4px 24px rgba(37,99,235,0.35)", transition: "filter 0.15s, transform 0.1s" },
-  topBar: { position: "fixed", top: 0, width: "100%", height: 60, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)", zIndex: 10, boxSizing: "border-box", gap: 16 },
-  smallButton: { padding: "8px 16px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 700, letterSpacing: "0.02em", transition: "background 0.2s, border-color 0.2s" },
-  loginWrapper: { height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", position: "relative", zIndex: 2 },
-  loginCard: { width: "min(400px, 92vw)", padding: "44px 32px", borderRadius: 20, background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(24px)", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" },
+  input: {
+    width: "100%", height: 46, padding: "0 14px",
+    borderRadius: 10,
+    border: `1px solid ${T.border}`,
+    background: "rgba(255,255,255,0.05)",
+    color: T.text, boxSizing: "border-box", outline: "none",
+    fontSize: 14, WebkitTextFillColor: T.text, opacity: 1,
+    transition: "border-color 0.2s, background 0.2s",
+    fontFamily: "inherit",
+  },
+  button: {
+    width: "100%", marginTop: 14, padding: "13px 20px",
+    borderRadius: 11, border: "none",
+    background: `linear-gradient(90deg,${T.blue},${T.violet})`,
+    color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer",
+    letterSpacing: "0.01em",
+    boxShadow: "0 4px 22px rgba(37,99,235,0.30)",
+    transition: "filter 0.15s, transform 0.12s",
+  },
+  topBar: {
+    position: "fixed", top: 0, width: "100%", height: 62,
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: "0 20px",
+    background: "rgba(5,8,16,0.88)",
+    backdropFilter: "blur(22px)",
+    borderBottom: `1px solid ${T.border}`,
+    zIndex: 10, boxSizing: "border-box", gap: 16,
+  },
+  smallButton: {
+    padding: "7px 15px", borderRadius: 8,
+    border: `1px solid ${T.border}`,
+    background: "rgba(255,255,255,0.06)",
+    color: T.text, cursor: "pointer",
+    fontSize: 12, fontWeight: 700, letterSpacing: "0.02em",
+    transition: "background 0.2s, border-color 0.2s",
+    fontFamily: "inherit",
+  },
+  loginWrapper: {
+    height: "100vh", display: "flex", justifyContent: "center",
+    alignItems: "center", position: "relative", zIndex: 2,
+  },
+  loginCard: {
+    width: "min(400px, 92vw)", padding: "44px 36px",
+    borderRadius: 20,
+    background: "rgba(12,16,35,0.96)",
+    border: `1px solid ${T.borderHi}`,
+    backdropFilter: "blur(28px)",
+    display: "flex", flexDirection: "column", gap: 12, alignItems: "center",
+    boxShadow: "0 32px 80px rgba(0,0,0,0.55)",
+  },
   loginLogo: { width: 120, height: 120, objectFit: "contain", marginBottom: 8 },
-  loginSlogan: { fontStyle: "italic", opacity: 0.55, fontSize: 14, textAlign: "center", marginBottom: 8 },
-  field: { display: "flex", flexDirection: "column", width: "100%", marginBottom: 18 },
-  label: { color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.07em" },
-  fieldError: { display: "flex", alignItems: "center", gap: 5, color: "rgba(239,68,68,0.9)", fontSize: 11, marginTop: 6 },
-};
-
-//#endregion
+  loginSlogan: { fontStyle: "italic", opacity: 0.45, fontSize: 14,
