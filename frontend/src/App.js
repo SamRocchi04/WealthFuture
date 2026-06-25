@@ -127,7 +127,7 @@ export default function App() {
   return savedUsers ? JSON.parse(savedUsers) : [];
 });
   const [logged, setLogged] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [, setCurrentUser] = useState(null);
   const [page, setPage] = useState("home");
   const [authPage, setAuthPage] = useState(null);
   const [history, setHistory] = useState([]);
@@ -424,6 +424,7 @@ function FeatureRow({ icon, title, desc }) {
 }
 
 // ── BAR CHART ─────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
 function BarChart() {
   const bars = [12, 22, 35, 48, 65, 80, 100];
   const labels = ["0", "5", "10", "15", "20", "25", "30a"];
@@ -999,7 +1000,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
   const [cognome, setCognome] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [fieldMessages, setFieldMessages] = useState({});
   const [visible, setVisible] = useState(false);
@@ -1141,10 +1142,12 @@ function Login({ mode, onLogin, onRegister, onBack }) {
     transform: visible ? "translateY(0px) scale(1)" : "translateY(32px) scale(0.97)",
     transition: "opacity 0.55s cubic-bezier(0.22,1,0.36,1), transform 0.55s cubic-bezier(0.22,1,0.36,1)",
   };
+  // eslint-disable-next-line no-unused-vars
   const bgAnimStyle = {
     opacity: visible ? 1 : 0,
     transition: "opacity 0.7s ease",
   };
+  // eslint-disable-next-line no-unused-vars
   const fieldAnim = (index) => ({
     opacity: visible ? 1 : 0,
     transform: visible ? "translateY(0px)" : "translateY(18px)",
@@ -1596,7 +1599,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
   const [errors, setErrors] = useState({});
 
   const limit = PLAN_LIMITS[plan].simulations;
-  const allowedLines = PLAN_LIMITS[plan].lines;
+  const _allowedLines = PLAN_LIMITS[plan].lines; // eslint-disable-line no-unused-vars
   const limitReached = history.length >= limit;
 
   function run() {
@@ -2101,8 +2104,8 @@ function Scenario({ history, setHistory, plan, setPage }) {
   const cey = result.carEndYear;
   const mm = result.monthlyMortgage ?? 0;
   const mc = result.monthlyCar ?? 0;
-  const MORTGAGE_YEARS = 25;
-  const CAR_YEARS = 5;
+  const MORTGAGE_YEARS = 25; // eslint-disable-line no-unused-vars
+  const CAR_YEARS = 5; // eslint-disable-line no-unused-vars
 
   // Calcola spese totali mensili all'anno i
   function totalExpAtYear(i) {
@@ -3041,6 +3044,7 @@ function Account({ history, plan, setPlan }) {
 //#endregion
 
 //region abbonamenti
+// eslint-disable-next-line no-unused-vars
 const handleSubscribe = async (priceId) => {
   const res = await fetch("http://localhost:8000/create-checkout-session", {
     method: "POST",
