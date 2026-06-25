@@ -1928,7 +1928,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
               {errors.carAge && <div style={styles.fieldError}><span>⚠</span> Campo obbligatorio</div>}
             </div>
           )}
-          </div>{/* chiude sezione acquisti previsti */}
+          </div>
           ) : (
             <div style={{ marginBottom: 16, padding: "14px 18px", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)", borderRadius: 12, fontSize: 13, color: "#fbbf24", fontWeight: 600, lineHeight: 1.6 }}>
               🔒 Confronto acquisti (casa, auto) disponibile dal piano <strong>Pro</strong>.
