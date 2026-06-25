@@ -1625,25 +1625,25 @@ function Scenario({ history, setHistory, plan, setPage }) {
     if (homeAge < age || homeAge > 100) { alert("L'età acquisto casa deve essere ≥ età attuale"); return; }
     if (carAge  < age || carAge  > 100) { alert("L'età acquisto auto deve essere ≥ età attuale"); return; }
 
-    // ── Crescita stipendio per settore ──────────────────────────
-    // ── Crescita stipendio per settore ──────────────────────────
+    // ── Crescita salariale REALE per settore (già al netto inflazione ~2.1%) ──
+    // Valori conservativi basati su dati ISTAT/OCSE per l'Italia
     const sectorGrowth = {
-      "IT e Software":         0.050,
-      "Banche e Finanza":      0.045,
-      "Energia":               0.040,
-      "Sanità":                0.035,
-      "Architettura e Design": 0.030,
-      "Costruzioni":           0.030,
-      "Commercio":             0.025,
-      "Logistica":             0.025,
-      "Comunicazione":         0.025,
-      "Educazione":            0.020,
-      "Arte e Cultura":        0.020,
-      "Turismo":               0.020,
-      "Agricoltura":           0.018,
-      "Altro":                 0.025,
+      "IT e Software":         0.025,
+      "Banche e Finanza":      0.020,
+      "Energia":               0.018,
+      "Sanità":                0.015,
+      "Architettura e Design": 0.012,
+      "Costruzioni":           0.012,
+      "Commercio":             0.010,
+      "Logistica":             0.010,
+      "Comunicazione":         0.010,
+      "Educazione":            0.008,
+      "Arte e Cultura":        0.008,
+      "Turismo":               0.008,
+      "Agricoltura":           0.007,
+      "Altro":                 0.010,
     };
-    const growth = sectorGrowth[data.sector] ?? 0.025;
+    const growth = sectorGrowth[data.sector] ?? 0.010;
     const INFLATION = 0.021; // inflazione media italiana storica
 
     // ── RATE MENSILI CASA E AUTO ─────────────────────────────────
@@ -1712,7 +1712,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
     // ── 4. PENSIONE PUBBLICA (sistema contributivo italiano) ─────
     // Input: stipendio netto → stima RAL lorda (inversa IRPEF semplificata)
     // Aliquota contributiva INPS: 33% della RAL
-    // Rivalutazione montante: 1.5% reale annuo (media storica PIL)
+    // Rivalutazione montante: legata alla crescita del PIL reale (~0.8% medio Italia)
     // Coefficiente di trasformazione a 67 anni: 5.7%
     // Tassazione pensione: aliquota media ~25% (IRPEF progressiva)
 
@@ -1723,28 +1723,34 @@ function Scenario({ history, setHistory, plan, setPage }) {
     // netto ≈ RAL × 0.72 (cuneo fiscale medio italiano)
     const ralLordaAnnua = (salary * 12) / 0.72;
 
-    // Simula il montante contributivo anno per anno
-    // Lo stipendio lordo cresce con il settore, il montante si rivaluta all'1.5%
+    // Crescita nominale dello stipendio = crescita reale + inflazione
+    const growthNominale = growth + INFLATION;
+
+    // Rivalutazione montante INPS: media PIL reale italiano ~0.8% (conservativa)
     const ALIQUOTA_CONTRIBUTIVA = 0.33;
-    const RIVALUTAZIONE_MONTANTE = 0.015;
+    const RIVALUTAZIONE_MONTANTE = 0.008;
     const COEFFICIENTE_TRASFORMAZIONE = 0.057;
 
     let montante = 0;
     let ralCorrente = ralLordaAnnua;
     for (let i = 0; i < yearsToRetirement; i++) {
-      ralCorrente = ralCorrente * (1 + growth);
+      ralCorrente = ralCorrente * (1 + growthNominale);
       const contributiAnno = ralCorrente * ALIQUOTA_CONTRIBUTIVA;
       montante = montante * (1 + RIVALUTAZIONE_MONTANTE) + contributiAnno;
     }
 
-    const pensioneLordaAnnua  = Math.round(montante * COEFFICIENTE_TRASFORMAZIONE);
+    // Deflaziona il montante nominale al potere d'acquisto attuale
+    const deflatore = Math.pow(1 + INFLATION, yearsToRetirement);
+    const montanteReale = montante / deflatore;
+
+    const pensioneLordaAnnua  = Math.round(montanteReale * COEFFICIENTE_TRASFORMAZIONE);
     const pensioneLordaMensile = Math.round(pensioneLordaAnnua / 13); // 13 mensilità
     // Tassazione media stimata sulla pensione (~25% per pensioni medie)
     const aliquotaTassazione = pensioneLordaAnnua > 50000 ? 0.30 : pensioneLordaAnnua > 28000 ? 0.25 : 0.20;
     const pensioneNettaMensile = Math.round(pensioneLordaMensile * (1 - aliquotaTassazione));
 
     // Alias per compatibilità con il resto del codice
-    const pension        = montante;
+    const pension        = montanteReale;
     const pensioneMensile = pensioneNettaMensile;
 
     // ── 5. COPERTURA PENSIONE ────────────────────────────────────
@@ -1753,7 +1759,11 @@ function Scenario({ history, setHistory, plan, setPage }) {
       : 0;
 
     // ── 7. ANNI AL FIRE ───────────────────────────────────────────
-    // Target FIRE = spese annue (anno 0, incluse rate se presenti) × 25
+    // Tutto in termini REALI (potere d'acquisto odierno)
+    // Rendimento reale portafoglio: ~4% (6% nominale - 2% inflazione, conservativo)
+    // Stipendio cresce solo in termini reali (già deflazionato nel growth)
+    // Spese reali: costanti in termini reali (expNow già al potere d'acquisto oggi)
+    const REAL_RETURN = 0.04;
     const targetFIRE = expNow * 12 * 25;
     let anniFIRE = null;
     if (monthlySurplus > 0) {
@@ -1761,10 +1771,10 @@ function Scenario({ history, setHistory, plan, setPage }) {
       let sal2 = salary;
       let anni = 0;
       while (cap < targetFIRE && anni < 100) {
-        sal2 = sal2 * (1 + growth);
-        const exp2 = expensesAtYear(anni, expenses);
+        sal2 = sal2 * (1 + growth); // growth è già reale
+        const exp2 = expensesAtYear(anni, expenses) / Math.pow(1 + INFLATION, anni); // spese reali
         const surplusAnno = Math.max(sal2 - exp2, 0) * 12;
-        cap = cap * 1.06 + surplusAnno;
+        cap = cap * (1 + REAL_RETURN) + surplusAnno;
         anni++;
       }
       anniFIRE = cap >= targetFIRE ? anni : null;
@@ -1781,7 +1791,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
       yearsToFinancialIndependence: anniFIRE,
       hasHome: data.hasHome, hasCar: data.hasCar,
       // Dati pensione dettagliati
-      montanteContributivo: Math.round(montante),
+      montanteContributivo: Math.round(montanteReale),
       pensioneLordaMensile,
       pensioneNettaMensile,
       ralLordaAnnua: Math.round(ralLordaAnnua),
@@ -2410,6 +2420,150 @@ function Scenario({ history, setHistory, plan, setPage }) {
         })}
       </div>
 
+      {/* ── GRAFICI ── */}
+      {(() => {
+        const maxYear = Math.min(result.yearsToRetirement || 40, 45);
+        const years = Array.from({ length: maxYear + 1 }, (_, i) => i);
+
+        // Dati per ogni anno
+        const salaryData = years.map(i => salary0 * Math.pow(1 + g, i));
+        const expData = years.map(i => totalExpAtYear(i));
+        const liquidData = years.map(i => {
+          let cap = sav0;
+          for (let j = 0; j < i; j++) {
+            const sal = salary0 * Math.pow(1 + g, j + 1);
+            const exp = totalExpAtYear(j);
+            cap += Math.max(sal - exp, 0) * 12;
+          }
+          return cap;
+        });
+
+        // Helper SVG line chart
+        function LineChart({ datasets, yLabel, colorLines, height = 180 }) {
+          const W = 560, H = height, PL = 64, PR = 16, PT = 12, PB = 36;
+          const cW = W - PL - PR, cH = H - PT - PB;
+          const allVals = datasets.flatMap(d => d);
+          const minV = Math.min(...allVals, 0);
+          const maxV = Math.max(...allVals);
+          const rangeV = maxV - minV || 1;
+          const toX = i => PL + (i / (years.length - 1)) * cW;
+          const toY = v => PT + cH - ((v - minV) / rangeV) * cH;
+
+          // Y axis ticks
+          const ticks = 4;
+          const tickVals = Array.from({ length: ticks + 1 }, (_, i) => minV + (rangeV / ticks) * i);
+
+          function makePath(data) {
+            return data.map((v, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(" ");
+          }
+          function makeArea(data, color) {
+            const p = makePath(data);
+            return `${p} L${toX(data.length - 1).toFixed(1)},${(PT + cH).toFixed(1)} L${toX(0).toFixed(1)},${(PT + cH).toFixed(1)} Z`;
+          }
+
+          // X axis labels every ~10 years
+          const xLabels = years.filter(i => i % Math.max(1, Math.floor(maxYear / 5)) === 0 || i === maxYear);
+
+          return (
+            <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
+              {/* Grid */}
+              {tickVals.map((v, i) => (
+                <g key={i}>
+                  <line x1={PL} y1={toY(v)} x2={W - PR} y2={toY(v)} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                  <text x={PL - 6} y={toY(v) + 4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">
+                    {v >= 1000 ? `€${(v / 1000).toFixed(0)}k` : `€${v.toFixed(0)}`}
+                  </text>
+                </g>
+              ))}
+              {/* X labels */}
+              {xLabels.map(i => (
+                <text key={i} x={toX(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">
+                  +{i}a
+                </text>
+              ))}
+              {/* Areas (subtle) */}
+              {datasets.map((data, di) => (
+                <path key={`area-${di}`} d={makeArea(data)} fill={colorLines[di]} opacity="0.08" />
+              ))}
+              {/* Lines */}
+              {datasets.map((data, di) => (
+                <path key={`line-${di}`} d={makePath(data)} fill="none" stroke={colorLines[di]} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              ))}
+              {/* Dots at last point */}
+              {datasets.map((data, di) => (
+                <circle key={`dot-${di}`} cx={toX(data.length - 1)} cy={toY(data[data.length - 1])} r="3.5" fill={colorLines[di]} />
+              ))}
+            </svg>
+          );
+        }
+
+        const fmt = v => v >= 1000 ? `€ ${(v / 1000).toFixed(1)}k` : `€ ${v.toFixed(0)}`;
+
+        const ChartCard = ({ title, icon, children, legend }) => (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 16, padding: "18px 20px", marginBottom: 16 }}>
+            <div style={{ display: "flex", justify: "space-between", alignItems: "center", marginBottom: 14, gap: 10, flexWrap: "wrap" }}>
+              <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.09em", color: "rgba(255,255,255,0.55)" }}>{icon} {title}</div>
+              {legend && (
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                  {legend.map((l, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "rgba(255,255,255,0.45)" }}>
+                      <div style={{ width: 18, height: 2.5, borderRadius: 99, background: l.color }} />
+                      {l.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {children}
+          </div>
+        );
+
+        return (
+          <div style={{ marginTop: 28 }}>
+            <div style={styles.sectionHeader}>
+              <span style={styles.sectionTitle}>📊 Grafici proiettivi</span>
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", marginBottom: 18 }}>
+              Proiezione su {maxYear} anni · valori in termini nominali
+            </div>
+
+            {/* 1 — Liquidità cumulata */}
+            <ChartCard title="Crescita liquidità cumulata" icon="💧" legend={[{ color: "#3b82f6", label: "Liquidità accumulata" }]}>
+              <LineChart datasets={[liquidData]} colorLines={["#3b82f6"]} />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 11, color: "rgba(255,255,255,0.38)" }}>
+                <span>Oggi: {fmt(liquidData[0])}</span>
+                <span>Tra {maxYear} anni: <strong style={{ color: "#3b82f6" }}>{fmt(liquidData[maxYear])}</strong></span>
+              </div>
+            </ChartCard>
+
+            {/* 2 — Stipendio */}
+            <ChartCard title="Crescita salariale prevista" icon="📈" legend={[{ color: "#10b981", label: "Stipendio mensile netto" }]}>
+              <LineChart datasets={[salaryData]} colorLines={["#10b981"]} height={160} />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 11, color: "rgba(255,255,255,0.38)" }}>
+                <span>Oggi: {fmt(salaryData[0])}/mese</span>
+                <span>Tra {maxYear} anni: <strong style={{ color: "#10b981" }}>{fmt(salaryData[maxYear])}/mese</strong></span>
+              </div>
+            </ChartCard>
+
+            {/* 3 — Spese */}
+            <ChartCard title="Andamento spese mensili" icon="🧾" legend={[{ color: "#f59e0b", label: "Spese base + inflazione" }, { color: "#ec4899", label: "Rate mutuo/auto" }]}>
+              {(() => {
+                const baseExp = years.map(i => expData[0] * Math.pow(1 + INFL, i));
+                return (
+                  <>
+                    <LineChart datasets={[baseExp, expData]} colorLines={["#f59e0b", "#ec4899"]} height={160} />
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 11, color: "rgba(255,255,255,0.38)" }}>
+                      <span>Oggi: {fmt(expData[0])}/mese</span>
+                      <span>Picco stimato: <strong style={{ color: "#ec4899" }}>{fmt(Math.max(...expData))}/mese</strong></span>
+                    </div>
+                  </>
+                );
+              })()}
+            </ChartCard>
+          </div>
+        );
+      })()}
+
       <div style={{ marginTop: 22, padding: "12px 16px", background: "linear-gradient(135deg,rgba(37,99,235,0.22) 0%,rgba(124,58,237,0.16) 100%)", border: "1px solid rgba(59,130,246,0.35)", borderRadius: 12, fontSize: 11, color: "rgba(248,250,252,0.60)", lineHeight: 1.8 }}>
         💡 Proiezioni basate su crescita salariale settoriale <strong style={{ color: "#3b82f6" }}>{(g * 100).toFixed(1)}%/anno</strong>, inflazione <strong style={{ color: "#7c3aed" }}>{(INFL * 100).toFixed(1)}%/anno</strong>. La liquidità cumulata è la somma dei surplus annuali. Il patrimonio investito assume un rendimento del 5%/anno. Non costituisce consulenza finanziaria.
       </div>
@@ -2580,15 +2734,63 @@ function Account({ history, plan, setPlan }) {
   const planDefs = [
     {
       id: "free", label: "Free", price: "€ 0", priceNote: "per sempre",
-      features: ["1 simulazione / mese","Orizzonte 10 anni","Solo scenario realistico","Score finanziario base","Dashboard 30 giorni","AI Coach limitato","— Pensione, PDF, Excel","— Confronto scelte di vita"],
+      color: "rgba(255,255,255,0.40)",
+      features: [
+        { label: "Simulazioni al mese", value: "1", ok: true },
+        { label: "Orizzonte temporale", value: "10 anni", ok: true },
+        { label: "Scenari di simulazione", value: "Solo realistico", ok: true },
+        { label: "Score finanziario", value: "Base", ok: true },
+        { label: "Dashboard storica", value: "30 giorni", ok: true },
+        { label: "AI Coach finanziario", value: "Limitato", ok: true },
+        { label: "Grafici proiettivi", value: "Liquidità, stipendio, spese", ok: true },
+        { label: "Simulazione pensione INPS", value: null, ok: false },
+        { label: "Scenari pessimistico/ottimistico", value: null, ok: false },
+        { label: "Confronto scelte di vita", value: null, ok: false },
+        { label: "Report PDF", value: null, ok: false },
+        { label: "Esportazione Excel", value: null, ok: false },
+        { label: "Crescita salariale attesa", value: null, ok: false },
+        { label: "Aggiornamento automatico dati", value: null, ok: false },
+      ],
     },
     {
       id: "pro", label: "Pro", price: "€ 9,99", priceNote: "/ mese", popular: true,
-      features: ["5 simulazioni / mese","Orizzonte 30 anni","Ottimistico, realistico, pessimistico","Score finanziario avanzato","Dashboard 1 anno","AI Coach completo","Simulazione pensione","Report PDF & Excel","Confronto scelte di vita"],
+      color: "#3b82f6",
+      features: [
+        { label: "Simulazioni al mese", value: "5", ok: true },
+        { label: "Orizzonte temporale", value: "30 anni", ok: true },
+        { label: "Scenari di simulazione", value: "Pessimistico, realistico, ottimistico", ok: true },
+        { label: "Score finanziario", value: "Avanzato", ok: true },
+        { label: "Dashboard storica", value: "1 anno", ok: true },
+        { label: "AI Coach finanziario", value: "Completo", ok: true },
+        { label: "Grafici proiettivi", value: "Liquidità, stipendio, spese", ok: true },
+        { label: "Simulazione pensione INPS", value: "Sistema contributivo", ok: true },
+        { label: "Scenari pessimistico/ottimistico", value: "Inclusi", ok: true },
+        { label: "Confronto scelte di vita", value: "Casa, auto, FIRE", ok: true },
+        { label: "Report PDF", value: "Download illimitati", ok: true },
+        { label: "Esportazione Excel", value: "Download illimitati", ok: true },
+        { label: "Crescita salariale attesa", value: null, ok: false },
+        { label: "Aggiornamento automatico dati", value: null, ok: false },
+      ],
     },
     {
       id: "premium", label: "Premium", price: "€ 19,99", priceNote: "/ mese",
-      features: ["20 simulazioni / mese","Orizzonte 70 anni","Ottimistico, realistico, pessimistico","Score finanziario professionale","Dashboard storica illimitata","AI Coach avanzato","Simulazione pensione","Report PDF & Excel","Confronto scelte di vita","Aggiornamento automatico dati","📈 Crescita salariale attesa"],
+      color: "#f59e0b",
+      features: [
+        { label: "Simulazioni al mese", value: "20", ok: true },
+        { label: "Orizzonte temporale", value: "70 anni", ok: true },
+        { label: "Scenari di simulazione", value: "Pessimistico, realistico, ottimistico", ok: true },
+        { label: "Score finanziario", value: "Professionale", ok: true },
+        { label: "Dashboard storica", value: "Illimitata", ok: true },
+        { label: "AI Coach finanziario", value: "Avanzato + consigli personalizzati", ok: true },
+        { label: "Grafici proiettivi", value: "Liquidità, stipendio, spese", ok: true },
+        { label: "Simulazione pensione INPS", value: "Sistema contributivo", ok: true },
+        { label: "Scenari pessimistico/ottimistico", value: "Inclusi", ok: true },
+        { label: "Confronto scelte di vita", value: "Casa, auto, FIRE", ok: true },
+        { label: "Report PDF", value: "Download illimitati", ok: true },
+        { label: "Esportazione Excel", value: "Download illimitati", ok: true },
+        { label: "Crescita salariale attesa", value: "Proiezione a 10/20/30 anni", ok: true },
+        { label: "Aggiornamento automatico dati", value: "Dati mercato in tempo reale", ok: true },
+      ],
     },
   ];
 
@@ -2620,11 +2822,11 @@ function Account({ history, plan, setPlan }) {
         <div style={styles.sectionHeader}><span style={styles.sectionTitle}>Piano attivo</span></div>
         <p style={{ opacity: 0.45, fontSize: 13, margin: "0 0 24px" }}>Scegli il piano più adatto alle tue esigenze.</p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
           {planDefs.map((p) => {
             const isActive = plan === p.id;
-            const accentColor = p.id === "premium" ? "#f59e0b" : p.id === "pro" ? "#3b82f6" : "rgba(255,255,255,0.4)";
-            const accentBg    = p.id === "premium" ? "rgba(245,158,11,0.08)" : p.id === "pro" ? "rgba(59,130,246,0.08)" : "rgba(255,255,255,0.03)";
+            const accentColor = p.color;
+            const accentBg = p.id === "premium" ? "rgba(245,158,11,0.08)" : p.id === "pro" ? "rgba(59,130,246,0.08)" : "rgba(255,255,255,0.03)";
             return (
               <div key={p.id} onClick={() => setPlan(p.id)} style={{ padding: "24px 22px", background: isActive ? accentBg : "rgba(255,255,255,0.03)", border: isActive ? `1.5px solid ${accentColor}` : "1px solid rgba(255,255,255,0.08)", cursor: "pointer", position: "relative", transition: "all 0.25s", borderRadius: 16, boxShadow: isActive ? `0 0 24px ${accentColor}22` : "none" }}
                 onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}}
@@ -2639,12 +2841,25 @@ function Account({ history, plan, setPlan }) {
                 <span style={planBadgeStyle(p.id)}>{p.label}</span>
                 <div style={{ fontSize: 26, fontWeight: 900, margin: "12px 0 2px", letterSpacing: "-0.03em", color: isActive ? accentColor : "white" }}>{p.price}</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 18 }}>{p.priceNote}</div>
-                {p.features.map((f, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, color: f.startsWith("—") ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.72)", padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <span style={{ flexShrink: 0, marginTop: 1 }}>{f.startsWith("—") ? "✗" : "✓"}</span>
-                    <span>{f.replace("—", "")}</span>
-                  </div>
-                ))}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {p.features.map((f, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 7, flex: 1, minWidth: 0 }}>
+                        <span style={{ flexShrink: 0, fontSize: 12, marginTop: 1, color: f.ok ? accentColor : "rgba(255,255,255,0.20)" }}>
+                          {f.ok ? "✓" : "✗"}
+                        </span>
+                        <span style={{ fontSize: 12, color: f.ok ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.22)", lineHeight: 1.45 }}>{f.label}</span>
+                      </div>
+                      {f.ok && f.value && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: accentColor, background: `${accentColor}18`, border: `1px solid ${accentColor}30`, padding: "2px 7px", borderRadius: 8, whiteSpace: "nowrap", flexShrink: 0, marginLeft: 4 }}>
+                          {f.value}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
                 {!isActive && (
                   <button style={{ ...styles.smallButton, marginTop: 18, width: "100%", borderColor: accentColor, color: accentColor }} onClick={(e) => { e.stopPropagation(); setPlan(p.id); }}>
                     {plan === "premium" && p.id !== "premium" ? "Passa a " + p.label : "Attiva " + p.label}
