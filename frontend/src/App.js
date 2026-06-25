@@ -102,15 +102,15 @@ const PLAN_LIMITS = {
 
 // ── DESIGN TOKENS (Landing-aligned) ─────────────────────────────
 const T = {
-  base:      "#07091a",
-  surface:   "#0c1023",
-  card:      "#111827",
-  cardHover: "#141e30",
-  border:    "rgba(255,255,255,0.07)",
-  borderHi:  "rgba(255,255,255,0.13)",
+  base:      "#080c20",
+  surface:   "#0e1428",
+  card:      "#131c30",
+  cardHover: "#182135",
+  border:    "rgba(255,255,255,0.09)",
+  borderHi:  "rgba(255,255,255,0.16)",
   blue:      "#2563eb",
-  blueDim:   "rgba(37,99,235,0.12)",
-  blueGlow:  "rgba(37,99,235,0.22)",
+  blueDim:   "rgba(37,99,235,0.15)",
+  blueGlow:  "rgba(37,99,235,0.28)",
   violet:    "#7c3aed",
   green:     "#10b981",
   amber:     "#f59e0b",
@@ -2799,12 +2799,12 @@ function Settings() {
 
 function Background({ page }) {
   const themes = {
-    home:      "radial-gradient(ellipse 70% 55% at 15% 35%, rgba(37,99,235,0.30), transparent 60%), radial-gradient(ellipse 60% 50% at 85% 70%, rgba(124,58,237,0.22), transparent 60%)",
-    dashboard: "radial-gradient(ellipse 70% 55% at 10% 20%, rgba(16,185,129,0.22), transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(6,182,212,0.18), transparent 60%)",
-    scenario:  "radial-gradient(ellipse 65% 50% at 75% 20%, rgba(245,158,11,0.22), transparent 60%), radial-gradient(ellipse 55% 50% at 20% 75%, rgba(239,68,68,0.18), transparent 60%)",
-    history:   "radial-gradient(ellipse 65% 55% at 20% 20%, rgba(99,102,241,0.24), transparent 60%), radial-gradient(ellipse 60% 50% at 75% 70%, rgba(168,85,247,0.18), transparent 60%)",
-    account:   "radial-gradient(ellipse 65% 55% at 80% 25%, rgba(234,179,8,0.22), transparent 60%), radial-gradient(ellipse 55% 50% at 20% 70%, rgba(249,115,22,0.18), transparent 60%)",
-    settings:  "radial-gradient(ellipse 60% 55% at 50% 20%, rgba(100,116,139,0.22), transparent 60%), radial-gradient(ellipse 55% 55% at 50% 80%, rgba(71,85,105,0.18), transparent 60%)",
+    home:      "radial-gradient(ellipse 75% 60% at 15% 35%, rgba(37,99,235,0.55), transparent 60%), radial-gradient(ellipse 65% 55% at 85% 70%, rgba(124,58,237,0.42), transparent 60%), radial-gradient(ellipse 50% 45% at 55% 95%, rgba(16,185,129,0.22), transparent 55%)",
+    dashboard: "radial-gradient(ellipse 75% 60% at 10% 20%, rgba(16,185,129,0.48), transparent 60%), radial-gradient(ellipse 65% 55% at 80% 80%, rgba(6,182,212,0.40), transparent 60%), radial-gradient(ellipse 45% 40% at 50% 50%, rgba(37,99,235,0.18), transparent 55%)",
+    scenario:  "radial-gradient(ellipse 70% 55% at 75% 20%, rgba(245,158,11,0.48), transparent 60%), radial-gradient(ellipse 60% 55% at 20% 75%, rgba(239,68,68,0.38), transparent 60%), radial-gradient(ellipse 50% 45% at 50% 50%, rgba(124,58,237,0.20), transparent 55%)",
+    history:   "radial-gradient(ellipse 70% 60% at 20% 20%, rgba(99,102,241,0.52), transparent 60%), radial-gradient(ellipse 65% 55% at 75% 70%, rgba(168,85,247,0.42), transparent 60%), radial-gradient(ellipse 45% 40% at 50% 50%, rgba(59,130,246,0.20), transparent 55%)",
+    account:   "radial-gradient(ellipse 70% 60% at 80% 25%, rgba(234,179,8,0.48), transparent 60%), radial-gradient(ellipse 60% 55% at 20% 70%, rgba(249,115,22,0.42), transparent 60%), radial-gradient(ellipse 45% 40% at 50% 55%, rgba(239,68,68,0.18), transparent 55%)",
+    settings:  "radial-gradient(ellipse 65% 60% at 50% 20%, rgba(100,116,139,0.50), transparent 60%), radial-gradient(ellipse 60% 55% at 50% 80%, rgba(71,85,105,0.42), transparent 60%), radial-gradient(ellipse 50% 45% at 20% 55%, rgba(37,99,235,0.22), transparent 55%)",
   };
   return <div style={{ ...styles.bg, background: themes[page] || themes.home }} />;
 }
@@ -2863,7 +2863,7 @@ function TopBar({ page, setPage }) {
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "0 20px", height: 62,
         backdropFilter: "blur(24px)",
-        background: "rgba(5,8,16,0.90)",
+        background: "rgba(8,12,32,0.82)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
         <div onClick={() => setPage("home")} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
@@ -2907,7 +2907,7 @@ function TopBar({ page, setPage }) {
         position: "fixed", top: 0,
         right: mobileMenu ? 0 : -300,
         width: 270, height: "100vh",
-        background: "linear-gradient(180deg, rgba(7,9,26,0.99), rgba(5,7,18,0.99))",
+        background: "linear-gradient(180deg, rgba(8,12,32,0.98), rgba(6,9,24,0.98))",
         borderLeft: "1px solid rgba(255,255,255,0.07)",
         backdropFilter: "blur(24px)",
         zIndex: 9999,
@@ -2976,15 +2976,15 @@ const styles = {
   app: {
     height: "100vh",
     overflow: "hidden",
-    background: T.base,
+    background: "#080c20",
     color: T.text,
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
     overflowX: "hidden",
   },
   bg: {
     position: "fixed", inset: 0,
-    filter: "blur(140px) saturate(1.2)",
-    zIndex: 0, opacity: 0.55,
+    filter: "blur(90px) saturate(1.6)",
+    zIndex: 0, opacity: 0.85,
   },
   container: {
     position: "relative", zIndex: 2,
@@ -3014,10 +3014,10 @@ const styles = {
   },
   kpiItem: {
     padding: "18px 20px",
-    background: T.card,
+    background: "rgba(255,255,255,0.05)",
     border: `1px solid ${T.border}`,
     borderRadius: 14,
-    backdropFilter: "blur(12px)",
+    backdropFilter: "blur(16px)",
     transition: "border-color 0.2s, background 0.2s",
   },
   kpiLabel: {
@@ -3072,7 +3072,7 @@ const styles = {
     position: "fixed", top: 0, width: "100%", height: 62,
     display: "flex", justifyContent: "space-between", alignItems: "center",
     padding: "0 20px",
-    background: "rgba(5,8,16,0.88)",
+    background: "rgba(8,12,32,0.82)",
     backdropFilter: "blur(22px)",
     borderBottom: `1px solid ${T.border}`,
     zIndex: 10, boxSizing: "border-box", gap: 16,
@@ -3093,11 +3093,11 @@ const styles = {
   loginCard: {
     width: "min(400px, 92vw)", padding: "44px 36px",
     borderRadius: 20,
-    background: "rgba(12,16,35,0.96)",
+    background: "rgba(14,20,40,0.95)",
     border: `1px solid ${T.borderHi}`,
     backdropFilter: "blur(28px)",
     display: "flex", flexDirection: "column", gap: 12, alignItems: "center",
-    boxShadow: "0 32px 80px rgba(0,0,0,0.55)",
+    boxShadow: "0 32px 80px rgba(0,0,0,0.45)",
   },
   loginLogo: { width: 120, height: 120, objectFit: "contain", marginBottom: 8 },
   loginSlogan: { fontStyle: "italic", opacity: 0.45, fontSize: 14, textAlign: "center", marginBottom: 8 },
