@@ -231,7 +231,7 @@ export default function App() {
         )}
         {page === "history" && (
           <PageTransition key="history">
-            <History history={history} setHistory={setHistory} />
+            <History history={history} setHistory={setHistory} plan={plan} />
           </PageTransition>
         )}
         {page === "account" && (
@@ -241,7 +241,7 @@ export default function App() {
         )}
         {page === "settings" && (
           <PageTransition key="settings">
-            <Settings />
+            <Settings plan={plan} setPage={setPage} />
           </PageTransition>
         )}
       </div>
@@ -1875,6 +1875,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
           </div>
 
           {/* ── Sezione: Acquisti previsti ── */}
+          {PLAN_LIMITS[plan].confrontoScelte ? (
           <div style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
             <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)", marginBottom: 16, marginTop: 8 }}>🏠 Acquisti previsti</div>
 
@@ -1928,6 +1929,11 @@ function Scenario({ history, setHistory, plan, setPage }) {
             </div>
           )}
           </div>{/* chiude sezione acquisti previsti */}
+          ) : (
+            <div style={{ marginBottom: 16, padding: "14px 18px", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)", borderRadius: 12, fontSize: 13, color: "#fbbf24", fontWeight: 600, lineHeight: 1.6 }}>
+              🔒 Confronto acquisti (casa, auto) disponibile dal piano <strong>Pro</strong>.
+            </div>
+          )}
 
           <div style={styles.field}>
             <label style={styles.label}>Paese di residenza</label>
@@ -2018,6 +2024,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
   </div>
 
   {/* Montante contributivo */}
+  {PLAN_LIMITS[plan].simulazionePensione ? (
   <div style={styles.kpiItem}>
     <div style={styles.kpiLabel}>Montante contributivo a 67 anni</div>
     <div style={{ ...styles.kpiValue, fontSize: 18, color: "#a78bfa" }}>
@@ -2027,8 +2034,16 @@ function Scenario({ history, setHistory, plan, setPage }) {
       sistema contributivo INPS
     </div>
   </div>
+  ) : (
+  <div style={{ ...styles.kpiItem, opacity: 0.45 }}>
+    <div style={styles.kpiLabel}>Montante contributivo a 67 anni</div>
+    <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700, marginTop: 6 }}>🔒 Piano Pro+</div>
+    <div style={{ fontSize: 10, opacity: 0.5, marginTop: 4 }}>simulazione pensione INPS</div>
+  </div>
+  )}
 
   {/* Pensione lorda mensile */}
+  {PLAN_LIMITS[plan].simulazionePensione ? (
   <div style={styles.kpiItem}>
     <div style={styles.kpiLabel}>Pensione lorda mensile</div>
     <div style={{ ...styles.kpiValue, color: "#22c55e" }}>
@@ -2038,6 +2053,13 @@ function Scenario({ history, setHistory, plan, setPage }) {
       13 mensilità · coeff. 5.7%
     </div>
   </div>
+  ) : (
+  <div style={{ ...styles.kpiItem, opacity: 0.45 }}>
+    <div style={styles.kpiLabel}>Pensione lorda mensile</div>
+    <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700, marginTop: 6 }}>🔒 Piano Pro+</div>
+    <div style={{ fontSize: 10, opacity: 0.5, marginTop: 4 }}>simulazione pensione INPS</div>
+  </div>
+  )}
 
   {/* Anni al FIRE */}
   {result.yearsToFinancialIndependence && (
@@ -2049,10 +2071,25 @@ function Scenario({ history, setHistory, plan, setPage }) {
   )}
 </div>
 
+{/* ── Selettore scenario (Pro/Premium) ── */}
+{PLAN_LIMITS[plan].scenari.length > 1 && (
+  <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+    {PLAN_LIMITS[plan].scenari.map((s) => (
+      <button key={s} onClick={() => setActiveLine(s === activeLine ? null : s)}
+        style={{ padding: "7px 16px", borderRadius: 10, border: activeLine === s ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.15)", background: activeLine === s ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.05)", color: activeLine === s ? "#93c5fd" : "rgba(255,255,255,0.55)", fontWeight: 700, fontSize: 12, cursor: "pointer", textTransform: "capitalize", transition: "all 0.2s", fontFamily: "inherit" }}>
+        {s === "pessimistico" ? "📉 Pessimistico" : s === "ottimistico" ? "📈 Ottimistico" : "📊 Realistico"}
+      </button>
+    ))}
+  </div>
+)}
+
 {/* ── Scenari temporali per orizzonte ── */}
 {(() => {
   const INFL = 0.021;
-  const g = result.growth ?? 0.025;
+  const activeScenario = activeLine || "normale";
+  const scenarioMultipliers = { pessimistico: 0.6, normale: 1.0, ottimistico: 1.4 };
+  const gBase = result.growth ?? 0.025;
+  const g = gBase * (scenarioMultipliers[activeScenario] ?? 1.0);
   const salary0 = result.salary;
   const exp0 = result.monthlyExpenses;
   const sav0 = result.savings;
@@ -2422,7 +2459,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
 
       {/* ── GRAFICI ── */}
       {(() => {
-        const maxYear = Math.min(result.yearsToRetirement || 40, 45);
+        const maxYear = Math.min(result.yearsToRetirement || 40, PLAN_LIMITS[plan].orizzonteAnni);
         const years = Array.from({ length: maxYear + 1 }, (_, i) => i);
 
         // Dati per ogni anno
@@ -2437,6 +2474,24 @@ function Scenario({ history, setHistory, plan, setPage }) {
           }
           return cap;
         });
+
+        // Multi-scenario lines for Pro/Premium
+        const allowedScenari = PLAN_LIMITS[plan].scenari;
+        const multiScenarioData = allowedScenari.length > 1 ? allowedScenari.map(sc => {
+          const scMult = { pessimistico: 0.6, normale: 1.0, ottimistico: 1.4 }[sc] ?? 1.0;
+          const scG = (result.growth ?? 0.025) * scMult;
+          return years.map(i => {
+            let cap = sav0;
+            for (let j = 0; j < i; j++) {
+              const sal = salary0 * Math.pow(1 + scG, j + 1);
+              const exp = totalExpAtYear(j);
+              cap += Math.max(sal - exp, 0) * 12;
+            }
+            return cap;
+          });
+        }) : null;
+        const scenarioLineColors = ["#f87171", "#3b82f6", "#34d399"];
+        const scenarioLineLabels = allowedScenari.length > 1 ? allowedScenari.map(s => s.charAt(0).toUpperCase() + s.slice(1)) : null;
 
         // Helper SVG line chart
         function LineChart({ datasets, yLabel, colorLines, height = 180 }) {
@@ -2528,8 +2583,13 @@ function Scenario({ history, setHistory, plan, setPage }) {
             </div>
 
             {/* 1 — Liquidità cumulata */}
-            <ChartCard title="Crescita liquidità cumulata" icon="💧" legend={[{ color: "#3b82f6", label: "Liquidità accumulata" }]}>
-              <LineChart datasets={[liquidData]} colorLines={["#3b82f6"]} />
+            <ChartCard title="Crescita liquidità cumulata" icon="💧"
+              legend={multiScenarioData
+                ? scenarioLineLabels.map((l, i) => ({ color: scenarioLineColors[i], label: l }))
+                : [{ color: "#3b82f6", label: "Liquidità accumulata" }]}>
+              <LineChart
+                datasets={multiScenarioData ?? [liquidData]}
+                colorLines={multiScenarioData ? scenarioLineColors : ["#3b82f6"]} />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 11, color: "rgba(255,255,255,0.38)" }}>
                 <span>Oggi: {fmt(liquidData[0])}</span>
                 <span>Tra {maxYear} anni: <strong style={{ color: "#3b82f6" }}>{fmt(liquidData[maxYear])}</strong></span>
@@ -2586,6 +2646,50 @@ function Scenario({ history, setHistory, plan, setPage }) {
 <button style={styles.button} onClick={() => { setResult(null); setData({}); setErrors({}); }}>
   Nuovo Scenario
 </button>
+
+{/* ── AI Coach ── */}
+<div style={{ marginTop: 24, padding: "18px 20px", background: PLAN_LIMITS[plan].aiCoach !== "limitato" ? "rgba(37,99,235,0.07)" : "rgba(255,255,255,0.03)", border: PLAN_LIMITS[plan].aiCoach !== "limitato" ? "1px solid rgba(59,130,246,0.22)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 14 }}>
+  <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.09em", color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>🤖 AI Coach finanziario</div>
+  {PLAN_LIMITS[plan].aiCoach === "limitato" && (
+    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
+      {result.savingsRate >= 20
+        ? "Buon tasso di risparmio. Considera di investire il surplus in ETF diversificati."
+        : "Il tuo tasso di risparmio è basso. Prova a ridurre le spese mensili del 10–15%."}
+      <div style={{ marginTop: 10, fontSize: 11, color: "#fbbf24", fontWeight: 600 }}>🔒 Sblocca consigli personalizzati avanzati con il piano Pro.</div>
+    </div>
+  )}
+  {PLAN_LIMITS[plan].aiCoach === "completo" && (
+    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.8 }}>
+      {result.savingsRate >= 30 ? (
+        <>💪 Eccellente: con un tasso di risparmio del <strong style={{ color: "#34d399" }}>{result.savingsRate}%</strong>, sei posizionato per raggiungere l'indipendenza finanziaria {result.yearsToFinancialIndependence ? `in ${result.yearsToFinancialIndependence} anni` : "relativamente presto"}.<br/>
+        📌 Azione consigliata: investi il surplus in un piano PAC su MSCI World + obbligazioni per ottimizzare rischio/rendimento.</>
+      ) : result.savingsRate >= 15 ? (
+        <>📈 Buon profilo, ma c'è margine. Con <strong style={{ color: "#60a5fa" }}>{result.savingsRate}%</strong> di risparmio, aumentare anche solo del 5% accelererebbe significativamente la crescita patrimoniale.<br/>
+        📌 Azione consigliata: automatizza il risparmio con un bonifico fisso mensile subito dopo lo stipendio.</>
+      ) : (
+        <>⚠️ Tasso di risparmio basso ({result.savingsRate}%). Le spese attuali lasciano poco margine per investire.<br/>
+        📌 Azione consigliata: analizza le spese mensili e identifica almeno 2–3 voci riducibili. Target minimo: 15% di risparmio.</>
+      )}
+    </div>
+  )}
+  {PLAN_LIMITS[plan].aiCoach === "avanzato" && (
+    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.8 }}>
+      {result.savingsRate >= 30 ? (
+        <>🔥 Profilo d'élite — <strong style={{ color: "#34d399" }}>{result.savingsRate}%</strong> di risparmio e score {result.health}/100. Sei candidato al FIRE entro {result.yearsToFinancialIndependence ?? "?"} anni.<br/>
+        📌 Strategia avanzata: valuta un'allocazione aggressiva (70% azionario globale, 20% obbligazionario, 10% alternativi). Considera anche un fondo pensione integrativo per ottimizzare la fiscalità.<br/>
+        🏆 Con il tuo profilo, un PAC mensile di € {Math.round(result.monthlySurplus * 0.7).toLocaleString("it-IT")} a rendimento 7%/anno porterebbe il patrimonio a € {Math.round(result.savings * Math.pow(1.07, 20) + result.monthlySurplus * 0.7 * 12 * ((Math.pow(1.07,20)-1)/0.07)).toLocaleString("it-IT")} in 20 anni.</>
+      ) : result.savingsRate >= 15 ? (
+        <>📊 Buon profilo con margine di miglioramento (<strong style={{ color: "#60a5fa" }}>{result.savingsRate}%</strong> risparmio, score {result.health}/100).<br/>
+        📌 Strategia avanzata: ottimizza il budget con la regola 50/30/20 (bisogni/desideri/risparmio). Automatizza investimenti mensili in ETF. Rivedi le spese fisse ogni 3 mesi.<br/>
+        💡 Aumentare il risparmio al 25% ridurrebbe il tempo al FIRE di circa {Math.round((result.yearsToFinancialIndependence ?? 30) * 0.25)} anni.</>
+      ) : (
+        <>🚨 Situazione critica ({result.savingsRate}% risparmio, score {result.health}/100). Intervento urgente necessario.<br/>
+        📌 Piano d'azione: 1) Elenca tutte le spese mensili per categoria 2) Taglia abbonamenti non essenziali 3) Negozia tariffe utenze 4) Punta al 10% di risparmio come primo obiettivo.<br/>
+        📞 Con questo profilo, considera una consulenza finanziaria professionale per un piano personalizzato.</>
+      )}
+    </div>
+  )}
+</div>
         </div>
       )}
     </div>
@@ -2595,8 +2699,24 @@ function Scenario({ history, setHistory, plan, setPage }) {
 
 //#region HISTORY
 
-function History({ history, setHistory }) {
+function History({ history, setHistory, plan }) {
   const [openId, setOpenId] = useState(null);
+
+  // Filtra la history in base al limite di giorni del piano
+  const dashLimit = PLAN_LIMITS[plan]?.dashboardStorica ?? 30;
+  const filteredHistory = dashLimit === 0
+    ? history // illimitata (Premium)
+    : history.filter(h => {
+        if (!h?.date) return false;
+        const parts = h.date.split("/");
+        if (parts.length !== 3) return true;
+        const [d, m, y] = parts;
+        const recordDate = new Date(Number(y), Number(m) - 1, Number(d));
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - dashLimit);
+        return recordDate >= cutoff;
+      });
+  const hiddenCount = history.length - filteredHistory.length;
 
   return (
     <div style={styles.page}>
@@ -2612,8 +2732,14 @@ function History({ history, setHistory }) {
         </div>
       )}
 
+      {hiddenCount > 0 && (
+        <div style={{ marginBottom: 16, padding: "12px 16px", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)", borderRadius: 12, fontSize: 13, color: "#fbbf24", fontWeight: 600 }}>
+          🔒 {hiddenCount} {hiddenCount === 1 ? "scenario nascosto" : "scenari nascosti"} (oltre {dashLimit} giorni). Passa al piano {plan === "free" ? "Pro" : "Premium"} per vedere tutto lo storico.
+        </div>
+      )}
+
       <div style={{ maxWidth: 680 }}>
-        {history.filter(Boolean).map((h) => {
+        {filteredHistory.filter(Boolean).map((h) => {
           if (!h) return null;
           const open = openId === h.id;
           const pension = Number(h?.pension ?? 0);
@@ -2679,14 +2805,18 @@ function History({ history, setHistory }) {
                       { label: "Capacità mutuo totale", value: `€ ${Number(h.mortgageCapacity ?? 0).toFixed(0)}` },
                       { label: "Finanziamento auto mensile", value: `€ ${Number(h.maxLoanRate ?? 0).toFixed(0)}` },
                       { label: "Capacità finanziamento auto", value: `€ ${Number(h.carLoanCapacity ?? 0).toFixed(0)}` },
-                      { label: "Capitale pensione a 67 anni", value: `€ ${pension.toFixed(0)}`, highlight: true },
-{ label: "Rendita mensile (SWR 4%)", value: `€ ${Number(h.pensioneMensile ?? 0).toLocaleString("it-IT")} / mese`, highlight: true },
+                      { label: "Capitale pensione a 67 anni", value: `€ ${pension.toFixed(0)}`, highlight: true, planRequired: "pro" },
+{ label: "Rendita mensile (SWR 4%)", value: `€ ${Number(h.pensioneMensile ?? 0).toLocaleString("it-IT")} / mese`, highlight: true, planRequired: "pro" },
                       { label: "Casa acquistabile (stima)", value: h.affordableHousePrice ? `€ ${Number(h.affordableHousePrice).toFixed(0)}` : "—" },
                       { label: "Surplus mensile", value: `€ ${Number(h.monthlySurplus ?? 0).toFixed(0)}` },
                       { label: "Tasso di risparmio", value: `${h.savingsRate ?? 0}%` },
                       { label: "Copertura pensione", value: `${h.breakEvenRetirement ?? 0}% stipendio` },
                       ...(h.yearsToFinancialIndependence ? [{ label: "Anni all'indipendenza fin.", value: `${h.yearsToFinancialIndependence} anni` }] : []),
-                    ].map(({ label, value, highlight }) => (
+                    ].filter(item => {
+                      if (!item.planRequired) return true;
+                      if (item.planRequired === "pro") return PLAN_LIMITS[plan].simulazionePensione;
+                      return true;
+                    }).map(({ label, value, highlight }) => (
                       <div key={label} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                         <div style={{ fontSize: 11, opacity: 0.4, marginBottom: 3 }}>{label}</div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: highlight ? "#22c55e" : "white" }}>{value}</div>
@@ -2920,7 +3050,7 @@ function Toggle({ defaultOn = false }) {
   );
 }
 
-function Settings() {
+function Settings({ plan, setPage }) {
   const [settingsMsg, setSettingsMsg] = useState("");
   const [resetConfirm, setResetConfirm] = useState(false);
   function showMsg(msg, duration = 2800) {
@@ -2984,6 +3114,21 @@ function Settings() {
         <div style={styles.dataRow}>
           <div><div style={{ fontWeight: 600, fontSize: 14 }}>Proiezione pensione</div><div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Calcolo a 67 anni con SWR 4%</div></div>
           <Toggle defaultOn={true} />
+        </div>
+        <div style={styles.dataRow}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
+              Aggiornamento automatico dati
+              {!PLAN_LIMITS[plan]?.aggiornamentoAutomatico && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)", padding: "2px 7px", borderRadius: 8 }}>Premium</span>
+              )}
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, marginTop: 3 }}>Dati mercato in tempo reale</div>
+          </div>
+          {PLAN_LIMITS[plan]?.aggiornamentoAutomatico
+            ? <Toggle defaultOn={true} />
+            : <button style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(245,158,11,0.35)", background: "rgba(245,158,11,0.08)", color: "#fbbf24", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }} onClick={() => setPage("account")}>Attiva →</button>
+          }
         </div>
       </div>
 
