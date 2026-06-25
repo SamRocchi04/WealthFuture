@@ -66,8 +66,8 @@ const PLAN_LIMITS = {
     simulations: 5,
     lines: ["pessimistico","normale","ottimistico"],
     label: "Pro",
-    price: "€ 9,99",
-    priceNote: "/ mese",
+    price: "€ 0",
+    priceNote: "per sempre",
     scoreFinanziario: true,
     orizzonteAnni: 30,
     scenari: ["pessimistico","normale","ottimistico"],
@@ -83,8 +83,8 @@ const PLAN_LIMITS = {
     simulations: 20,
     lines: ["pessimistico","normale","ottimistico"],
     label: "Premium",
-    price: "€ 19,99",
-    priceNote: "/ mese",
+    price: "€ 0",
+    priceNote: "per sempre",
     scoreFinanziario: true,
     orizzonteAnni: 70,
     scenari: ["pessimistico","normale","ottimistico"],
@@ -2884,7 +2884,7 @@ function Account({ history, plan, setPlan }) {
       ],
     },
     {
-      id: "pro", label: "Pro", price: "€ 9,99", priceNote: "/ mese", popular: true,
+      id: "pro", label: "Pro", price: "€ 0", priceNote: "per sempre", popular: true,
       color: "#3b82f6",
       features: [
         { label: "Simulazioni al mese", value: "5", ok: true },
@@ -2904,7 +2904,7 @@ function Account({ history, plan, setPlan }) {
       ],
     },
     {
-      id: "premium", label: "Premium", price: "€ 19,99", priceNote: "/ mese",
+      id: "premium", label: "Premium", price: "€ 0", priceNote: "per sempre",
       color: "#f59e0b",
       features: [
         { label: "Simulazioni al mese", value: "20", ok: true },
@@ -3039,6 +3039,18 @@ function Account({ history, plan, setPlan }) {
 }
 
 //#endregion
+
+//region abbonamenti
+const handleSubscribe = async (priceId) => {
+  const res = await fetch("http://localhost:8000/create-checkout-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ price_id: priceId }),
+  });
+  const data = await res.json();
+  window.location.href = data.url;  // reindirizza a Stripe Checkout
+};
+//endregion
 
 //#region SETTINGS
 
