@@ -1,14 +1,4 @@
 import { useEffect, useState } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from "recharts";
 
 if (typeof document !== "undefined") {
   let meta = document.querySelector('meta[name="viewport"]');
@@ -1719,22 +1709,6 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const health         = Math.round(Math.min(surplusScore + emergencyScore + debtScore + ageBonus, 100));
     const savingsRate    = salary > 0 ? Math.round((monthlySurplus / salary) * 100) : 0;
 
-    // ── Helper principale: simulazione anno per anno ─────────────
-    // Stipendio cresce per settore; spese base crescono con inflazione;
-    // Rate mutuo/auto si aggiungono negli anni corretti.
-    function simulate(years, annualReturn, salGrowthOverride) {
-      const g = salGrowthOverride ?? growth;
-      let sal = salary;
-      let cap = savings;
-      for (let i = 0; i < years; i++) {
-        sal = sal * (1 + g);
-        const exp = expensesAtYear(i, expenses);
-        const surplus = Math.max(sal - exp, 0);
-        cap = cap * (1 + annualReturn) + surplus * 12;
-      }
-      return Math.round(cap);
-    }
-
     // ── 4. PENSIONE PUBBLICA (sistema contributivo italiano) ─────
     // Input: stipendio netto → stima RAL lorda (inversa IRPEF semplificata)
     // Aliquota contributiva INPS: 33% della RAL
@@ -1773,18 +1747,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const pension        = montante;
     const pensioneMensile = pensioneNettaMensile;
 
-    // ── 5. PATRIMONIO NEL TEMPO (grafico) ─────────────────────────
-    // Calcola ogni 5 anni fino a 80, simulazione reale anno per anno
-    const wealthPoints = {};
-    [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80].forEach(y => {
-      wealthPoints[y] = {
-        pess: simulate(y, 0.03),
-        norm: simulate(y, 0.05),
-        real: simulate(y, 0.08),
-      };
-    });
-
-    // ── 6. COPERTURA PENSIONE ────────────────────────────────────
+    // ── 5. COPERTURA PENSIONE ────────────────────────────────────
     const breakEvenRetirement = salary > 0
       ? Math.round((pensioneMensile / salary) * 100)
       : 0;
@@ -1810,7 +1773,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const res = {
       id: Date.now(), date: new Date().toLocaleDateString(),
       age, country: data.country, sector: data.sector, salary, savings,
-      growth, health, pension, pensioneMensile, wealth: wealthPoints,
+      growth, health, pension, pensioneMensile,
       homeAge, carAge, maxMortgageRate, mortgageCapacity, affordableHousePrice,
       maxLoanRate, carLoanCapacity,
       monthlyExpenses: expenses, monthlySurplus, savingsRate,
@@ -1856,43 +1819,6 @@ function Scenario({ history, setHistory, plan, setPage }) {
       </div>
     );
   }
-
-  const orizzonteAnni = PLAN_LIMITS[plan].orizzonteAnni;
-
-  // Ricostruisce le spese mensili effettive all'anno i usando i parametri del risultato
-  function chartExpensesAtYear(i) {
-    if (!result) return 0;
-    const { monthlyExpenses, monthlyMortgage: mm, monthlyCar: mc,
-            homeStartYear: hsy, homeEndYear: hey, carStartYear: csy, carEndYear: cey,
-            growth: g } = result;
-    const INFL = 0.021;
-    let exp = (monthlyExpenses ?? 0) * Math.pow(1 + INFL, i);
-    if (hsy >= 0 && i >= hsy && i < hey) {
-      exp += (mm ?? 0) * Math.pow(1 + INFL, hsy);
-    }
-    if (csy >= 0 && i >= csy && i < cey) {
-      exp += (mc ?? 0) * Math.pow(1 + INFL, csy);
-    }
-    return exp;
-  }
-
-  function liquiditaAdAnno(years, salGrowthFactor) {
-    if (!result) return 0;
-    const g = (result.growth ?? 0.025) * salGrowthFactor;
-    const sal = (result.salary ?? 0) * Math.pow(1 + g, years);
-    const exp = chartExpensesAtYear(years);
-    return Math.round((sal - exp) * 12);
-  }
-
-  const allChartPoints = [5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80]
-    .filter(y => result?.wealth[y])
-    .map(y => ({
-      years: y,
-      pessimistico: liquiditaAdAnno(y, 0.6),
-      normale:      liquiditaAdAnno(y, 1.0),
-      ottimistico:  liquiditaAdAnno(y, 1.4),
-    }));
-  const chartData = allChartPoints.filter(p => p.years <= orizzonteAnni);
 
   return (
     <div style={styles.center}>
@@ -2081,35 +2007,27 @@ function Scenario({ history, setHistory, plan, setPage }) {
     </div>
   </div>
 
-  {/* Surplus mensile */}
+  {/* Montante contributivo */}
   <div style={styles.kpiItem}>
-    <div style={styles.kpiLabel}>Surplus mensile</div>
-    <div style={{ ...styles.kpiValue, color: result.monthlySurplus >= 0 ? "#34d399" : "#f87171" }}>
-      € {result.monthlySurplus.toLocaleString("it-IT")}
+    <div style={styles.kpiLabel}>Montante contributivo a 67 anni</div>
+    <div style={{ ...styles.kpiValue, fontSize: 18, color: "#a78bfa" }}>
+      € {result.montanteContributivo.toLocaleString("it-IT")}
     </div>
     <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>
-      {result.savingsRate ?? 0}% del reddito
+      sistema contributivo INPS
     </div>
   </div>
 
-  {!result.hasHome && result.monthlyMortgage > 0 && (
-    <div style={styles.kpiItem}>
-      <div style={styles.kpiLabel}>Rata mutuo stimata</div>
-      <div style={styles.kpiValue}>€ {result.monthlyMortgage.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
-      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>
-        da età {result.homeAge} · 25 anni
-      </div>
+  {/* Pensione lorda mensile */}
+  <div style={styles.kpiItem}>
+    <div style={styles.kpiLabel}>Pensione lorda mensile</div>
+    <div style={{ ...styles.kpiValue, color: "#22c55e" }}>
+      € {result.pensioneLordaMensile.toLocaleString("it-IT")}
     </div>
-  )}
-  {!result.hasCar && result.monthlyCar > 0 && (
-    <div style={styles.kpiItem}>
-      <div style={styles.kpiLabel}>Rata auto stimata</div>
-      <div style={styles.kpiValue}>€ {result.monthlyCar.toLocaleString("it-IT")}<span style={styles.kpiUnit}>/m</span></div>
-      <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>
-        da età {result.carAge} · 5 anni
-      </div>
+    <div style={{ fontSize: 10, opacity: 0.4, marginTop: 5 }}>
+      13 mensilità · coeff. 5.7%
     </div>
-  )}
+  </div>
 
   {/* Anni al FIRE */}
   {result.yearsToFinancialIndependence && (
@@ -2121,370 +2039,356 @@ function Scenario({ history, setHistory, plan, setPage }) {
   )}
 </div>
 
-<div style={styles.divider} />
-
-{/* ── Timeline spese ── */}
-{((!result.hasHome && result.monthlyMortgage > 0) || (!result.hasCar && result.monthlyCar > 0)) && (
-  <div style={{ marginBottom: 24 }}>
-    <div style={styles.sectionHeader}>
-      <span style={styles.sectionTitle}>📅 Timeline spese previste</span>
-    </div>
-    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginBottom: 10 }}>
-      Liquidità, FIRE e patrimonio tengono conto di queste variazioni anno per anno.
-    </div>
-    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-      {/* Spese base ora */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "right" }}>Oggi</div>
-        <div style={{ flex: 1, padding: "8px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>Spese base mensili</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>€ {result.monthlyExpenses.toLocaleString("it-IT")} / mese</span>
-          </div>
-        </div>
-      </div>
-      {/* Casa — inizio rata */}
-      {!result.hasHome && result.monthlyMortgage > 0 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#60a5fa", textAlign: "right" }}>+{result.homeStartYear}a</div>
-          <div style={{ flex: 1, padding: "8px 12px", background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.22)", borderRadius: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🏠 Acquisto casa (età {result.homeAge}) · mutuo 25 anni</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#60a5fa" }}>+€ {result.monthlyMortgage.toLocaleString("it-IT")} / mese</span>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Casa — fine rata */}
-      {!result.hasHome && result.monthlyMortgage > 0 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#34d399", textAlign: "right" }}>+{result.homeEndYear}a</div>
-          <div style={{ flex: 1, padding: "8px 12px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)", borderRadius: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🏠 Mutuo estinto (età {result.homeAge + 25})</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>−€ {result.monthlyMortgage.toLocaleString("it-IT")} / mese</span>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Auto — inizio rata */}
-      {!result.hasCar && result.monthlyCar > 0 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#fbbf24", textAlign: "right" }}>+{result.carStartYear}a</div>
-          <div style={{ flex: 1, padding: "8px 12px", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)", borderRadius: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🚗 Acquisto auto (età {result.carAge}) · finanziamento 5 anni</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>+€ {result.monthlyCar.toLocaleString("it-IT")} / mese</span>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Auto — fine rata */}
-      {!result.hasCar && result.monthlyCar > 0 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#34d399", textAlign: "right" }}>+{result.carEndYear}a</div>
-          <div style={{ flex: 1, padding: "8px 12px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)", borderRadius: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🚗 Finanziamento estinto (età {result.carAge + 5})</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>−€ {result.monthlyCar.toLocaleString("it-IT")} / mese</span>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-)}
-
-<div style={styles.divider} />
-
-{/* ── Pensione ── */}
-{PLAN_LIMITS[plan].simulazionePensione ? (
-  <div style={styles.section}>
-  <div style={styles.sectionHeader}><span style={styles.sectionTitle}>🏦 Pensione pubblica stimata (INPS)</span></div>
-  <div style={styles.dataRow}>
-    <span style={styles.dataLabel}>RAL lorda stimata attuale</span>
-    <span style={styles.dataValue}>€ {result.ralLordaAnnua.toLocaleString("it-IT")} / anno</span>
-  </div>
-  <div style={styles.dataRow}>
-    <span style={styles.dataLabel}>Anni di contribuzione stimati</span>
-    <span style={styles.dataValue}>{result.yearsToRetirement} anni</span>
-  </div>
-  <div style={styles.dataRow}>
-    <span style={styles.dataLabel}>Montante contributivo a 67 anni</span>
-    <span style={styles.dataValue}>€ {result.montanteContributivo.toLocaleString("it-IT")}</span>
-  </div>
-  <div style={styles.dataRow}>
-    <span style={styles.dataLabel}>Pensione lorda mensile (13ª inclusa)</span>
-    <span style={styles.dataValue}>€ {result.pensioneLordaMensile.toLocaleString("it-IT")} / mese</span>
-  </div>
-  <div style={styles.dataRow}>
-    <span style={styles.dataLabel}>Pensione netta mensile stimata</span>
-    <span style={{ ...styles.dataValue, color: "#22c55e", fontSize: 16 }}>
-      € {result.pensioneNettaMensile.toLocaleString("it-IT")} / mese
-    </span>
-  </div>
-  <div style={{ marginTop: 10, padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, fontSize: 11, color: "rgba(255,255,255,0.35)", lineHeight: 1.7 }}>
-    Calcolo basato sul sistema contributivo italiano (aliquota 33%, rivalutazione 1.5%/anno, coeff. trasformazione 5.7% a 67 anni). Stima semplificata a scopo educativo.
-  </div>
-</div>
-) : (
-  <div style={{ fontSize: 13, opacity: 0.4, padding: "12px 0", marginBottom: 20 }}>
-    Simulazione pensione disponibile dal piano Pro
-  </div>
-)}
-
-<div style={styles.divider} />
-
-{/* ── Sezione investimenti ── */}
+{/* ── Scenari temporali per orizzonte ── */}
 {(() => {
-  const sr = result.savingsRate ?? 0;
-  const surplus = Math.max(result.monthlySurplus, 0);
+  const INFL = 0.021;
+  const g = result.growth ?? 0.025;
+  const salary0 = result.salary;
+  const exp0 = result.monthlyExpenses;
+  const sav0 = result.savings;
+  const age0 = result.age;
+  const hsy = result.homeStartYear;  // anni dall'oggi
+  const hey = result.homeEndYear;
+  const csy = result.carStartYear;
+  const cey = result.carEndYear;
+  const mm = result.monthlyMortgage ?? 0;
+  const mc = result.monthlyCar ?? 0;
+  const MORTGAGE_YEARS = 25;
+  const CAR_YEARS = 5;
 
-  // Allocazione consigliata in base al profilo
-  let alloc;
-  if (plan === "free") {
-    alloc = [
-      { label: "Liquidità / Fondo emergenza", pct: 60, color: "#60a5fa", desc: `€ ${Math.round(surplus * 0.60).toLocaleString("it-IT")}/mese` },
-      { label: "ETF azionari globali", pct: 40, color: "#34d399", desc: `€ ${Math.round(surplus * 0.40).toLocaleString("it-IT")}/mese` },
+  // Calcola spese totali mensili all'anno i
+  function totalExpAtYear(i) {
+    let exp = exp0 * Math.pow(1 + INFL, i);
+    if (hsy >= 0 && i >= hsy && i < hey) exp += mm * Math.pow(1 + INFL, hsy);
+    if (csy >= 0 && i >= csy && i < cey) exp += mc * Math.pow(1 + INFL, csy);
+    return exp;
+  }
+
+  // Calcola liquidità cumulata fino all'anno i (non si azzera, si accumula)
+  function liquiditaCumulataAdAnno(yearN) {
+    let cap = sav0;
+    for (let i = 0; i < yearN; i++) {
+      const sal = salary0 * Math.pow(1 + g, i + 1);
+      const exp = totalExpAtYear(i);
+      const surplus = Math.max(sal - exp, 0);
+      cap = cap + surplus * 12;
+    }
+    return Math.round(cap);
+  }
+
+  // Calcola patrimonio investito cumulato (rendimento 5%/anno sul surplus investito)
+  function patrimonioCumulatoAdAnno(yearN) {
+    let cap = sav0;
+    for (let i = 0; i < yearN; i++) {
+      const sal = salary0 * Math.pow(1 + g, i + 1);
+      const exp = totalExpAtYear(i);
+      const surplus = Math.max(sal - exp, 0);
+      cap = cap * 1.05 + surplus * 12;
+    }
+    return Math.round(cap);
+  }
+
+  // Determina gli anni-chiave degli scenari in base agli eventi
+  // Ogni scenario = periodo tra due eventi che cambiano le spese mensili
+  const events = [{ year: 0, age: age0, label: "Situazione attuale", type: "start" }];
+
+  if (hsy > 0) {
+    events.push({ year: hsy, age: age0 + hsy, label: `Acquisto casa (mutuo 25 anni)`, type: "home_start" });
+  }
+  if (csy > 0) {
+    events.push({ year: csy, age: age0 + csy, label: `Acquisto auto (finanziamento 5 anni)`, type: "car_start" });
+  }
+  if (hey > 0) {
+    events.push({ year: hey, age: age0 + hey, label: `Mutuo estinto`, type: "home_end" });
+  }
+  if (cey > 0) {
+    events.push({ year: cey, age: age0 + cey, label: `Finanziamento auto estinto`, type: "car_end" });
+  }
+  // Aggiungi sempre un evento pensione
+  events.push({ year: result.yearsToRetirement, age: 67, label: `Pensione (67 anni)`, type: "pension" });
+  events.sort((a, b) => a.year - b.year);
+  // De-duplica anni uguali
+  const uniqueEvents = events.filter((e, i, arr) => i === 0 || e.year !== arr[i-1].year);
+
+  // Allocazione investimenti in base al surplus/sal ratio
+  function getAlloc(surplus, sr) {
+    if (surplus <= 0) return [];
+    if (sr >= 30) return [
+      { label: "ETF azionari globali (MSCI World)", pct: 50, color: "#34d399" },
+      { label: "ETF obbligazionari", pct: 20, color: "#60a5fa" },
+      { label: "Liquidità / Fondo emergenza", pct: 15, color: "#a78bfa" },
+      { label: "ETF tematici / Small cap", pct: 10, color: "#fbbf24" },
+      { label: "Crypto (opzionale)", pct: 5, color: "#f97316" },
     ];
-  } else if (sr >= 30) {
-    alloc = [
-      { label: "ETF azionari globali (MSCI World)", pct: 50, color: "#34d399", desc: `€ ${Math.round(surplus * 0.50).toLocaleString("it-IT")}/mese` },
-      { label: "ETF obbligazionari", pct: 20, color: "#60a5fa", desc: `€ ${Math.round(surplus * 0.20).toLocaleString("it-IT")}/mese` },
-      { label: "Liquidità / Fondo emergenza", pct: 15, color: "#a78bfa", desc: `€ ${Math.round(surplus * 0.15).toLocaleString("it-IT")}/mese` },
-      { label: "ETF tematici / Small cap", pct: 10, color: "#fbbf24", desc: `€ ${Math.round(surplus * 0.10).toLocaleString("it-IT")}/mese` },
-      { label: "Criptovalute (opzionale)", pct: 5, color: "#f97316", desc: `€ ${Math.round(surplus * 0.05).toLocaleString("it-IT")}/mese` },
+    if (sr >= 15) return [
+      { label: "ETF azionari globali (MSCI World)", pct: 40, color: "#34d399" },
+      { label: "ETF obbligazionari", pct: 25, color: "#60a5fa" },
+      { label: "Liquidità / Fondo emergenza", pct: 25, color: "#a78bfa" },
+      { label: "ETF tematici", pct: 10, color: "#fbbf24" },
     ];
-  } else if (sr >= 15) {
-    alloc = [
-      { label: "ETF azionari globali (MSCI World)", pct: 40, color: "#34d399", desc: `€ ${Math.round(surplus * 0.40).toLocaleString("it-IT")}/mese` },
-      { label: "ETF obbligazionari", pct: 25, color: "#60a5fa", desc: `€ ${Math.round(surplus * 0.25).toLocaleString("it-IT")}/mese` },
-      { label: "Liquidità / Fondo emergenza", pct: 25, color: "#a78bfa", desc: `€ ${Math.round(surplus * 0.25).toLocaleString("it-IT")}/mese` },
-      { label: "ETF tematici", pct: 10, color: "#fbbf24", desc: `€ ${Math.round(surplus * 0.10).toLocaleString("it-IT")}/mese` },
-    ];
-  } else {
-    alloc = [
-      { label: "Liquidità / Fondo emergenza", pct: 50, color: "#a78bfa", desc: `€ ${Math.round(surplus * 0.50).toLocaleString("it-IT")}/mese` },
-      { label: "ETF obbligazionari (basso rischio)", pct: 30, color: "#60a5fa", desc: `€ ${Math.round(surplus * 0.30).toLocaleString("it-IT")}/mese` },
-      { label: "ETF azionari globali", pct: 20, color: "#34d399", desc: `€ ${Math.round(surplus * 0.20).toLocaleString("it-IT")}/mese` },
+    return [
+      { label: "Liquidità / Fondo emergenza", pct: 50, color: "#a78bfa" },
+      { label: "ETF obbligazionari (basso rischio)", pct: 30, color: "#60a5fa" },
+      { label: "ETF azionari globali", pct: 20, color: "#34d399" },
     ];
   }
 
+  const scenarioColors = ["#60a5fa", "#a78bfa", "#34d399", "#fbbf24", "#f97316", "#f87171"];
+  const scenarioIcons  = ["🚀", "🏠", "🚗", "🏁", "🌅", "🏦"];
+
   return (
-    <div style={styles.section}>
+    <div style={{ marginTop: 8 }}>
       <div style={styles.sectionHeader}>
-        <span style={styles.sectionTitle}>📊 Allocazione investimenti consigliata</span>
-        {plan === "free" && <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(255,255,255,0.06)", borderRadius: 20, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>Base</span>}
+        <span style={styles.sectionTitle}>📅 Proiezione per orizzonte temporale</span>
+      </div>
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginBottom: 20, padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, lineHeight: 1.6 }}>
+        Ogni fase rappresenta un periodo della tua vita finanziaria, tenendo conto della crescita salariale ({(g * 100).toFixed(1)}%/anno), dell'inflazione ({(INFL * 100).toFixed(1)}%/anno) e degli eventi previsti. La liquidità cumulata non si azzera tra uno scenario e l'altro.
       </div>
 
-      <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, fontSize: 12, color: "rgba(255,255,255,0.40)", lineHeight: 1.6 }}>
-        Surplus mensile disponibile: <span style={{ color: "#f8fafc", fontWeight: 700 }}>€ {surplus.toLocaleString("it-IT")}</span>
-        {plan === "free" && " · Upgrade a Pro per un'analisi completa del portafoglio"}
-      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {uniqueEvents.map((ev, idx) => {
+          const nextEv = uniqueEvents[idx + 1];
+          const yearStart = ev.year;
+          const yearEnd = nextEv ? nextEv.year : ev.year;
+          const isLast = !nextEv;
+          const color = scenarioColors[idx % scenarioColors.length];
+          const icon = scenarioIcons[idx % scenarioIcons.length];
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {alloc.map((a, i) => (
-          <div key={i}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>{a.label}</span>
+          const salAtStart = Math.round(salary0 * Math.pow(1 + g, yearStart));
+          const expAtStart = Math.round(totalExpAtYear(yearStart));
+          const surplusAtStart = Math.max(salAtStart - expAtStart, 0);
+          const srAtStart = salAtStart > 0 ? Math.round((surplusAtStart / salAtStart) * 100) : 0;
+          const liquiditaStart = liquiditaCumulataAdAnno(yearStart);
+          const patrimonioStart = patrimonioCumulatoAdAnno(yearStart);
+          const liquiditaEnd = !isLast ? liquiditaCumulataAdAnno(yearEnd) : null;
+          const patrimonioEnd = !isLast ? patrimonioCumulatoAdAnno(yearEnd) : null;
+
+          // Rate attive in questo periodo
+          const mortgageActive = hsy >= 0 && yearStart >= hsy && yearStart < hey;
+          const carActive = csy >= 0 && yearStart >= csy && yearStart < cey;
+          const mortgageRataAttuale = mortgageActive ? Math.round(mm * Math.pow(1 + INFL, hsy)) : 0;
+          const carRataAttuale = carActive ? Math.round(mc * Math.pow(1 + INFL, csy)) : 0;
+
+          const alloc = getAlloc(surplusAtStart, srAtStart);
+
+          return (
+            <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${color}30`, borderRadius: 18, overflow: "hidden" }}>
+              {/* Header scenario */}
+              <div style={{ padding: "16px 20px", background: `${color}12`, borderBottom: `1px solid ${color}20`, display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}25`, border: `1px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                  {icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color, letterSpacing: "-0.01em" }}>
+                    {idx === 0 ? "Fase 1 — " : `Fase ${idx + 1} — `}{ev.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", marginTop: 2 }}>
+                    Età {ev.age}{!isLast ? ` → ${nextEv.age} anni` : "+"} · {!isLast ? `${yearEnd - yearStart} anni di durata` : "in poi"}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color }}>€ {salAtStart.toLocaleString("it-IT")}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>stipendio netto/mese</div>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.40)" }}>{a.desc}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: a.color, minWidth: 32, textAlign: "right" }}>{a.pct}%</span>
+
+              <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+                {/* Rate attive in questo periodo */}
+                {(mortgageActive || carActive) && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.30)", marginBottom: 2 }}>Rate attive</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+                      {mortgageActive && (
+                        <div style={{ padding: "10px 14px", background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.22)", borderRadius: 10 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🏠 Mutuo (finisce età {age0 + hey})</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#60a5fa" }}>€ {mortgageRataAttuale.toLocaleString("it-IT")}/mese</span>
+                          </div>
+                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginTop: 4 }}>
+                            Rimangono {Math.max(0, hey - yearStart)} anni · cap. totale € {result.mortgageCapacity.toLocaleString("it-IT")}
+                          </div>
+                        </div>
+                      )}
+                      {carActive && (
+                        <div style={{ padding: "10px 14px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.22)", borderRadius: 10 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>🚗 Finanziamento auto (finisce età {age0 + cey})</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>€ {carRataAttuale.toLocaleString("it-IT")}/mese</span>
+                          </div>
+                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginTop: 4 }}>
+                            Rimangono {Math.max(0, cey - yearStart)} anni · cap. auto € {result.carLoanCapacity.toLocaleString("it-IT")}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Prossimi finanziamenti futuri in questo periodo */}
+                {(() => {
+                  const items = [];
+                  if (hsy > yearStart && (isLast || hsy < yearEnd) && !result.hasHome) {
+                    const salAtHome = Math.round(salary0 * Math.pow(1 + g, hsy));
+                    items.push(
+                      <div key="home_future" style={{ padding: "10px 14px", background: "rgba(37,99,235,0.05)", border: "1px dashed rgba(37,99,235,0.30)", borderRadius: 10 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>🏠 Futuro acquisto casa (età {age0 + hsy})</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#60a5fa" }}>+€ {mm.toLocaleString("it-IT")}/mese</span>
+                        </div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginTop: 4 }}>
+                          Stipendio previsto: € {salAtHome.toLocaleString("it-IT")}/mese · mutuo 25 anni · casa € {result.affordableHousePrice?.toLocaleString("it-IT") ?? "—"}
+                        </div>
+                        {carActive && <div style={{ fontSize: 10, color: "#fbbf24", marginTop: 3 }}>⚠ Finanziamento auto ancora attivo all'acquisto</div>}
+                      </div>
+                    );
+                  }
+                  if (csy > yearStart && (isLast || csy < yearEnd) && !result.hasCar) {
+                    const salAtCar = Math.round(salary0 * Math.pow(1 + g, csy));
+                    items.push(
+                      <div key="car_future" style={{ padding: "10px 14px", background: "rgba(245,158,11,0.05)", border: "1px dashed rgba(245,158,11,0.30)", borderRadius: 10 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>🚗 Futuro acquisto auto (età {age0 + csy})</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>+€ {mc.toLocaleString("it-IT")}/mese</span>
+                        </div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginTop: 4 }}>
+                          Stipendio previsto: € {salAtCar.toLocaleString("it-IT")}/mese · finanziamento 5 anni · auto € {result.carLoanCapacity.toLocaleString("it-IT")}
+                          {mortgageActive && ` · mutuo ancora attivo`}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (items.length === 0) return null;
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.30)", marginBottom: 2 }}>Impegni previsti in questa fase</div>
+                      {items}
+                    </div>
+                  );
+                })()}
+
+                {/* Investimenti */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.30)", marginBottom: 10 }}>Investimenti</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 12 }}>
+                    <div style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Surplus mensile</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: surplusAtStart > 0 ? "#34d399" : "#f87171" }}>€ {surplusAtStart.toLocaleString("it-IT")}</div>
+                    </div>
+                    <div style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Tasso di risparmio</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: srAtStart >= 20 ? "#34d399" : srAtStart >= 10 ? "#fbbf24" : "#f87171" }}>{srAtStart}%</div>
+                    </div>
+                    <div style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Spese mensili totali</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "rgba(255,255,255,0.85)" }}>€ {expAtStart.toLocaleString("it-IT")}</div>
+                    </div>
+                  </div>
+
+                  {alloc.length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      {alloc.map((a, ai) => (
+                        <div key={ai}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: 2, background: a.color, flexShrink: 0 }} />
+                              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.70)" }}>{a.label}</span>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>€ {Math.round(surplusAtStart * a.pct / 100).toLocaleString("it-IT")}/mese</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: a.color, minWidth: 28, textAlign: "right" }}>{a.pct}%</span>
+                            </div>
+                          </div>
+                          <div style={{ height: 4, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", borderRadius: 99, width: `${a.pct}%`, background: a.color, opacity: 0.85 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.30)", fontStyle: "italic", padding: "8px 0" }}>
+                      Surplus non disponibile — le spese superano lo stipendio in questa fase.
+                    </div>
+                  )}
+                </div>
+
+                {/* Liquidità */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.30)", marginBottom: 10 }}>Liquidità cumulata</div>
+                  <div style={{ display: "grid", gridTemplateColumns: liquiditaEnd !== null ? "1fr 1fr" : "1fr", gap: 8 }}>
+                    <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: `1px solid ${color}25`, borderRadius: 10 }}>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Liquidità all'inizio fase (età {ev.age})</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color }}>€ {liquiditaStart.toLocaleString("it-IT")}</div>
+                    </div>
+                    {liquiditaEnd !== null && (
+                      <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: `1px solid ${color}25`, borderRadius: 10 }}>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Liquidità fine fase (età {nextEv.age})</div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: liquiditaEnd > liquiditaStart ? "#34d399" : "#f87171" }}>
+                          € {liquiditaEnd.toLocaleString("it-IT")}
+                          <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>
+                            {liquiditaEnd > liquiditaStart ? "▲" : "▼"} {Math.abs(Math.round((liquiditaEnd - liquiditaStart) / Math.max(1, liquiditaStart) * 100))}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {patrimonioEnd !== null && (
+                    <div style={{ marginTop: 8, padding: "8px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, fontSize: 11, color: "rgba(255,255,255,0.38)", display: "flex", justifyContent: "space-between" }}>
+                      <span>Patrimonio investito a fine fase (5%/anno):</span>
+                      <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.75)" }}>€ {patrimonioEnd.toLocaleString("it-IT")}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Box pensione nell'ultima fase */}
+                {ev.type === "pension" && PLAN_LIMITS[plan].simulazionePensione && (
+                  <div style={{ padding: "14px 16px", background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.22)", borderRadius: 12 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(34,197,94,0.7)", marginBottom: 10 }}>🏦 Pensione pubblica INPS</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8 }}>
+                      {[
+                        { label: "Anni contribuzione", value: `${result.yearsToRetirement} anni` },
+                        { label: "Montante contributivo", value: `€ ${result.montanteContributivo.toLocaleString("it-IT")}` },
+                        { label: "Pensione lorda mensile", value: `€ ${result.pensioneLordaMensile.toLocaleString("it-IT")}/mese`, color: "#22c55e" },
+                        { label: "Pensione netta mensile", value: `€ ${result.pensioneNettaMensile.toLocaleString("it-IT")}/mese`, color: "#22c55e" },
+                      ].map(({ label, value, color: c }) => (
+                        <div key={label} style={{ padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: 8 }}>
+                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 3 }}>{label}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: c ?? "rgba(255,255,255,0.85)" }}>{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginTop: 10, lineHeight: 1.6 }}>
+                      Calcolo sistema contributivo italiano (aliquota 33%, rivalutazione 1.5%/anno, coeff. 5.7% a 67 anni). Stima a scopo educativo.
+                    </div>
+                  </div>
+                )}
+                {ev.type === "pension" && !PLAN_LIMITS[plan].simulazionePensione && (
+                  <div style={{ fontSize: 13, opacity: 0.4, padding: "8px 0", fontStyle: "italic" }}>
+                    Simulazione pensione disponibile dal piano Pro
+                  </div>
+                )}
+
               </div>
             </div>
-            <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-              <div style={{ height: "100%", borderRadius: 99, width: `${a.pct}%`, background: a.color, opacity: 0.85, transition: `width 0.8s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.1}s` }} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {plan !== "free" && (
-        <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.18)", borderRadius: 10, fontSize: 12, color: "rgba(248,250,252,0.50)", lineHeight: 1.7 }}>
-          💡 Allocazione calcolata in base al tuo tasso di risparmio ({sr}%) e al profilo di rischio dedotto dallo score finanziario. Non costituisce consulenza finanziaria.
-        </div>
-      )}
+      <div style={{ marginTop: 20, padding: "10px 14px", background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 10, fontSize: 11, color: "rgba(248,250,252,0.40)", lineHeight: 1.7 }}>
+        💡 Proiezioni basate su crescita salariale settoriale ({(g * 100).toFixed(1)}%/anno), inflazione {(INFL * 100).toFixed(1)}%/anno. La liquidità cumulata è la somma dei surplus annuali. Il patrimonio investito assume un rendimento del 5%/anno. Non costituisce consulenza finanziaria.
+      </div>
     </div>
   );
 })()}
 
-<div style={styles.divider} />
-
-{/* ── Analisi Pro / Premium ── */}
-{plan !== "free" && (
-  <>
-    <div style={styles.section}>
-      <div style={styles.sectionHeader}>
-        <span style={styles.sectionTitle}>{plan === "premium" ? "📋 Analisi Premium" : "📋 Analisi Pro"}</span>
-      </div>
-      <div style={styles.dataRow}>
-        <span style={styles.dataLabel}>Tasso di risparmio</span>
-        <span style={styles.dataValue}>{result.savingsRate}%
-          <span style={{ fontSize: 11, opacity: 0.45, marginLeft: 6 }}>
-            {result.savingsRate >= 35 ? "· eccellente" : result.savingsRate >= 20 ? "· buono" : result.savingsRate >= 10 ? "· nella media" : "· basso"}
-          </span>
-        </span>
-      </div>
-      {PLAN_LIMITS[plan].confrontoScelte && (
-        <>
-          {!result.hasHome && (
-            <>
-              <div style={styles.dataRow}>
-                <span style={styles.dataLabel}>Casa acquistabile (stima)</span>
-                <span style={styles.dataValue}>€ {result.affordableHousePrice?.toLocaleString("it-IT") ?? "—"}</span>
-              </div>
-              <div style={styles.dataRow}>
-                <span style={styles.dataLabel}>Mutuo erogabile totale</span>
-                <span style={styles.dataValue}>€ {result.mortgageCapacity.toLocaleString("it-IT")}</span>
-              </div>
-            </>
-          )}
-          {!result.hasCar && (
-            <div style={styles.dataRow}>
-              <span style={styles.dataLabel}>Auto finanziabile (totale)</span>
-              <span style={styles.dataValue}>€ {result.carLoanCapacity.toLocaleString("it-IT")}</span>
-            </div>
-          )}
-        </>
-      )}
-      {!result.yearsToFinancialIndependence && (
-        <div style={styles.dataRow}>
-          <span style={styles.dataLabel}>Anni all'indipendenza finanziaria (FIRE)</span>
-          <span style={{ ...styles.dataValue, opacity: 0.4 }}>Non raggiungibile con risparmio attuale</span>
-        </div>
-      )}
-    </div>
-  </>
-)}
-
-<div style={styles.divider} />
-
-<div style={styles.divider} />
-
-{/* ── Crescita salariale (solo Premium) ── */}
-{plan === "premium" && result.salaryProjections && (
-  <div style={styles.section}>
-    <div style={styles.sectionHeader}>
-      <span style={styles.sectionTitle}>📈 Crescita salariale attesa</span>
-      <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 20, color: "#fcd34d", marginLeft: 6 }}>Premium</span>
-    </div>
-    <div style={{ marginBottom: 12, padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, fontSize: 12, color: "rgba(255,255,255,0.40)", lineHeight: 1.6 }}>
-      Proiezione basata su crescita settoriale <span style={{ color: "#f8fafc", fontWeight: 700 }}>{result.salaryProjections.growthPct}%/anno</span> — {result.sector} · {result.country}
-    </div>
-    <div style={styles.dataRow}>
-      <span style={styles.dataLabel}>Stipendio attuale (netto/mese)</span>
-      <span style={styles.dataValue}>€ {result.salary.toLocaleString("it-IT")}</span>
-    </div>
-    <div style={styles.dataRow}>
-      <span style={styles.dataLabel}>Tra 10 anni (stima netto/mese)</span>
-      <span style={{ ...styles.dataValue, color: "#60a5fa" }}>
-        € {result.salaryProjections.y10.toLocaleString("it-IT")}
-        <span style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>+{Math.round((result.salaryProjections.y10 / result.salary - 1) * 100)}%</span>
-      </span>
-    </div>
-    <div style={styles.dataRow}>
-      <span style={styles.dataLabel}>Tra 20 anni (stima netto/mese)</span>
-      <span style={{ ...styles.dataValue, color: "#a78bfa" }}>
-        € {result.salaryProjections.y20.toLocaleString("it-IT")}
-        <span style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>+{Math.round((result.salaryProjections.y20 / result.salary - 1) * 100)}%</span>
-      </span>
-    </div>
-    <div style={styles.dataRow}>
-      <span style={styles.dataLabel}>Tra 30 anni (stima netto/mese)</span>
-      <span style={{ ...styles.dataValue, color: "#34d399" }}>
-        € {result.salaryProjections.y30.toLocaleString("it-IT")}
-        <span style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>+{Math.round((result.salaryProjections.y30 / result.salary - 1) * 100)}%</span>
-      </span>
-    </div>
-    <div style={{ marginTop: 12 }}>
-      {[
-        { label: "Oggi", val: result.salary, color: "rgba(255,255,255,0.5)" },
-        { label: "+10a", val: result.salaryProjections.y10, color: "#60a5fa" },
-        { label: "+20a", val: result.salaryProjections.y20, color: "#a78bfa" },
-        { label: "+30a", val: result.salaryProjections.y30, color: "#34d399" },
-      ].map((bar, i) => {
-        const maxVal = result.salaryProjections.y30;
-        const pct = Math.round((bar.val / maxVal) * 100);
-        return (
-          <div key={i} style={{ marginBottom: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{bar.label}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: bar.color }}>€ {bar.val.toLocaleString("it-IT")}</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: bar.color, transition: `width 0.9s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.12}s` }} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-)}
-
-<div style={styles.divider} />
-
-
-{/* ── Grafico liquidità stimata ── */}
-<div style={{ marginBottom: 20 }}>
-  <div style={styles.sectionHeader}>
-    <span style={styles.sectionTitle}>💧 Liquidità annua stimata</span>
-    <span style={{ fontSize: 12, opacity: 0.4 }}>fino a {orizzonteAnni} anni dall'oggi</span>
-  </div>
-  <div style={{ marginBottom: 8, padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, fontSize: 11, color: "rgba(255,255,255,0.35)", lineHeight: 1.6 }}>
-    Liquidità = (stipendio annuo − spese annue) proiettati nel tempo. Lo stipendio cresce per settore, le spese crescono con l'inflazione.
-  </div>
-  {plan === "free" && (
-    <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 8 }}>
-      Scenari pessimistico e ottimistico disponibili dal piano Pro
-    </div>
-  )}
-  <div style={{ width: "100%", height: 320 }}>
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-        <XAxis dataKey="years" type="number" domain={[5, orizzonteAnni]}
-          ticks={allChartPoints.filter(p => p.years <= orizzonteAnni).map(p => p.years)}
-          label={{ value: "Anni dall'oggi", position: "insideBottom", offset: -10 }}
-          stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-        <YAxis
-          tickFormatter={(v) => new Intl.NumberFormat("it-IT", { notation: "compact", maximumFractionDigits: 1 }).format(v)}
-          stroke="rgba(255,255,255,0.3)" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-        <Tooltip content={({ active, payload, label }) => {
-          if (!active || !payload || payload.length === 0) return null;
-          const item = payload.find((p) => p.dataKey === activeLine) || payload[0];
-          if (!item) return null;
-          return (
-            <div style={{ background: "rgba(10,10,20,0.95)", border: "1px solid rgba(255,255,255,0.1)", padding: "10px 14px", borderRadius: 10, color: "white" }}>
-              <div style={{ color: item.stroke, fontWeight: 700, marginBottom: 4, fontSize: 12 }}>{item.dataKey}</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>€ {Number(item.value).toLocaleString("it-IT")} / anno</div>
-              <div style={{ opacity: 0.45, marginTop: 4, fontSize: 11 }}>+{label} anni dall'oggi</div>
-            </div>
-          );
-        }} />
-        <Legend verticalAlign="bottom" height={40} wrapperStyle={{ paddingTop: 25 }} />
-        {allowedLines.includes("pessimistico") && (
-          <Line type="monotone" dataKey="pessimistico" stroke="#f87171" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#f87171" }} onMouseEnter={() => setActiveLine("pessimistico")} />
-        )}
-        <Line type="monotone" dataKey="normale" stroke="#60a5fa" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#60a5fa" }} onMouseEnter={() => setActiveLine("normale")} />
-        {allowedLines.includes("ottimistico") && (
-          <Line type="monotone" dataKey="ottimistico" stroke="#34d399" strokeWidth={2.5} dot={false} activeDot={{ r: 7, fill: "#34d399" }} onMouseEnter={() => setActiveLine("ottimistico")} />
-        )}
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
-</div>
-
 {(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
-  <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+  <div style={{ display: "flex", gap: 10, margin: "20px 0 12px" }}>
     {PLAN_LIMITS[plan].reportPdf   && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
     {PLAN_LIMITS[plan].exportExcel && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
   </div>
 )}
 {plan === "free" && (
-  <div style={{ fontSize: 12, opacity: 0.35, marginBottom: 12 }}>
+  <div style={{ fontSize: 12, opacity: 0.35, margin: "20px 0 12px" }}>
     Report PDF ed Esportazione Excel disponibili dal piano Pro
   </div>
 )}
@@ -2652,60 +2556,6 @@ function Account({ history, plan, setPlan }) {
     },
   ];
 
-  // Output dinamici da mostrare nei box piano, calcolati dall'ultimo scenario
-  function getPlanOutputs(planId) {
-    if (!last) return null;
-    const salary = last.salary ?? 0;
-    const expenses = last.monthlyExpenses ?? 0;
-    const surplus = Math.max(salary - expenses, 0);
-    const growth = last.growth ?? 0.025;
-    const INFL = 0.021;
-
-    if (planId === "free") {
-      // Mostra solo dati 10 anni, scenario normale
-      const sal10 = salary * Math.pow(1 + growth, 10);
-      const exp10 = expenses * Math.pow(1 + INFL, 10);
-      const liq10 = Math.round((sal10 - exp10) * 12);
-      return [
-        { label: "Score finanziario", value: `${last.health}/100`, color: last.health >= 70 ? "#34d399" : last.health >= 40 ? "#fbbf24" : "#f87171" },
-        { label: "Surplus mensile attuale", value: `€ ${surplus.toLocaleString("it-IT")} / mese` },
-        { label: "Liquidità annua a +10 anni", value: `€ ${liq10.toLocaleString("it-IT")} / anno`, color: "#60a5fa" },
-      ];
-    }
-
-    if (planId === "pro") {
-      const sal10 = salary * Math.pow(1 + growth, 10);
-      const exp10 = expenses * Math.pow(1 + INFL, 10);
-      const liq10 = Math.round((sal10 - exp10) * 12);
-      const sal30 = salary * Math.pow(1 + growth, 30);
-      const exp30 = expenses * Math.pow(1 + INFL, 30);
-      const liq30 = Math.round((sal30 - exp30) * 12);
-      return [
-        { label: "Pensione netta stimata", value: `€ ${(last.pensioneNettaMensile ?? 0).toLocaleString("it-IT")} / mese`, color: "#22c55e" },
-        { label: "Liquidità annua a +10 anni", value: `€ ${liq10.toLocaleString("it-IT")} / anno`, color: "#60a5fa" },
-        { label: "Liquidità annua a +30 anni", value: `€ ${liq30.toLocaleString("it-IT")} / anno`, color: "#34d399" },
-        { label: "FIRE in", value: last.yearsToFinancialIndependence ? `${last.yearsToFinancialIndependence} anni` : "Non raggiungibile" },
-      ];
-    }
-
-    if (planId === "premium") {
-      const sal10 = Math.round(salary * Math.pow(1 + growth, 10));
-      const sal20 = Math.round(salary * Math.pow(1 + growth, 20));
-      const sal30 = Math.round(salary * Math.pow(1 + growth, 30));
-      const exp70 = expenses * Math.pow(1 + INFL, 70);
-      const sal70 = salary * Math.pow(1 + growth, 70);
-      const liq70 = Math.round((sal70 - exp70) * 12);
-      return [
-        { label: "Stipendio tra 10 anni", value: `€ ${sal10.toLocaleString("it-IT")} / mese`, color: "#60a5fa" },
-        { label: "Stipendio tra 20 anni", value: `€ ${sal20.toLocaleString("it-IT")} / mese`, color: "#a78bfa" },
-        { label: "Stipendio tra 30 anni", value: `€ ${sal30.toLocaleString("it-IT")} / mese`, color: "#34d399" },
-        { label: "Liquidità annua a +70 anni", value: liq70 > 0 ? `€ ${liq70.toLocaleString("it-IT")} / anno` : "n.d.", color: "#fbbf24" },
-        { label: "Pensione netta stimata", value: `€ ${(last.pensioneNettaMensile ?? 0).toLocaleString("it-IT")} / mese`, color: "#22c55e" },
-      ];
-    }
-    return null;
-  }
-
   return (
     <div style={styles.page}>
       {accountMsg && (
@@ -2759,25 +2609,6 @@ function Account({ history, plan, setPlan }) {
                     <span>{f.replace("—", "")}</span>
                   </div>
                 ))}
-                {/* Output dinamici basati sull'ultimo scenario */}
-                {getPlanOutputs(p.id) && (
-                  <div style={{ marginTop: 14, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.30)", marginBottom: 8 }}>
-                      Output dal tuo scenario
-                    </div>
-                    {getPlanOutputs(p.id).map((out, oi) => (
-                      <div key={oi} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: oi < getPlanOutputs(p.id).length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.42)" }}>{out.label}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: out.color ?? "rgba(255,255,255,0.85)" }}>{out.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {!last && (
-                  <div style={{ marginTop: 14, padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 10, fontSize: 11, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
-                    Crea uno scenario per vedere i tuoi output
-                  </div>
-                )}
                 {!isActive && (
                   <button style={{ ...styles.smallButton, marginTop: 18, width: "100%", borderColor: accentColor, color: accentColor }} onClick={(e) => { e.stopPropagation(); setPlan(p.id); }}>
                     {plan === "premium" && p.id !== "premium" ? "Passa a " + p.label : "Attiva " + p.label}
