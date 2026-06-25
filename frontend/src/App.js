@@ -1602,10 +1602,11 @@ function Scenario({ history, setHistory, plan, setPage }) {
   function run() {
     const newErrors = {};
     if (!data.age) newErrors.age = true;
-    if (data.hasHome === undefined) newErrors.hasHome = true;
-    if (data.hasHome === false && !data.homeAge) newErrors.homeAge = true;
-    if (data.hasCar === undefined) newErrors.hasCar = true;
-    if (data.hasCar === false && !data.carAge) newErrors.carAge = true;
+    const hasConfronto = PLAN_LIMITS[plan].confrontoScelte;
+    if (hasConfronto && data.hasHome === undefined) newErrors.hasHome = true;
+    if (hasConfronto && data.hasHome === false && !data.homeAge) newErrors.homeAge = true;
+    if (hasConfronto && data.hasCar === undefined) newErrors.hasCar = true;
+    if (hasConfronto && data.hasCar === false && !data.carAge) newErrors.carAge = true;
     if (!data.salary) newErrors.salary = true;
     if (!data.savings) newErrors.savings = true;
     if (!data.sector) newErrors.sector = true;
@@ -1618,12 +1619,12 @@ function Scenario({ history, setHistory, plan, setPage }) {
     const savings  = Number(data.savings);
     const age      = Number(data.age);
     const expenses = Number(data.expenses);
-    const homeAge  = data.hasHome ? age : Number(data.homeAge);
-    const carAge   = data.hasCar  ? age : Number(data.carAge);
+    const homeAge  = !hasConfronto || data.hasHome ? age : Number(data.homeAge);
+    const carAge   = !hasConfronto || data.hasCar  ? age : Number(data.carAge);
 
     if (age < 16 || age > 100)          { alert("Età non valida"); return; }
-    if (homeAge < age || homeAge > 100) { alert("L'età acquisto casa deve essere ≥ età attuale"); return; }
-    if (carAge  < age || carAge  > 100) { alert("L'età acquisto auto deve essere ≥ età attuale"); return; }
+    if (hasConfronto && (homeAge < age || homeAge > 100)) { alert("L'età acquisto casa deve essere ≥ età attuale"); return; }
+    if (hasConfronto && (carAge  < age || carAge  > 100)) { alert("L'età acquisto auto deve essere ≥ età attuale"); return; }
 
     // ── Crescita salariale REALE per settore (già al netto inflazione ~2.1%) ──
     // Valori conservativi basati su dati ISTAT/OCSE per l'Italia
