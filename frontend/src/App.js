@@ -2846,8 +2846,6 @@ function History({ history, setHistory, plan }) {
         {filteredHistory.filter(Boolean).map((h) => {
           if (!h) return null;
           const open = openId === h.id;
-          const pension = Number(h?.pension ?? 0);
-          const mortgage = Number(h?.maxMortgageRate ?? 0);
           const health = Number(h?.health ?? 0);
           const healthColor = health >= 70 ? "#34d399" : health >= 40 ? "#f59e0b" : "#f87171";
 
@@ -2894,12 +2892,6 @@ function History({ history, setHistory, plan }) {
                     <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>{label}</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: color || "white", letterSpacing: "-0.02em" }}>{value}</div>
                     {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>{sub}</div>}
-                  </div>
-                );
-                const Row = ({ label, value, color }) => (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: color || "white" }}>{value}</span>
                   </div>
                 );
                 return (
