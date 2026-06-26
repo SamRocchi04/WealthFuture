@@ -7,7 +7,9 @@ if (typeof document !== "undefined") {
     meta.name = "viewport";
     document.head.appendChild(meta);
   }
-  meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+  // ✅ FIX: rimosso user-scalable=no e maximum-scale=1.0 — violazione WCAG 1.4.4
+  // Gli utenti devono poter zoomare liberamente su mobile
+  meta.content = "width=device-width, initial-scale=1.0";
 }
 
 function PageTransition({ children }) {
@@ -28,6 +30,22 @@ function PageTransition({ children }) {
       {children}
     </div>
   );
+}
+
+// ✅ FIX: hash password con Web Crypto API (SHA-256) — mai salvare password in chiaro
+async function hashPassword(password) {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ✅ FIX: validazione email e password
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+function isValidPassword(password) {
+  return password.length >= 8;
 }
 
 //#region DATA
@@ -115,8 +133,8 @@ const T = {
   green:     "#10b981",
   amber:     "#f59e0b",
   text:      "#f8fafc",
-  muted:     "rgba(248,250,252,0.50)",
-  hint:      "rgba(248,250,252,0.28)",
+  muted:     "rgba(248,250,252,0.70)", // ✅ FIX contrasto WCAG: era 0.50
+  hint:      "rgba(248,250,252,0.55)", // ✅ FIX contrasto WCAG: era 0.28
 };
 
 //#region APP
@@ -126,14 +144,24 @@ export default function App() {
   const savedUsers = localStorage.getItem("wealthfuture_users");
   return savedUsers ? JSON.parse(savedUsers) : [];
 });
-  const [logged, setLogged] = useState(false);
-  const [, setCurrentUser] = useState(null);
+  // ✅ FIX: sessione persistente — sopravvive al refresh della pagina
+  const [logged, setLogged] = useState(() => !!localStorage.getItem("wealthfuture_session"));
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem("wealthfuture_session");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [page, setPage] = useState("home");
   const [authPage, setAuthPage] = useState(null);
   const [history, setHistory] = useState([]);
   const [plan, setPlan] = useState("free");
   const [selectedNews, setSelectedNews] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  // ✅ FIX: sistema toast globale
+  const [toast, setToast] = useState(null);
+  const showToast = (msg, type = "info", duration = 3000) => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), duration);
+  };
   const openModal = (item) => { setSelectedNews(item); setTimeout(() => setModalVisible(true), 10); };
   const closeModal = () => { setModalVisible(false); setTimeout(() => setSelectedNews(null), 300); };
   useEffect(() => {
@@ -143,32 +171,59 @@ export default function App() {
   );
 }, [users]);
 
-  function handleRegister({ nome, cognome, email, password }) {
+  // ✅ FIX: registrazione con hash password e validazione
+  async function handleRegister({ nome, cognome, email, password }) {
     const emailNorm = email.trim().toLowerCase();
+    if (!isValidEmail(emailNorm)) {
+      return { ok: false, error: "Inserisci un indirizzo email valido." };
+    }
+    if (!isValidPassword(password)) {
+      return { ok: false, error: "La password deve essere di almeno 8 caratteri." };
+    }
     if (users.find(u => u.email === emailNorm)) {
       return { ok: false, error: "Questa email è associata ad un altro account." };
     }
-    const newUser = { nome, cognome, email: emailNorm, password };
+    const hashed = await hashPassword(password);
+    const newUser = { nome, cognome, email: emailNorm, password: hashed };
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
+    // ✅ FIX: salva sessione in localStorage
+    localStorage.setItem("wealthfuture_session", JSON.stringify(newUser));
     setLogged(true);
     setPage("home");
+    showToast(`Benvenuto, ${nome}! 🎉`, "success");
     return { ok: true };
   }
 
-  function handleLogin({ email, password }) {
+  // ✅ FIX: login con hash password e validazione
+  async function handleLogin({ email, password }) {
     const emailNorm = email.trim().toLowerCase();
+    if (!isValidEmail(emailNorm)) {
+      return { ok: false, error: "Inserisci un indirizzo email valido." };
+    }
     const found = users.find(u => u.email === emailNorm);
     if (!found) {
       return { ok: false, error: "Non esiste un account associato a questa email." };
     }
-    if (found.password !== password) {
+    const hashed = await hashPassword(password);
+    if (found.password !== hashed) {
       return { ok: false, error: "Password errata." };
     }
     setCurrentUser(found);
+    // ✅ FIX: salva sessione in localStorage
+    localStorage.setItem("wealthfuture_session", JSON.stringify(found));
     setLogged(true);
     setPage("home");
+    showToast(`Bentornato, ${found.nome}! 👋`, "success");
     return { ok: true };
+  }
+
+  // ✅ FIX: logout pulisce la sessione
+  function handleLogout() {
+    localStorage.removeItem("wealthfuture_session");
+    setCurrentUser(null);
+    setLogged(false);
+    setPage("home");
   }
 
   if (!logged) {
@@ -210,8 +265,24 @@ export default function App() {
           -moz-appearance: textfield;
         }
       `}</style>
+
+      {/* ✅ FIX: Sistema Toast globale */}
+      {toast && (
+        <div role="alert" aria-live="polite" style={{
+          position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
+          background: toast.type === "success" ? "rgba(16,185,129,0.95)" : toast.type === "error" ? "rgba(239,68,68,0.95)" : "rgba(30,30,50,0.97)",
+          border: "1px solid rgba(255,255,255,0.15)", color: "white",
+          padding: "12px 24px", borderRadius: 14, fontSize: 14, fontWeight: 600,
+          zIndex: 999999, boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          backdropFilter: "blur(12px)", whiteSpace: "nowrap",
+          animation: "fadeInUp 0.3s ease",
+        }}>
+          {toast.msg}
+        </div>
+      )}
+
       <Background page={page} />
-      <TopBar page={page} setPage={setPage} />
+      <TopBar page={page} setPage={setPage} currentUser={currentUser} onLogout={handleLogout} />
 
       <div style={styles.container}>
         {page === "home" && (
@@ -249,7 +320,12 @@ export default function App() {
       {/* Modal montato FUORI dal container scrollabile per evitare lo stacking context */}
       {selectedNews && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={selectedNews.title}
           onClick={closeModal}
+          onKeyDown={(e) => { if (e.key === "Escape") closeModal(); }}
+          tabIndex={-1}
           style={{
             position: "fixed",
             inset: 0,
@@ -321,8 +397,8 @@ const C = {
   greenDim: "rgba(16,185,129,0.12)",
   amber:    "#f59e0b",
   text:     "#f8fafc",
-  muted:    "rgba(248,250,252,0.45)",
-  hint:     "rgba(248,250,252,0.25)",
+  muted:    "rgba(248,250,252,0.70)", // ✅ FIX contrasto WCAG: era 0.45
+  hint:     "rgba(248,250,252,0.55)", // ✅ FIX contrasto WCAG: era 0.25
 };
 
 // ── SPARKLINE ─────────────────────────────────────────────────
@@ -659,6 +735,14 @@ const GlobalStyles = () => (
     }
     @keyframes pulse {
       0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
     .wf-card-hover:hover {
       border-color: rgba(255,255,255,0.13) !important;
@@ -1326,23 +1410,17 @@ function Login({ mode, onLogin, onRegister, onBack }) {
             </button>
 
             {/* Switch + back */}
-            <div style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+            <div style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
               {isRegister ? "Hai già un account? " : "Non hai un account? "}
-              <span onClick={onBack} style={{ color: "#3b82f6", fontWeight: 600, cursor: "pointer" }}>
+              <button onClick={onBack} style={{ color: "#3b82f6", fontWeight: 600, cursor: "pointer", background: "none", border: "none", fontSize: 13, fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
                 {isRegister ? "Accedi" : "Registrati gratis"}
-              </span>
+              </button>
             </div>
 
           </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes fadeInDown {
-          from { opacity: 0; transform: translateY(-8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
@@ -1443,9 +1521,10 @@ function Home({ setPage, openModal }) {
   </div>
   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
     {news.map((item, i) => (
-      <div
+      <button
         key={i}
         onClick={() => openModal(item)}
+        aria-label={`Leggi notizia: ${item.title}`}
         style={{
           padding: "22px 20px",
           background: "rgba(12,16,35,0.80)",
@@ -1454,6 +1533,10 @@ function Home({ setPage, openModal }) {
           transition: "background 0.2s, border-color 0.2s, transform 0.2s",
           cursor: "pointer",
           backdropFilter: "blur(10px)",
+          textAlign: "left",
+          width: "100%",
+          fontFamily: "inherit",
+          color: "inherit",
         }}
         onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,30,60,0.90)"; e.currentTarget.style.borderColor = "rgba(37,99,235,0.30)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
         onMouseLeave={e => { e.currentTarget.style.background = "rgba(12,16,35,0.80)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.transform = "translateY(0)"; }}
@@ -1462,7 +1545,7 @@ function Home({ setPage, openModal }) {
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: "#f8fafc", lineHeight: 1.45 }}>{item.title}</div>
         <div style={{ fontSize: 13, color: "rgba(248,250,252,0.45)", lineHeight: 1.7 }}>{item.desc}</div>
         <div style={{ marginTop: 14, fontSize: 12, color: "#60a5fa", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>Leggi di più <span style={{ fontSize: 14 }}>→</span></div>
-      </div>
+      </button>
     ))}
   </div>
 </div>
@@ -3166,7 +3249,7 @@ function Account({ history, plan, setPlan }) {
             const accentColor = p.color;
             const accentBg = p.id === "premium" ? "rgba(245,158,11,0.08)" : p.id === "pro" ? "rgba(59,130,246,0.08)" : "rgba(255,255,255,0.03)";
             return (
-              <div key={p.id} onClick={() => setPlan(p.id)} style={{ padding: "24px 22px", background: isActive ? accentBg : "rgba(255,255,255,0.03)", border: isActive ? `1.5px solid ${accentColor}` : "1px solid rgba(255,255,255,0.08)", cursor: "pointer", position: "relative", transition: "all 0.25s", borderRadius: 16, boxShadow: isActive ? `0 0 24px ${accentColor}22` : "none" }}
+              <button key={p.id} onClick={() => setPlan(p.id)} aria-pressed={isActive} style={{ padding: "24px 22px", background: isActive ? accentBg : "rgba(255,255,255,0.03)", border: isActive ? `1.5px solid ${accentColor}` : "1px solid rgba(255,255,255,0.08)", cursor: "pointer", position: "relative", transition: "all 0.25s", borderRadius: 16, boxShadow: isActive ? `0 0 24px ${accentColor}22` : "none", textAlign: "left", fontFamily: "inherit", color: "inherit", width: "100%" }}
                 onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}}
                 onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}}
               >
@@ -3203,7 +3286,7 @@ function Account({ history, plan, setPlan }) {
                   </button>
                 )}
                 {isActive && <div style={{ marginTop: 18, fontSize: 13, color: accentColor, fontWeight: 700 }}>✓ Piano attivo</div>}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -3392,7 +3475,7 @@ function Background({ page }) {
 //#endregion
 
 //#region TOPBAR
-function TopBar({ page, setPage }) {
+function TopBar({ page, setPage, currentUser, onLogout }) {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -3415,24 +3498,26 @@ function TopBar({ page, setPage }) {
   const NavItem = ({ id, label }) => {
     const isActive = page === id;
     return (
-      <div
+      <button
         onClick={() => setPage(id)}
+        aria-current={isActive ? "page" : undefined}
         style={{
           display: "flex", alignItems: "center",
           padding: "6px 13px", cursor: "pointer", position: "relative",
           borderRadius: 8,
-          color: isActive ? "#f8fafc" : "rgba(248,250,252,0.45)",
+          color: isActive ? "#f8fafc" : "rgba(248,250,252,0.55)",
           fontWeight: isActive ? 600 : 400,
           fontSize: 13, whiteSpace: "nowrap",
           background: isActive ? "rgba(37,99,235,0.12)" : "transparent",
           border: isActive ? "1px solid rgba(37,99,235,0.25)" : "1px solid transparent",
           transition: "all .2s ease",
+          fontFamily: "inherit",
         }}
         onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = "rgba(248,250,252,0.8)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}}
-        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = "rgba(248,250,252,0.45)"; e.currentTarget.style.background = "transparent"; }}}
+        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = "rgba(248,250,252,0.55)"; e.currentTarget.style.background = "transparent"; }}}
       >
         {label}
-      </div>
+      </button>
     );
   };
 
@@ -3446,7 +3531,7 @@ function TopBar({ page, setPage }) {
         background: "rgba(8,12,32,0.82)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
-        <div onClick={() => setPage("home")} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
+        <button onClick={() => setPage("home")} aria-label="Torna alla home" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0, background: "none", border: "none", padding: 0 }}>
           <div style={{
             width: 30, height: 30, borderRadius: 8,
             background: "linear-gradient(135deg,#2563eb,#7c3aed)",
@@ -3459,7 +3544,7 @@ function TopBar({ page, setPage }) {
             background: "linear-gradient(90deg,#60a5fa,#a78bfa)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
           }}>WealthFuture</span>
-        </div>
+        </button>
 
         {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -3468,22 +3553,30 @@ function TopBar({ page, setPage }) {
         )}
 
         {isMobile && (
-          <div
+          <button
             onClick={() => setMobileMenu(!mobileMenu)}
-            style={{ cursor: "pointer", padding: "8px", userSelect: "none", display: "flex", flexDirection: "column", gap: 5, borderRadius: 8, background: mobileMenu ? "rgba(255,255,255,0.08)" : "transparent", transition: "background 0.2s" }}
+            aria-expanded={mobileMenu}
+            aria-label={mobileMenu ? "Chiudi menu" : "Apri menu"}
+            aria-controls="mobile-drawer"
+            style={{ cursor: "pointer", padding: "8px", userSelect: "none", display: "flex", flexDirection: "column", gap: 5, borderRadius: 8, background: mobileMenu ? "rgba(255,255,255,0.08)" : "transparent", transition: "background 0.2s", border: "none" }}
           >
             <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", transition: "transform 0.25s, opacity 0.25s", transform: mobileMenu ? "translateY(6.5px) rotate(45deg)" : "none" }} />
             <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", opacity: mobileMenu ? 0 : 1, transition: "opacity 0.2s" }} />
             <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", transition: "transform 0.25s, opacity 0.25s", transform: mobileMenu ? "translateY(-6.5px) rotate(-45deg)" : "none" }} />
-          </div>
+          </button>
         )}
       </div>
 
       {/* Overlay */}
-      <div onClick={() => setMobileMenu(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", zIndex: 9998, opacity: mobileMenu ? 1 : 0, visibility: mobileMenu ? "visible" : "hidden", transition: "opacity .3s ease, visibility .3s ease" }} />
+      <div role="presentation" onClick={() => setMobileMenu(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", zIndex: 9998, opacity: mobileMenu ? 1 : 0, visibility: mobileMenu ? "visible" : "hidden", transition: "opacity .3s ease, visibility .3s ease" }} />
 
       {/* Drawer */}
-      <div style={{
+      <div
+        id="mobile-drawer"
+        role="navigation"
+        aria-label="Menu principale"
+        aria-hidden={!mobileMenu}
+        style={{
         position: "fixed", top: 0,
         right: mobileMenu ? 0 : -300,
         width: 270, height: "100vh",
@@ -3494,33 +3587,56 @@ function TopBar({ page, setPage }) {
         opacity: mobileMenu ? 1 : 0,
         transform: mobileMenu ? "translateX(0)" : "translateX(24px)",
         transition: "right .35s cubic-bezier(.4,0,.2,1), opacity .3s ease, transform .3s ease",
+        display: "flex", flexDirection: "column",
         paddingTop: 72,
+        overflowY: "auto",
       }}>
         <div style={{ padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 8 }}>
-          <div style={{ fontSize: 10, opacity: 0.35, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 4 }}>Navigazione</div>
+          <div style={{ fontSize: 10, opacity: 0.45, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 4 }}>Navigazione</div>
           <div style={{ fontWeight: 800, fontSize: 17, color: "white" }}>WealthFuture</div>
+          {currentUser && (
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.50)", marginTop: 4 }}>
+              {currentUser.nome} {currentUser.cognome}
+            </div>
+          )}
         </div>
 
-        {menuItems.map(([id, label], index) => (
-          <div
-            key={id}
-            onClick={() => { setPage(id); setMobileMenu(false); }}
-            style={{
-              padding: "13px 20px", margin: "3px 10px", cursor: "pointer",
-              borderRadius: 10,
-              color: page === id ? "#f8fafc" : "rgba(248,250,252,0.55)",
-              fontWeight: page === id ? 600 : 400,
-              fontSize: 14,
-              background: page === id ? "rgba(37,99,235,0.12)" : "transparent",
-              border: page === id ? "1px solid rgba(37,99,235,0.22)" : "1px solid transparent",
-              transition: `all .25s ease ${index * 0.04}s`,
-            }}
-          >
-            {label}
-          </div>
-        ))}
+        <div style={{ flex: 1 }}>
+          {menuItems.map(([id, label], index) => (
+            <button
+              key={id}
+              onClick={() => { setPage(id); setMobileMenu(false); }}
+              aria-current={page === id ? "page" : undefined}
+              style={{
+                display: "block", width: "100%", textAlign: "left",
+                padding: "13px 20px", margin: "3px 10px", cursor: "pointer",
+                borderRadius: 10,
+                color: page === id ? "#f8fafc" : "rgba(248,250,252,0.65)",
+                fontWeight: page === id ? 600 : 400,
+                fontSize: 14,
+                background: page === id ? "rgba(37,99,235,0.12)" : "transparent",
+                border: page === id ? "1px solid rgba(37,99,235,0.22)" : "1px solid transparent",
+                transition: `all .25s ease ${index * 0.04}s`,
+                fontFamily: "inherit",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        <div style={{ position: "absolute", bottom: 36, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        {currentUser && (
+          <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <button
+              onClick={() => { onLogout(); setMobileMenu(false); }}
+              style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "rgba(248,100,100,0.9)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              Esci
+            </button>
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "24px 0 32px" }}>
           <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#2563eb,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontSize: 16, fontWeight: 900, color: "white" }}>W</span>
           </div>
