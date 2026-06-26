@@ -2644,8 +2644,101 @@ function Scenario({ history, setHistory, plan, setPage }) {
 
 {(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
   <div style={{ display: "flex", gap: 10, margin: "20px 0 12px" }}>
-    {PLAN_LIMITS[plan].reportPdf   && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
-    {PLAN_LIMITS[plan].exportExcel && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
+    {PLAN_LIMITS[plan].reportPdf && (
+      <button style={{ ...styles.smallButton, padding: "8px 16px" }} onClick={() => {
+        const r = result;
+        const printWindow = window.open("", "_blank");
+        printWindow.document.write(`<!DOCTYPE html><html><head>
+          <meta charset="utf-8">
+          <title>WealthFuture — Scenario ${r.country} · ${r.sector}</title>
+          <style>
+            body { font-family: Arial, sans-serif; font-size: 13px; color: #111; margin: 36px; }
+            h1 { font-size: 22px; margin-bottom: 4px; }
+            h2 { font-size: 15px; margin: 24px 0 10px; color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: 4px; }
+            .sub { color: #555; margin-bottom: 24px; font-size: 12px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+            th { background: #1e3a5f; color: white; padding: 8px 12px; text-align: left; font-size: 12px; }
+            td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
+            td.val { font-weight: 700; text-align: right; }
+            tr:nth-child(even) td { background: #f9fafb; }
+            .note { font-size: 11px; color: #777; margin-top: 20px; line-height: 1.7; }
+            @media print { body { margin: 16px; } }
+          </style>
+        </head><body>
+          <h1>WealthFuture — Report Scenario Finanziario</h1>
+          <p class="sub">Piano: ${PLAN_LIMITS[plan]?.label} · Generato il: ${new Date().toLocaleDateString("it-IT")}</p>
+          <h2>Dati Inseriti</h2>
+          <table><tbody>
+            <tr><td>Paese</td><td class="val">${r.country}</td></tr>
+            <tr><td>Settore</td><td class="val">${r.sector}</td></tr>
+            <tr><td>Età</td><td class="val">${r.age} anni</td></tr>
+            <tr><td>Stipendio netto mensile</td><td class="val">€ ${Number(r.salary).toLocaleString("it-IT")}</td></tr>
+            <tr><td>Risparmi attuali</td><td class="val">€ ${Number(r.savings).toLocaleString("it-IT")}</td></tr>
+            <tr><td>Spese mensili</td><td class="val">€ ${Number(r.monthlyExpenses).toLocaleString("it-IT")}</td></tr>
+          </tbody></table>
+          <h2>Score Finanziario</h2>
+          <table><tbody>
+            <tr><td>Score</td><td class="val">${r.health}/100</td></tr>
+            <tr><td>Surplus mensile</td><td class="val">€ ${Number(r.monthlySurplus).toLocaleString("it-IT")}</td></tr>
+            <tr><td>Tasso di risparmio</td><td class="val">${r.savingsRate}%</td></tr>
+            ${r.yearsToFinancialIndependence ? `<tr><td>Anni all'indipendenza finanziaria</td><td class="val">${r.yearsToFinancialIndependence} anni</td></tr>` : ""}
+          </tbody></table>
+          <h2>Immobile & Auto</h2>
+          <table><tbody>
+            <tr><td>Rata mutuo max mensile</td><td class="val">€ ${Number(r.maxMortgageRate).toLocaleString("it-IT")}</td></tr>
+            <tr><td>Capacità mutuo totale</td><td class="val">€ ${Number(r.mortgageCapacity).toLocaleString("it-IT")}</td></tr>
+            <tr><td>Casa acquistabile (stima)</td><td class="val">€ ${Number(r.affordableHousePrice).toLocaleString("it-IT")}</td></tr>
+            <tr><td>Rata auto max mensile</td><td class="val">€ ${Number(r.maxLoanRate).toLocaleString("it-IT")}</td></tr>
+            <tr><td>Capacità finanziamento auto</td><td class="val">€ ${Number(r.carLoanCapacity).toLocaleString("it-IT")}</td></tr>
+          </tbody></table>
+          ${PLAN_LIMITS[plan].simulazionePensione ? `
+          <h2>Simulazione Pensione</h2>
+          <table><tbody>
+            <tr><td>Anni al pensionamento (67 anni)</td><td class="val">${r.yearsToRetirement} anni</td></tr>
+            <tr><td>Capitale pensione (valore attuale)</td><td class="val">€ ${Number(r.pension).toLocaleString("it-IT")}</td></tr>
+            <tr><td>Rendita mensile netta (SWR 4%)</td><td class="val">€ ${Number(r.pensioneMensile).toLocaleString("it-IT")} / mese</td></tr>
+            <tr><td>Copertura pensione</td><td class="val">${r.breakEvenRetirement}% dello stipendio attuale</td></tr>
+          </tbody></table>` : ""}
+          <p class="note">⚠️ Le proiezioni si basano su crescita salariale settoriale, inflazione media italiana (2.1%) e rendimento investimenti 5%/anno. Non costituiscono consulenza finanziaria.</p>
+        </body></html>`);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => { printWindow.print(); }, 400);
+      }}>Scarica PDF</button>
+    )}
+    {PLAN_LIMITS[plan].exportExcel && (
+      <button style={{ ...styles.smallButton, padding: "8px 16px" }} onClick={() => {
+        const r = result;
+        const headers = ["Campo","Valore"];
+        const rows = [
+          ["Data",r.date],["Paese",r.country],["Settore",r.sector],["Età",r.age],
+          ["Stipendio netto mensile (€)",r.salary],["Risparmi attuali (€)",r.savings],
+          ["Spese mensili (€)",r.monthlyExpenses],["Surplus mensile (€)",Number(r.monthlySurplus).toFixed(0)],
+          ["Tasso di risparmio (%)",r.savingsRate],["Score finanziario",r.health],
+          ["Rata mutuo max (€)",r.maxMortgageRate],["Capacità mutuo (€)",r.mortgageCapacity],
+          ["Casa acquistabile (€)",r.affordableHousePrice],["Rata auto max (€)",r.maxLoanRate],
+          ["Capacità finanziamento auto (€)",r.carLoanCapacity],
+          ...(PLAN_LIMITS[plan].simulazionePensione ? [
+            ["Anni al pensionamento",r.yearsToRetirement],
+            ["Capitale pensione (€)",Number(r.pension).toFixed(0)],
+            ["Rendita mensile netta (€)",r.pensioneMensile],
+            ["Copertura pensione (%)",r.breakEvenRetirement],
+          ] : []),
+          ...(r.yearsToFinancialIndependence ? [["Anni all'indipendenza fin.",r.yearsToFinancialIndependence]] : []),
+        ];
+        const bom = "\uFEFF";
+        const csv = bom + [headers, ...rows].map(row => row.join(";")).join("\r\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `wealthfuture_scenario_${r.country}_${r.sector}_${new Date().toISOString().slice(0,10)}.csv`.replace(/\s+/g,"_");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }}>Esporta Excel</button>
+    )}
   </div>
 )}
 {plan === "free" && (
@@ -2787,55 +2880,90 @@ function History({ history, setHistory, plan }) {
                 </div>
               </div>
 
-              {open && (
-                <div style={{ marginTop: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.4, marginBottom: 10 }}>Dati inseriti</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0 32px", marginBottom: 20 }}>
-                    {[
-                      { label: "Età", value: `${h.age} anni` },
-                      { label: "Paese", value: h.country },
-                      { label: "Settore", value: h.sector },
-                      { label: "Stipendio netto mensile", value: `€ ${Number(h.salary).toLocaleString("it-IT")}` },
-                      { label: "Risparmi attuali", value: `€ ${Number(h.savings).toLocaleString("it-IT")}` },
-                      { label: "Spese mensili", value: `€ ${Number(h.monthlyExpenses ?? 0).toLocaleString("it-IT")}` },
-                      { label: "Età acquisto casa", value: `${h.homeAge} anni` },
-                      { label: "Età acquisto auto", value: `${h.carAge} anni` },
-                    ].map(({ label, value }) => (
-                      <div key={label} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ fontSize: 11, opacity: 0.4, marginBottom: 3 }}>{label}</div>
-                        <div style={{ fontSize: 14, fontWeight: 600 }}>{value}</div>
-                      </div>
-                    ))}
+              {open && (() => {
+                const hc = healthColor;
+                const SectionHeader = ({ icon, label, color }) => (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "20px 0 10px" }}>
+                    <span style={{ fontSize: 14 }}>{icon}</span>
+                    <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: color || "rgba(255,255,255,0.35)" }}>{label}</span>
+                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)", marginLeft: 4 }} />
                   </div>
+                );
+                const KpiCard = ({ label, value, color, sub }) => (
+                  <div style={{ padding: "14px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>{label}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: color || "white", letterSpacing: "-0.02em" }}>{value}</div>
+                    {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>{sub}</div>}
+                  </div>
+                );
+                const Row = ({ label, value, color }) => (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: color || "white" }}>{value}</span>
+                  </div>
+                );
+                return (
+                  <div style={{ marginTop: 4 }}>
 
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.4, marginBottom: 10 }}>Risultati</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0 32px" }}>
-                    {[
-                      { label: "Score finanziario", value: `${health}/100` },
-                      { label: "Mutuo max mensile", value: `€ ${mortgage.toFixed(0)}` },
-                      { label: "Capacità mutuo totale", value: `€ ${Number(h.mortgageCapacity ?? 0).toFixed(0)}` },
-                      { label: "Finanziamento auto mensile", value: `€ ${Number(h.maxLoanRate ?? 0).toFixed(0)}` },
-                      { label: "Capacità finanziamento auto", value: `€ ${Number(h.carLoanCapacity ?? 0).toFixed(0)}` },
-                      { label: "Capitale pensione a 67 anni", value: `€ ${pension.toFixed(0)}`, highlight: true, planRequired: "pro" },
-{ label: "Rendita mensile (SWR 4%)", value: `€ ${Number(h.pensioneMensile ?? 0).toLocaleString("it-IT")} / mese`, highlight: true, planRequired: "pro" },
-                      { label: "Casa acquistabile (stima)", value: h.affordableHousePrice ? `€ ${Number(h.affordableHousePrice).toFixed(0)}` : "—" },
-                      { label: "Surplus mensile", value: `€ ${Number(h.monthlySurplus ?? 0).toFixed(0)}` },
-                      { label: "Tasso di risparmio", value: `${h.savingsRate ?? 0}%` },
-                      { label: "Copertura pensione", value: `${h.breakEvenRetirement ?? 0}% stipendio` },
-                      ...(h.yearsToFinancialIndependence ? [{ label: "Anni all'indipendenza fin.", value: `${h.yearsToFinancialIndependence} anni` }] : []),
-                    ].filter(item => {
-                      if (!item.planRequired) return true;
-                      if (item.planRequired === "pro") return PLAN_LIMITS[plan].simulazionePensione;
-                      return true;
-                    }).map(({ label, value, highlight }) => (
-                      <div key={label} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ fontSize: 11, opacity: 0.4, marginBottom: 3 }}>{label}</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: highlight ? "#22c55e" : "white" }}>{value}</div>
+                    {/* ── PROFILO ── */}
+                    <SectionHeader icon="👤" label="Profilo" />
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
+                      <KpiCard label="Età" value={`${h.age} anni`} />
+                      <KpiCard label="Paese" value={h.country || "—"} />
+                      <KpiCard label="Settore" value={h.sector || "—"} />
+                      <KpiCard label="Stipendio netto" value={`€ ${Number(h.salary).toLocaleString("it-IT")}`} sub="mensile" />
+                      <KpiCard label="Risparmi" value={`€ ${Number(h.savings).toLocaleString("it-IT")}`} sub="attuali" />
+                      <KpiCard label="Spese" value={`€ ${Number(h.monthlyExpenses ?? 0).toLocaleString("it-IT")}`} sub="mensili" />
+                    </div>
+
+                    {/* ── SCORE FINANZIARIO ── */}
+                    <SectionHeader icon="📊" label="Score Finanziario" color={hc} />
+                    <div style={{ padding: "14px 16px", background: `${hc}10`, border: `1px solid ${hc}25`, borderRadius: 12, marginBottom: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Score finanziario</span>
+                        <span style={{ fontSize: 26, fontWeight: 900, color: hc }}>{health}<span style={{ fontSize: 14, fontWeight: 500, opacity: 0.5 }}>/100</span></span>
                       </div>
-                    ))}
+                      <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${health}%`, background: `linear-gradient(90deg, ${hc}, ${hc}99)`, borderRadius: 99, transition: "width 0.6s ease" }} />
+                      </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      <KpiCard label="Surplus mensile" value={`€ ${Number(h.monthlySurplus ?? 0).toLocaleString("it-IT")}`} color={Number(h.monthlySurplus) >= 0 ? "#34d399" : "#f87171"} />
+                      <KpiCard label="Tasso di risparmio" value={`${h.savingsRate ?? 0}%`} color={(h.savingsRate ?? 0) >= 20 ? "#34d399" : (h.savingsRate ?? 0) >= 10 ? "#f59e0b" : "#f87171"} />
+                      {h.yearsToFinancialIndependence && (
+                        <KpiCard label="Anni all'indip. fin." value={`${h.yearsToFinancialIndependence} anni`} color="#a78bfa" />
+                      )}
+                    </div>
+
+                    {/* ── IMMOBILE & AUTO ── */}
+                    <SectionHeader icon="🏠" label="Immobile & Auto" color="#60a5fa" />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                      <KpiCard label="Rata mutuo max" value={`€ ${Number(h.maxMortgageRate ?? 0).toLocaleString("it-IT")}`} sub="mensile" color="#60a5fa" />
+                      <KpiCard label="Capacità mutuo" value={`€ ${Number(h.mortgageCapacity ?? 0).toLocaleString("it-IT")}`} color="#60a5fa" />
+                      <KpiCard label="Casa acquistabile" value={h.affordableHousePrice ? `€ ${Number(h.affordableHousePrice).toLocaleString("it-IT")}` : "—"} color="#60a5fa" />
+                      <KpiCard label="Età acquisto casa" value={`${h.homeAge} anni`} />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      <KpiCard label="Rata auto max" value={`€ ${Number(h.maxLoanRate ?? 0).toLocaleString("it-IT")}`} sub="mensile" color="#818cf8" />
+                      <KpiCard label="Capacità finanziamento" value={`€ ${Number(h.carLoanCapacity ?? 0).toLocaleString("it-IT")}`} color="#818cf8" />
+                    </div>
+
+                    {/* ── PENSIONE ── */}
+                    {PLAN_LIMITS[plan].simulazionePensione && (
+                      <>
+                        <SectionHeader icon="🏦" label="Simulazione Pensione" color="#34d399" />
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
+                          <KpiCard label="Capitale a 67 anni" value={`€ ${Number(h.pension ?? 0).toLocaleString("it-IT")}`} color="#34d399" />
+                          <KpiCard label="Rendita mensile netta" value={`€ ${Number(h.pensioneMensile ?? 0).toLocaleString("it-IT")}`} sub="SWR 4%" color="#34d399" />
+                          <KpiCard label="Anni al pensionamento" value={`${h.yearsToRetirement ?? "—"} anni`} />
+                          <KpiCard label="Copertura pensione" value={`${h.breakEvenRetirement ?? 0}%`} sub="dello stipendio" color={(h.breakEvenRetirement ?? 0) >= 70 ? "#34d399" : "#f59e0b"} />
+                        </div>
+                      </>
+                    )}
+
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           );
         })}
@@ -3057,8 +3185,7 @@ function Account({ history, plan, setPlan }) {
                   <div style={{ position: "absolute", top: 14, right: 14, width: 20, height: 20, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#000" }}>✓</div>
                 )}
                 <span style={planBadgeStyle(p.id)}>{p.label}</span>
-                <div style={{ fontSize: 26, fontWeight: 900, margin: "12px 0 2px", letterSpacing: "-0.03em", color: isActive ? accentColor : "white" }}>{p.price}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 18 }}>{p.priceNote}</div>
+                <div style={{ marginBottom: 18 }} />
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {p.features.map((f, i) => (
