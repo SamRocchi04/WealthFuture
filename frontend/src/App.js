@@ -1196,8 +1196,15 @@ function Login({ mode, onLogin, onRegister, onBack }) {
           : "radial-gradient(circle at 30% 40%, rgba(15,118,110,0.85), transparent 60%), radial-gradient(circle at 75% 65%, rgba(30,58,138,0.75), transparent 55%)"
       }} />
 
-      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 2, padding: "20px" }}>
-        <div style={{
+      <style>{`
+        @media (max-width: 600px) {
+          .wf-login-left { display: none !important; }
+          .wf-login-card { flex-direction: column !important; min-height: unset !important; width: 100% !important; max-width: 420px !important; }
+          .wf-login-right { padding: 32px 22px !important; }
+        }
+      `}</style>
+      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 2, padding: "16px", overflowY: "auto" }}>
+        <div className="wf-login-card" style={{
           ...cardAnimStyle,
           display: "flex", width: "min(860px, 100%)", minHeight: 520,
           borderRadius: 24, overflow: "hidden",
@@ -1206,7 +1213,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
         }}>
 
           {/* ── LEFT PANEL ── */}
-          <div style={{
+          <div className="wf-login-left" style={{
             flex: "0 0 320px",
             background: isRegister
               ? "linear-gradient(145deg,rgba(37,99,235,0.25),rgba(124,58,237,0.3))"
@@ -1246,7 +1253,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
           </div>
 
           {/* ── RIGHT PANEL (form) ── */}
-          <div style={{ flex: 1, background: "rgba(10,12,22,0.95)", backdropFilter: "blur(30px)", padding: "44px 36px", display: "flex", flexDirection: "column", justifyContent: "center", overflowY: "auto" }}>
+          <div className="wf-login-right" style={{ flex: 1, background: "rgba(10,12,22,0.95)", backdropFilter: "blur(30px)", padding: "44px 36px", display: "flex", flexDirection: "column", justifyContent: "center", overflowY: "auto" }}>
 
             {/* Header */}
             <div style={{ marginBottom: 24 }}>
@@ -2855,11 +2862,88 @@ function Account({ history, plan, setPlan }) {
   }
   function handleExportPDF() {
     if (!PLAN_LIMITS[plan].reportPdf) return;
-    showMsg("📄 Export PDF avviato — funzionalità in arrivo.");
+    if (history.length === 0) { showMsg("⚠️ Nessuno scenario da esportare."); return; }
+
+    const printWindow = window.open("", "_blank");
+    const rows = history.map(h => `
+      <tr>
+        <td>${h.date || "—"}</td>
+        <td>${h.country || "—"}</td>
+        <td>${h.sector || "—"}</td>
+        <td>${h.age || "—"}</td>
+        <td>€ ${Number(h.salary || 0).toLocaleString("it-IT")}</td>
+        <td>€ ${Number(h.savings || 0).toLocaleString("it-IT")}</td>
+        <td>€ ${Number(h.monthlyExpenses || 0).toLocaleString("it-IT")}</td>
+        <td>${h.health || 0}/100</td>
+        <td>€ ${Number(h.pension || 0).toLocaleString("it-IT")}</td>
+        <td>${h.savingsRate || 0}%</td>
+      </tr>`).join("");
+
+    printWindow.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="utf-8">
+      <title>WealthFuture — Report Scenari</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #111; margin: 32px; }
+        h1 { font-size: 20px; margin-bottom: 4px; }
+        p.sub { color: #555; margin-bottom: 20px; font-size: 11px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #1e3a5f; color: white; padding: 8px 10px; text-align: left; font-size: 11px; }
+        td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+        tr:nth-child(even) td { background: #f9fafb; }
+        @media print { body { margin: 16px; } }
+      </style>
+    </head><body>
+      <h1>WealthFuture — Report Scenari Finanziari</h1>
+      <p class="sub">Piano: ${PLAN_LIMITS[plan]?.label || plan} · Generato il: ${new Date().toLocaleDateString("it-IT")}</p>
+      <table>
+        <thead><tr>
+          <th>Data</th><th>Paese</th><th>Settore</th><th>Età</th>
+          <th>Stipendio</th><th>Risparmi</th><th>Spese/mese</th>
+          <th>Score</th><th>Cap. Pensione</th><th>Tasso Risp.</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 400);
+    showMsg("📄 Finestra di stampa/PDF aperta.");
   }
+
   function handleExportExcel() {
     if (!PLAN_LIMITS[plan].exportExcel) return;
-    showMsg("📊 Export Excel avviato — funzionalità in arrivo.");
+    if (history.length === 0) { showMsg("⚠️ Nessuno scenario da esportare."); return; }
+
+    const headers = ["Data","Paese","Settore","Età","Stipendio (€)","Risparmi (€)","Spese mensili (€)","Score finanziario","Cap. Pensione (€)","Tasso risparmio (%)","Surplus mensile (€)","Anni ind. fin."];
+    const csvRows = [
+      headers.join(";"),
+      ...history.map(h => [
+        h.date || "",
+        h.country || "",
+        h.sector || "",
+        h.age || "",
+        Number(h.salary || 0).toFixed(0),
+        Number(h.savings || 0).toFixed(0),
+        Number(h.monthlyExpenses || 0).toFixed(0),
+        h.health || 0,
+        Number(h.pension || 0).toFixed(0),
+        h.savingsRate || 0,
+        Number(h.monthlySurplus || 0).toFixed(0),
+        h.yearsToFinancialIndependence || "",
+      ].join(";"))
+    ];
+    const bom = "\uFEFF";
+    const csvContent = bom + csvRows.join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `wealthfuture_scenari_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showMsg("📊 File Excel (CSV) scaricato.");
   }
   function handleGestisci() {
     showMsg("🔒 Gestione sicurezza account — funzionalità in arrivo.");
