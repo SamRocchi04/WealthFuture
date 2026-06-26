@@ -254,19 +254,8 @@ export default function App() {
   }
 
   return (
-    <div style={styles.app}>
-      <style>{`
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        input[type="number"] {
-          -moz-appearance: textfield;
-        }
-      `}</style>
-
-      {/* ✅ FIX: Sistema Toast globale */}
+    <>
+      {/* ✅ FIX: Toast globale montato FUORI dal div con overflow:hidden — sempre visibile */}
       {toast && (
         <div role="alert" aria-live="polite" style={{
           position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
@@ -280,6 +269,22 @@ export default function App() {
           {toast.msg}
         </div>
       )}
+
+    <div style={styles.app}>
+      <style>{`
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
 
       <Background page={page} />
       <TopBar page={page} setPage={setPage} currentUser={currentUser} onLogout={handleLogout} />
@@ -307,12 +312,12 @@ export default function App() {
         )}
         {page === "account" && (
           <PageTransition key="account">
-            <Account history={history} plan={plan} setPlan={setPlan} />
+            <Account history={history} plan={plan} setPlan={setPlan} showToast={showToast} />
           </PageTransition>
         )}
         {page === "settings" && (
           <PageTransition key="settings">
-            <Settings plan={plan} setPage={setPage} />
+            <Settings plan={plan} setPage={setPage} showToast={showToast} />
           </PageTransition>
         )}
       </div>
@@ -374,6 +379,7 @@ export default function App() {
         </div>
       )}
     </div>
+    </>
   );
 }
 
@@ -3051,21 +3057,16 @@ function History({ history, setHistory, plan }) {
 
 //#region ACCOUNT
 
-function Account({ history, plan, setPlan }) {
+function Account({ history, plan, setPlan, showToast }) {
   const total = history.length;
   const last = history[0];
   const avgSalary = history.length ? history.reduce((a, b) => a + b.salary, 0) / history.length : 0;
   const totalWealth = history.reduce((a, b) => a + (b.pension || 0), 0);
   const bestScenario = history.reduce((best, h) => (!best || h.pension > best.pension ? h : best), null);
   const avgHealth = history.length ? history.reduce((a, b) => a + b.health, 0) / history.length : 0;
-  const [accountMsg, setAccountMsg] = useState("");
-  function showMsg(msg, duration = 2800) {
-    setAccountMsg(msg);
-    setTimeout(() => setAccountMsg(""), duration);
-  }
   function handleExportPDF() {
     if (!PLAN_LIMITS[plan].reportPdf) return;
-    if (history.length === 0) { showMsg("⚠️ Nessuno scenario da esportare."); return; }
+    if (history.length === 0) { showToast("⚠️ Nessuno scenario da esportare."); return; }
 
     const printWindow = window.open("", "_blank");
     const rows = history.map(h => `
@@ -3110,12 +3111,12 @@ function Account({ history, plan, setPlan }) {
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => { printWindow.print(); }, 400);
-    showMsg("📄 Finestra di stampa/PDF aperta.");
+    showToast("📄 Finestra di stampa/PDF aperta.");
   }
 
   function handleExportExcel() {
     if (!PLAN_LIMITS[plan].exportExcel) return;
-    if (history.length === 0) { showMsg("⚠️ Nessuno scenario da esportare."); return; }
+    if (history.length === 0) { showToast("⚠️ Nessuno scenario da esportare."); return; }
 
     const headers = ["Data","Paese","Settore","Età","Stipendio (€)","Risparmi (€)","Spese mensili (€)","Score finanziario","Cap. Pensione (€)","Tasso risparmio (%)","Surplus mensile (€)","Anni ind. fin."];
     const csvRows = [
@@ -3146,10 +3147,10 @@ function Account({ history, plan, setPlan }) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showMsg("📊 File Excel (CSV) scaricato.");
+    showToast("📊 File Excel (CSV) scaricato.");
   }
   function handleGestisci() {
-    showMsg("🔒 Gestione sicurezza account — funzionalità in arrivo.");
+    showToast("🔒 Gestione sicurezza account — funzionalità in arrivo.");
   }
 
   const planDefs = [
@@ -3217,11 +3218,6 @@ function Account({ history, plan, setPlan }) {
 
   return (
     <div style={styles.page}>
-      {accountMsg && (
-        <div style={{ position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)", background: "rgba(30,30,50,0.97)", border: "1px solid rgba(255,255,255,0.15)", color: "white", padding: "12px 24px", borderRadius: 14, fontSize: 14, fontWeight: 600, zIndex: 99999, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", whiteSpace: "nowrap" }}>
-          {accountMsg}
-        </div>
-      )}
       <div style={styles.pageHeader}>
         <div>
           <div style={{ fontSize: 12, opacity: 0.4, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Account</div>
@@ -3353,18 +3349,13 @@ function Toggle({ defaultOn = false }) {
   );
 }
 
-function Settings({ plan, setPage }) {
-  const [settingsMsg, setSettingsMsg] = useState("");
+function Settings({ plan, setPage, showToast }) {
   const [resetConfirm, setResetConfirm] = useState(false);
-  function showMsg(msg, duration = 2800) {
-    setSettingsMsg(msg);
-    setTimeout(() => setSettingsMsg(""), duration);
-  }
   function handleCambiaPassword() {
-    showMsg("🔑 Cambio password — funzionalità in arrivo.");
+    showToast("🔑 Cambio password — funzionalità in arrivo.");
   }
   function handleAttiva2FA() {
-    showMsg("🛡️ Autenticazione 2FA — funzionalità in arrivo.");
+    showToast("🛡️ Autenticazione 2FA — funzionalità in arrivo.");
   }
   function handleReset() {
     if (!resetConfirm) {
@@ -3372,16 +3363,11 @@ function Settings({ plan, setPage }) {
       setTimeout(() => setResetConfirm(false), 4000);
     } else {
       setResetConfirm(false);
-      showMsg("🗑️ Account resettato — tutti i dati locali eliminati.");
+      showToast("🗑️ Account resettato — tutti i dati locali eliminati.", "success");
     }
   }
   return (
     <div style={styles.page}>
-      {settingsMsg && (
-        <div style={{ position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)", background: "rgba(30,30,50,0.97)", border: "1px solid rgba(255,255,255,0.15)", color: "white", padding: "12px 24px", borderRadius: 14, fontSize: 14, fontWeight: 600, zIndex: 99999, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", whiteSpace: "nowrap" }}>
-          {settingsMsg}
-        </div>
-      )}
       <div style={styles.pageHeader}>
         <h2 style={styles.pageTitle}>Impostazioni</h2>
       </div>
