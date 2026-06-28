@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import ReactGA from "react-ga4";
+
+ReactGA.initialize("G-XXXXXXXXXX");
 
 if (typeof document !== "undefined") {
   let meta = document.querySelector('meta[name="viewport"]');
@@ -7,9 +10,7 @@ if (typeof document !== "undefined") {
     meta.name = "viewport";
     document.head.appendChild(meta);
   }
-  // ✅ FIX: rimosso user-scalable=no e maximum-scale=1.0 — violazione WCAG 1.4.4
-  // Gli utenti devono poter zoomare liberamente su mobile
-  meta.content = "width=device-width, initial-scale=1.0";
+  meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
 }
 
 function PageTransition({ children }) {
@@ -30,22 +31,6 @@ function PageTransition({ children }) {
       {children}
     </div>
   );
-}
-
-// ✅ FIX: hash password con Web Crypto API (SHA-256) — mai salvare password in chiaro
-async function hashPassword(password) {
-  const msgBuffer = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-// ✅ FIX: validazione email e password
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
-function isValidPassword(password) {
-  return password.length >= 8;
 }
 
 //#region DATA
@@ -133,97 +118,71 @@ const T = {
   green:     "#10b981",
   amber:     "#f59e0b",
   text:      "#f8fafc",
-  muted:     "rgba(248,250,252,0.70)", // ✅ FIX contrasto WCAG: era 0.50
-  hint:      "rgba(248,250,252,0.55)", // ✅ FIX contrasto WCAG: era 0.28
+  muted:     "rgba(248,250,252,0.50)",
+  hint:      "rgba(248,250,252,0.28)",
 };
 
 //#region APP
 
+// ✅ Hash SHA-256 tramite Web Crypto API (nativo nel browser, nessuna dipendenza)
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 export default function App() {
-  const [users, setUsers] = useState(() => {
-  const savedUsers = localStorage.getItem("wealthfuture_users");
-  return savedUsers ? JSON.parse(savedUsers) : [];
-});
-  // ✅ FIX: sessione persistente — sopravvive al refresh della pagina
-  const [logged, setLogged] = useState(() => !!localStorage.getItem("wealthfuture_session"));
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem("wealthfuture_session");
-    return saved ? JSON.parse(saved) : null;
-  });
+  // ✅ Gli utenti sono mantenuti solo in memoria (non in localStorage).
+  // Le password vengono salvate come hash SHA-256 e non in chiaro.
+  const [users, setUsers] = useState([]);
+  const [logged, setLogged] = useState(false);
+  const [, setCurrentUser] = useState(null);
   const [page, setPage] = useState("home");
   const [authPage, setAuthPage] = useState(null);
+
+  useEffect(() => {
+    ReactGA.send({ hitType: "pageview", page: "/" + page, title: page });
+  }, [page]);
   const [history, setHistory] = useState([]);
   const [plan, setPlan] = useState("free");
   const [selectedNews, setSelectedNews] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  // ✅ FIX: sistema toast globale
-  const [toast, setToast] = useState(null);
-  const showToast = (msg, type = "info", duration = 3000) => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), duration);
-  };
   const openModal = (item) => { setSelectedNews(item); setTimeout(() => setModalVisible(true), 10); };
   const closeModal = () => { setModalVisible(false); setTimeout(() => setSelectedNews(null), 300); };
-  useEffect(() => {
-  localStorage.setItem(
-    "wealthfuture_users",
-    JSON.stringify(users)
-  );
-}, [users]);
 
-  // ✅ FIX: registrazione con hash password e validazione
+
   async function handleRegister({ nome, cognome, email, password }) {
     const emailNorm = email.trim().toLowerCase();
-    if (!isValidEmail(emailNorm)) {
-      return { ok: false, error: "Inserisci un indirizzo email valido." };
-    }
-    if (!isValidPassword(password)) {
-      return { ok: false, error: "La password deve essere di almeno 8 caratteri." };
-    }
     if (users.find(u => u.email === emailNorm)) {
       return { ok: false, error: "Questa email è associata ad un altro account." };
     }
-    const hashed = await hashPassword(password);
-    const newUser = { nome, cognome, email: emailNorm, password: hashed };
+    // ✅ Hash SHA-256 della password — non viene mai salvata in chiaro
+    const pwHash = await hashPassword(password);
+    const newUser = { nome, cognome, email: emailNorm, pwHash };
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
-    // ✅ FIX: salva sessione in localStorage
-    localStorage.setItem("wealthfuture_session", JSON.stringify(newUser));
     setLogged(true);
     setPage("home");
-    showToast(`Benvenuto, ${nome}! 🎉`, "success");
     return { ok: true };
   }
 
-  // ✅ FIX: login con hash password e validazione
   async function handleLogin({ email, password }) {
     const emailNorm = email.trim().toLowerCase();
-    if (!isValidEmail(emailNorm)) {
-      return { ok: false, error: "Inserisci un indirizzo email valido." };
-    }
     const found = users.find(u => u.email === emailNorm);
     if (!found) {
       return { ok: false, error: "Non esiste un account associato a questa email." };
     }
-    const hashed = await hashPassword(password);
-    if (found.password !== hashed) {
+    // ✅ Confronta l'hash SHA-256 — la password originale non viene mai salvata
+    const pwHash = await hashPassword(password);
+    if (found.pwHash !== pwHash) {
       return { ok: false, error: "Password errata." };
     }
     setCurrentUser(found);
-    // ✅ FIX: salva sessione in localStorage
-    localStorage.setItem("wealthfuture_session", JSON.stringify(found));
     setLogged(true);
     setPage("home");
-    showToast(`Bentornato, ${found.nome}! 👋`, "success");
     return { ok: true };
-  }
-
-  // ✅ FIX: logout pulisce la sessione
-  function handleLogout() {
-    localStorage.removeItem("wealthfuture_session");
-    setCurrentUser(null);
-    setLogged(false);
-    setPage("home");
   }
 
   if (!logged) {
@@ -254,22 +213,6 @@ export default function App() {
   }
 
   return (
-    <>
-      {/* ✅ FIX: Toast globale montato FUORI dal div con overflow:hidden — sempre visibile */}
-      {toast && (
-        <div role="alert" aria-live="polite" style={{
-          position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)",
-          background: toast.type === "success" ? "rgba(16,185,129,0.95)" : toast.type === "error" ? "rgba(239,68,68,0.95)" : "rgba(30,30,50,0.97)",
-          border: "1px solid rgba(255,255,255,0.15)", color: "white",
-          padding: "12px 24px", borderRadius: 14, fontSize: 14, fontWeight: 600,
-          zIndex: 999999, boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-          backdropFilter: "blur(12px)", whiteSpace: "nowrap",
-          animation: "fadeInUp 0.3s ease",
-        }}>
-          {toast.msg}
-        </div>
-      )}
-
     <div style={styles.app}>
       <style>{`
         input[type="number"]::-webkit-outer-spin-button,
@@ -280,14 +223,9 @@ export default function App() {
         input[type="number"] {
           -moz-appearance: textfield;
         }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateX(-50%) translateY(12px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
       `}</style>
-
       <Background page={page} />
-      <TopBar page={page} setPage={setPage} currentUser={currentUser} onLogout={handleLogout} />
+      <TopBar page={page} setPage={setPage} />
 
       <div style={styles.container}>
         {page === "home" && (
@@ -312,12 +250,12 @@ export default function App() {
         )}
         {page === "account" && (
           <PageTransition key="account">
-            <Account history={history} plan={plan} setPlan={setPlan} showToast={showToast} />
+            <Account history={history} plan={plan} setPlan={setPlan} />
           </PageTransition>
         )}
         {page === "settings" && (
           <PageTransition key="settings">
-            <Settings plan={plan} setPage={setPage} showToast={showToast} />
+            <Settings plan={plan} setPage={setPage} />
           </PageTransition>
         )}
       </div>
@@ -325,12 +263,7 @@ export default function App() {
       {/* Modal montato FUORI dal container scrollabile per evitare lo stacking context */}
       {selectedNews && (
         <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={selectedNews.title}
           onClick={closeModal}
-          onKeyDown={(e) => { if (e.key === "Escape") closeModal(); }}
-          tabIndex={-1}
           style={{
             position: "fixed",
             inset: 0,
@@ -379,7 +312,6 @@ export default function App() {
         </div>
       )}
     </div>
-    </>
   );
 }
 
@@ -403,8 +335,8 @@ const C = {
   greenDim: "rgba(16,185,129,0.12)",
   amber:    "#f59e0b",
   text:     "#f8fafc",
-  muted:    "rgba(248,250,252,0.70)", // ✅ FIX contrasto WCAG: era 0.45
-  hint:     "rgba(248,250,252,0.55)", // ✅ FIX contrasto WCAG: era 0.25
+  muted:    "rgba(248,250,252,0.45)",
+  hint:     "rgba(248,250,252,0.25)",
 };
 
 // ── SPARKLINE ─────────────────────────────────────────────────
@@ -741,14 +673,6 @@ const GlobalStyles = () => (
     }
     @keyframes pulse {
       0%,100% { opacity: 1; } 50% { opacity: 0.3; }
-    }
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateX(-50%) translateY(12px); }
-      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-    @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
     }
     .wf-card-hover:hover {
       border-color: rgba(255,255,255,0.13) !important;
@@ -1161,7 +1085,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
   }
 
   // ── Submit ─────────────────────────────────────────────────────
-  function handleSubmit() {
+  async function handleSubmit() {
     setError("");
     const errs = {};
     const msgs = {};
@@ -1198,14 +1122,14 @@ function Login({ mode, onLogin, onRegister, onBack }) {
     setFieldMessages({});
 
     if (isRegister) {
-      const result = onRegister({ nome, cognome, email, password });
+      const result = await onRegister({ nome, cognome, email, password });
       if (!result.ok) {
         setFieldErrors({ email: true });
         setFieldMessages({ email: result.error });
         setError(result.error);
       }
     } else {
-      const result = onLogin({ email, password });
+      const result = await onLogin({ email, password });
       if (!result.ok) {
         if (result.error.includes("Password")) {
           setFieldErrors({ password: true });
@@ -1286,15 +1210,8 @@ function Login({ mode, onLogin, onRegister, onBack }) {
           : "radial-gradient(circle at 30% 40%, rgba(15,118,110,0.85), transparent 60%), radial-gradient(circle at 75% 65%, rgba(30,58,138,0.75), transparent 55%)"
       }} />
 
-      <style>{`
-        @media (max-width: 600px) {
-          .wf-login-left { display: none !important; }
-          .wf-login-card { flex-direction: column !important; min-height: unset !important; width: 100% !important; max-width: 420px !important; }
-          .wf-login-right { padding: 32px 22px !important; }
-        }
-      `}</style>
-      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 2, padding: "16px", overflowY: "auto" }}>
-        <div className="wf-login-card" style={{
+      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 2, padding: "20px" }}>
+        <div style={{
           ...cardAnimStyle,
           display: "flex", width: "min(860px, 100%)", minHeight: 520,
           borderRadius: 24, overflow: "hidden",
@@ -1303,7 +1220,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
         }}>
 
           {/* ── LEFT PANEL ── */}
-          <div className="wf-login-left" style={{
+          <div style={{
             flex: "0 0 320px",
             background: isRegister
               ? "linear-gradient(145deg,rgba(37,99,235,0.25),rgba(124,58,237,0.3))"
@@ -1343,7 +1260,7 @@ function Login({ mode, onLogin, onRegister, onBack }) {
           </div>
 
           {/* ── RIGHT PANEL (form) ── */}
-          <div className="wf-login-right" style={{ flex: 1, background: "rgba(10,12,22,0.95)", backdropFilter: "blur(30px)", padding: "44px 36px", display: "flex", flexDirection: "column", justifyContent: "center", overflowY: "auto" }}>
+          <div style={{ flex: 1, background: "rgba(10,12,22,0.95)", backdropFilter: "blur(30px)", padding: "44px 36px", display: "flex", flexDirection: "column", justifyContent: "center", overflowY: "auto" }}>
 
             {/* Header */}
             <div style={{ marginBottom: 24 }}>
@@ -1416,17 +1333,23 @@ function Login({ mode, onLogin, onRegister, onBack }) {
             </button>
 
             {/* Switch + back */}
-            <div style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+            <div style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
               {isRegister ? "Hai già un account? " : "Non hai un account? "}
-              <button onClick={onBack} style={{ color: "#3b82f6", fontWeight: 600, cursor: "pointer", background: "none", border: "none", fontSize: 13, fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
+              <span onClick={onBack} style={{ color: "#3b82f6", fontWeight: 600, cursor: "pointer" }}>
                 {isRegister ? "Accedi" : "Registrati gratis"}
-              </button>
+              </span>
             </div>
 
           </div>
         </div>
       </div>
 
+      <style>{`
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -1527,10 +1450,9 @@ function Home({ setPage, openModal }) {
   </div>
   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
     {news.map((item, i) => (
-      <button
+      <div
         key={i}
         onClick={() => openModal(item)}
-        aria-label={`Leggi notizia: ${item.title}`}
         style={{
           padding: "22px 20px",
           background: "rgba(12,16,35,0.80)",
@@ -1539,10 +1461,6 @@ function Home({ setPage, openModal }) {
           transition: "background 0.2s, border-color 0.2s, transform 0.2s",
           cursor: "pointer",
           backdropFilter: "blur(10px)",
-          textAlign: "left",
-          width: "100%",
-          fontFamily: "inherit",
-          color: "inherit",
         }}
         onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,30,60,0.90)"; e.currentTarget.style.borderColor = "rgba(37,99,235,0.30)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
         onMouseLeave={e => { e.currentTarget.style.background = "rgba(12,16,35,0.80)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.transform = "translateY(0)"; }}
@@ -1551,7 +1469,7 @@ function Home({ setPage, openModal }) {
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: "#f8fafc", lineHeight: 1.45 }}>{item.title}</div>
         <div style={{ fontSize: 13, color: "rgba(248,250,252,0.45)", lineHeight: 1.7 }}>{item.desc}</div>
         <div style={{ marginTop: 14, fontSize: 12, color: "#60a5fa", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>Leggi di più <span style={{ fontSize: 14 }}>→</span></div>
-      </button>
+      </div>
     ))}
   </div>
 </div>
@@ -2733,101 +2651,8 @@ function Scenario({ history, setHistory, plan, setPage }) {
 
 {(PLAN_LIMITS[plan].reportPdf || PLAN_LIMITS[plan].exportExcel) && (
   <div style={{ display: "flex", gap: 10, margin: "20px 0 12px" }}>
-    {PLAN_LIMITS[plan].reportPdf && (
-      <button style={{ ...styles.smallButton, padding: "8px 16px" }} onClick={() => {
-        const r = result;
-        const printWindow = window.open("", "_blank");
-        printWindow.document.write(`<!DOCTYPE html><html><head>
-          <meta charset="utf-8">
-          <title>WealthFuture — Scenario ${r.country} · ${r.sector}</title>
-          <style>
-            body { font-family: Arial, sans-serif; font-size: 13px; color: #111; margin: 36px; }
-            h1 { font-size: 22px; margin-bottom: 4px; }
-            h2 { font-size: 15px; margin: 24px 0 10px; color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: 4px; }
-            .sub { color: #555; margin-bottom: 24px; font-size: 12px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-            th { background: #1e3a5f; color: white; padding: 8px 12px; text-align: left; font-size: 12px; }
-            td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
-            td.val { font-weight: 700; text-align: right; }
-            tr:nth-child(even) td { background: #f9fafb; }
-            .note { font-size: 11px; color: #777; margin-top: 20px; line-height: 1.7; }
-            @media print { body { margin: 16px; } }
-          </style>
-        </head><body>
-          <h1>WealthFuture — Report Scenario Finanziario</h1>
-          <p class="sub">Piano: ${PLAN_LIMITS[plan]?.label} · Generato il: ${new Date().toLocaleDateString("it-IT")}</p>
-          <h2>Dati Inseriti</h2>
-          <table><tbody>
-            <tr><td>Paese</td><td class="val">${r.country}</td></tr>
-            <tr><td>Settore</td><td class="val">${r.sector}</td></tr>
-            <tr><td>Età</td><td class="val">${r.age} anni</td></tr>
-            <tr><td>Stipendio netto mensile</td><td class="val">€ ${Number(r.salary).toLocaleString("it-IT")}</td></tr>
-            <tr><td>Risparmi attuali</td><td class="val">€ ${Number(r.savings).toLocaleString("it-IT")}</td></tr>
-            <tr><td>Spese mensili</td><td class="val">€ ${Number(r.monthlyExpenses).toLocaleString("it-IT")}</td></tr>
-          </tbody></table>
-          <h2>Score Finanziario</h2>
-          <table><tbody>
-            <tr><td>Score</td><td class="val">${r.health}/100</td></tr>
-            <tr><td>Surplus mensile</td><td class="val">€ ${Number(r.monthlySurplus).toLocaleString("it-IT")}</td></tr>
-            <tr><td>Tasso di risparmio</td><td class="val">${r.savingsRate}%</td></tr>
-            ${r.yearsToFinancialIndependence ? `<tr><td>Anni all'indipendenza finanziaria</td><td class="val">${r.yearsToFinancialIndependence} anni</td></tr>` : ""}
-          </tbody></table>
-          <h2>Immobile & Auto</h2>
-          <table><tbody>
-            <tr><td>Rata mutuo max mensile</td><td class="val">€ ${Number(r.maxMortgageRate).toLocaleString("it-IT")}</td></tr>
-            <tr><td>Capacità mutuo totale</td><td class="val">€ ${Number(r.mortgageCapacity).toLocaleString("it-IT")}</td></tr>
-            <tr><td>Casa acquistabile (stima)</td><td class="val">€ ${Number(r.affordableHousePrice).toLocaleString("it-IT")}</td></tr>
-            <tr><td>Rata auto max mensile</td><td class="val">€ ${Number(r.maxLoanRate).toLocaleString("it-IT")}</td></tr>
-            <tr><td>Capacità finanziamento auto</td><td class="val">€ ${Number(r.carLoanCapacity).toLocaleString("it-IT")}</td></tr>
-          </tbody></table>
-          ${PLAN_LIMITS[plan].simulazionePensione ? `
-          <h2>Simulazione Pensione</h2>
-          <table><tbody>
-            <tr><td>Anni al pensionamento (67 anni)</td><td class="val">${r.yearsToRetirement} anni</td></tr>
-            <tr><td>Capitale pensione (valore attuale)</td><td class="val">€ ${Number(r.pension).toLocaleString("it-IT")}</td></tr>
-            <tr><td>Rendita mensile netta (SWR 4%)</td><td class="val">€ ${Number(r.pensioneMensile).toLocaleString("it-IT")} / mese</td></tr>
-            <tr><td>Copertura pensione</td><td class="val">${r.breakEvenRetirement}% dello stipendio attuale</td></tr>
-          </tbody></table>` : ""}
-          <p class="note">⚠️ Le proiezioni si basano su crescita salariale settoriale, inflazione media italiana (2.1%) e rendimento investimenti 5%/anno. Non costituiscono consulenza finanziaria.</p>
-        </body></html>`);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => { printWindow.print(); }, 400);
-      }}>Scarica PDF</button>
-    )}
-    {PLAN_LIMITS[plan].exportExcel && (
-      <button style={{ ...styles.smallButton, padding: "8px 16px" }} onClick={() => {
-        const r = result;
-        const headers = ["Campo","Valore"];
-        const rows = [
-          ["Data",r.date],["Paese",r.country],["Settore",r.sector],["Età",r.age],
-          ["Stipendio netto mensile (€)",r.salary],["Risparmi attuali (€)",r.savings],
-          ["Spese mensili (€)",r.monthlyExpenses],["Surplus mensile (€)",Number(r.monthlySurplus).toFixed(0)],
-          ["Tasso di risparmio (%)",r.savingsRate],["Score finanziario",r.health],
-          ["Rata mutuo max (€)",r.maxMortgageRate],["Capacità mutuo (€)",r.mortgageCapacity],
-          ["Casa acquistabile (€)",r.affordableHousePrice],["Rata auto max (€)",r.maxLoanRate],
-          ["Capacità finanziamento auto (€)",r.carLoanCapacity],
-          ...(PLAN_LIMITS[plan].simulazionePensione ? [
-            ["Anni al pensionamento",r.yearsToRetirement],
-            ["Capitale pensione (€)",Number(r.pension).toFixed(0)],
-            ["Rendita mensile netta (€)",r.pensioneMensile],
-            ["Copertura pensione (%)",r.breakEvenRetirement],
-          ] : []),
-          ...(r.yearsToFinancialIndependence ? [["Anni all'indipendenza fin.",r.yearsToFinancialIndependence]] : []),
-        ];
-        const bom = "\uFEFF";
-        const csv = bom + [headers, ...rows].map(row => row.join(";")).join("\r\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `wealthfuture_scenario_${r.country}_${r.sector}_${new Date().toISOString().slice(0,10)}.csv`.replace(/\s+/g,"_");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }}>Esporta Excel</button>
-    )}
+    {PLAN_LIMITS[plan].reportPdf   && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Scarica PDF</button>}
+    {PLAN_LIMITS[plan].exportExcel && <button style={{ ...styles.smallButton, padding: "8px 16px" }}>Esporta Excel</button>}
   </div>
 )}
 {plan === "free" && (
@@ -2935,6 +2760,8 @@ function History({ history, setHistory, plan }) {
         {filteredHistory.filter(Boolean).map((h) => {
           if (!h) return null;
           const open = openId === h.id;
+          const pension = Number(h?.pension ?? 0);
+          const mortgage = Number(h?.maxMortgageRate ?? 0);
           const health = Number(h?.health ?? 0);
           const healthColor = health >= 70 ? "#34d399" : health >= 40 ? "#f59e0b" : "#f87171";
 
@@ -2967,84 +2794,55 @@ function History({ history, setHistory, plan }) {
                 </div>
               </div>
 
-              {open && (() => {
-                const hc = healthColor;
-                const SectionHeader = ({ icon, label, color }) => (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "20px 0 10px" }}>
-                    <span style={{ fontSize: 14 }}>{icon}</span>
-                    <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: color || "rgba(255,255,255,0.35)" }}>{label}</span>
-                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)", marginLeft: 4 }} />
-                  </div>
-                );
-                const KpiCard = ({ label, value, color, sub }) => (
-                  <div style={{ padding: "14px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>{label}</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: color || "white", letterSpacing: "-0.02em" }}>{value}</div>
-                    {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>{sub}</div>}
-                  </div>
-                );
-                return (
-                  <div style={{ marginTop: 4 }}>
-
-                    {/* ── PROFILO ── */}
-                    <SectionHeader icon="👤" label="Profilo" />
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
-                      <KpiCard label="Età" value={`${h.age} anni`} />
-                      <KpiCard label="Paese" value={h.country || "—"} />
-                      <KpiCard label="Settore" value={h.sector || "—"} />
-                      <KpiCard label="Stipendio netto" value={`€ ${Number(h.salary).toLocaleString("it-IT")}`} sub="mensile" />
-                      <KpiCard label="Risparmi" value={`€ ${Number(h.savings).toLocaleString("it-IT")}`} sub="attuali" />
-                      <KpiCard label="Spese" value={`€ ${Number(h.monthlyExpenses ?? 0).toLocaleString("it-IT")}`} sub="mensili" />
-                    </div>
-
-                    {/* ── SCORE FINANZIARIO ── */}
-                    <SectionHeader icon="📊" label="Score Finanziario" color={hc} />
-                    <div style={{ padding: "14px 16px", background: `${hc}10`, border: `1px solid ${hc}25`, borderRadius: 12, marginBottom: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Score finanziario</span>
-                        <span style={{ fontSize: 26, fontWeight: 900, color: hc }}>{health}<span style={{ fontSize: 14, fontWeight: 500, opacity: 0.5 }}>/100</span></span>
+              {open && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.4, marginBottom: 10 }}>Dati inseriti</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0 32px", marginBottom: 20 }}>
+                    {[
+                      { label: "Età", value: `${h.age} anni` },
+                      { label: "Paese", value: h.country },
+                      { label: "Settore", value: h.sector },
+                      { label: "Stipendio netto mensile", value: `€ ${Number(h.salary).toLocaleString("it-IT")}` },
+                      { label: "Risparmi attuali", value: `€ ${Number(h.savings).toLocaleString("it-IT")}` },
+                      { label: "Spese mensili", value: `€ ${Number(h.monthlyExpenses ?? 0).toLocaleString("it-IT")}` },
+                      { label: "Età acquisto casa", value: `${h.homeAge} anni` },
+                      { label: "Età acquisto auto", value: `${h.carAge} anni` },
+                    ].map(({ label, value }) => (
+                      <div key={label} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 11, opacity: 0.4, marginBottom: 3 }}>{label}</div>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>{value}</div>
                       </div>
-                      <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${health}%`, background: `linear-gradient(90deg, ${hc}, ${hc}99)`, borderRadius: 99, transition: "width 0.6s ease" }} />
-                      </div>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      <KpiCard label="Surplus mensile" value={`€ ${Number(h.monthlySurplus ?? 0).toLocaleString("it-IT")}`} color={Number(h.monthlySurplus) >= 0 ? "#34d399" : "#f87171"} />
-                      <KpiCard label="Tasso di risparmio" value={`${h.savingsRate ?? 0}%`} color={(h.savingsRate ?? 0) >= 20 ? "#34d399" : (h.savingsRate ?? 0) >= 10 ? "#f59e0b" : "#f87171"} />
-                      {h.yearsToFinancialIndependence && (
-                        <KpiCard label="Anni all'indip. fin." value={`${h.yearsToFinancialIndependence} anni`} color="#a78bfa" />
-                      )}
-                    </div>
-
-                    {/* ── IMMOBILE & AUTO ── */}
-                    <SectionHeader icon="🏠" label="Immobile & Auto" color="#60a5fa" />
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                      <KpiCard label="Rata mutuo max" value={`€ ${Number(h.maxMortgageRate ?? 0).toLocaleString("it-IT")}`} sub="mensile" color="#60a5fa" />
-                      <KpiCard label="Capacità mutuo" value={`€ ${Number(h.mortgageCapacity ?? 0).toLocaleString("it-IT")}`} color="#60a5fa" />
-                      <KpiCard label="Casa acquistabile" value={h.affordableHousePrice ? `€ ${Number(h.affordableHousePrice).toLocaleString("it-IT")}` : "—"} color="#60a5fa" />
-                      <KpiCard label="Età acquisto casa" value={`${h.homeAge} anni`} />
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      <KpiCard label="Rata auto max" value={`€ ${Number(h.maxLoanRate ?? 0).toLocaleString("it-IT")}`} sub="mensile" color="#818cf8" />
-                      <KpiCard label="Capacità finanziamento" value={`€ ${Number(h.carLoanCapacity ?? 0).toLocaleString("it-IT")}`} color="#818cf8" />
-                    </div>
-
-                    {/* ── PENSIONE ── */}
-                    {PLAN_LIMITS[plan].simulazionePensione && (
-                      <>
-                        <SectionHeader icon="🏦" label="Simulazione Pensione" color="#34d399" />
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
-                          <KpiCard label="Capitale a 67 anni" value={`€ ${Number(h.pension ?? 0).toLocaleString("it-IT")}`} color="#34d399" />
-                          <KpiCard label="Rendita mensile netta" value={`€ ${Number(h.pensioneMensile ?? 0).toLocaleString("it-IT")}`} sub="SWR 4%" color="#34d399" />
-                          <KpiCard label="Anni al pensionamento" value={`${h.yearsToRetirement ?? "—"} anni`} />
-                          <KpiCard label="Copertura pensione" value={`${h.breakEvenRetirement ?? 0}%`} sub="dello stipendio" color={(h.breakEvenRetirement ?? 0) >= 70 ? "#34d399" : "#f59e0b"} />
-                        </div>
-                      </>
-                    )}
-
+                    ))}
                   </div>
-                );
-              })()}
+
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.4, marginBottom: 10 }}>Risultati</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0 32px" }}>
+                    {[
+                      { label: "Score finanziario", value: `${health}/100` },
+                      { label: "Mutuo max mensile", value: `€ ${mortgage.toFixed(0)}` },
+                      { label: "Capacità mutuo totale", value: `€ ${Number(h.mortgageCapacity ?? 0).toFixed(0)}` },
+                      { label: "Finanziamento auto mensile", value: `€ ${Number(h.maxLoanRate ?? 0).toFixed(0)}` },
+                      { label: "Capacità finanziamento auto", value: `€ ${Number(h.carLoanCapacity ?? 0).toFixed(0)}` },
+                      { label: "Capitale pensione a 67 anni", value: `€ ${pension.toFixed(0)}`, highlight: true, planRequired: "pro" },
+{ label: "Rendita mensile (SWR 4%)", value: `€ ${Number(h.pensioneMensile ?? 0).toLocaleString("it-IT")} / mese`, highlight: true, planRequired: "pro" },
+                      { label: "Casa acquistabile (stima)", value: h.affordableHousePrice ? `€ ${Number(h.affordableHousePrice).toFixed(0)}` : "—" },
+                      { label: "Surplus mensile", value: `€ ${Number(h.monthlySurplus ?? 0).toFixed(0)}` },
+                      { label: "Tasso di risparmio", value: `${h.savingsRate ?? 0}%` },
+                      { label: "Copertura pensione", value: `${h.breakEvenRetirement ?? 0}% stipendio` },
+                      ...(h.yearsToFinancialIndependence ? [{ label: "Anni all'indipendenza fin.", value: `${h.yearsToFinancialIndependence} anni` }] : []),
+                    ].filter(item => {
+                      if (!item.planRequired) return true;
+                      if (item.planRequired === "pro") return PLAN_LIMITS[plan].simulazionePensione;
+                      return true;
+                    }).map(({ label, value, highlight }) => (
+                      <div key={label} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ fontSize: 11, opacity: 0.4, marginBottom: 3 }}>{label}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: highlight ? "#22c55e" : "white" }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -3057,100 +2855,28 @@ function History({ history, setHistory, plan }) {
 
 //#region ACCOUNT
 
-function Account({ history, plan, setPlan, showToast }) {
+function Account({ history, plan, setPlan }) {
   const total = history.length;
   const last = history[0];
   const avgSalary = history.length ? history.reduce((a, b) => a + b.salary, 0) / history.length : 0;
   const totalWealth = history.reduce((a, b) => a + (b.pension || 0), 0);
   const bestScenario = history.reduce((best, h) => (!best || h.pension > best.pension ? h : best), null);
   const avgHealth = history.length ? history.reduce((a, b) => a + b.health, 0) / history.length : 0;
+  const [accountMsg, setAccountMsg] = useState("");
+  function showMsg(msg, duration = 2800) {
+    setAccountMsg(msg);
+    setTimeout(() => setAccountMsg(""), duration);
+  }
   function handleExportPDF() {
     if (!PLAN_LIMITS[plan].reportPdf) return;
-    if (history.length === 0) { showToast("⚠️ Nessuno scenario da esportare."); return; }
-
-    const printWindow = window.open("", "_blank");
-    const rows = history.map(h => `
-      <tr>
-        <td>${h.date || "—"}</td>
-        <td>${h.country || "—"}</td>
-        <td>${h.sector || "—"}</td>
-        <td>${h.age || "—"}</td>
-        <td>€ ${Number(h.salary || 0).toLocaleString("it-IT")}</td>
-        <td>€ ${Number(h.savings || 0).toLocaleString("it-IT")}</td>
-        <td>€ ${Number(h.monthlyExpenses || 0).toLocaleString("it-IT")}</td>
-        <td>${h.health || 0}/100</td>
-        <td>€ ${Number(h.pension || 0).toLocaleString("it-IT")}</td>
-        <td>${h.savingsRate || 0}%</td>
-      </tr>`).join("");
-
-    printWindow.document.write(`<!DOCTYPE html><html><head>
-      <meta charset="utf-8">
-      <title>WealthFuture — Report Scenari</title>
-      <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; color: #111; margin: 32px; }
-        h1 { font-size: 20px; margin-bottom: 4px; }
-        p.sub { color: #555; margin-bottom: 20px; font-size: 11px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #1e3a5f; color: white; padding: 8px 10px; text-align: left; font-size: 11px; }
-        td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
-        tr:nth-child(even) td { background: #f9fafb; }
-        @media print { body { margin: 16px; } }
-      </style>
-    </head><body>
-      <h1>WealthFuture — Report Scenari Finanziari</h1>
-      <p class="sub">Piano: ${PLAN_LIMITS[plan]?.label || plan} · Generato il: ${new Date().toLocaleDateString("it-IT")}</p>
-      <table>
-        <thead><tr>
-          <th>Data</th><th>Paese</th><th>Settore</th><th>Età</th>
-          <th>Stipendio</th><th>Risparmi</th><th>Spese/mese</th>
-          <th>Score</th><th>Cap. Pensione</th><th>Tasso Risp.</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </body></html>`);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); }, 400);
-    showToast("📄 Finestra di stampa/PDF aperta.");
+    showMsg("📄 Export PDF avviato — funzionalità in arrivo.");
   }
-
   function handleExportExcel() {
     if (!PLAN_LIMITS[plan].exportExcel) return;
-    if (history.length === 0) { showToast("⚠️ Nessuno scenario da esportare."); return; }
-
-    const headers = ["Data","Paese","Settore","Età","Stipendio (€)","Risparmi (€)","Spese mensili (€)","Score finanziario","Cap. Pensione (€)","Tasso risparmio (%)","Surplus mensile (€)","Anni ind. fin."];
-    const csvRows = [
-      headers.join(";"),
-      ...history.map(h => [
-        h.date || "",
-        h.country || "",
-        h.sector || "",
-        h.age || "",
-        Number(h.salary || 0).toFixed(0),
-        Number(h.savings || 0).toFixed(0),
-        Number(h.monthlyExpenses || 0).toFixed(0),
-        h.health || 0,
-        Number(h.pension || 0).toFixed(0),
-        h.savingsRate || 0,
-        Number(h.monthlySurplus || 0).toFixed(0),
-        h.yearsToFinancialIndependence || "",
-      ].join(";"))
-    ];
-    const bom = "\uFEFF";
-    const csvContent = bom + csvRows.join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `wealthfuture_scenari_${new Date().toISOString().slice(0,10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showToast("📊 File Excel (CSV) scaricato.");
+    showMsg("📊 Export Excel avviato — funzionalità in arrivo.");
   }
   function handleGestisci() {
-    showToast("🔒 Gestione sicurezza account — funzionalità in arrivo.");
+    showMsg("🔒 Gestione sicurezza account — funzionalità in arrivo.");
   }
 
   const planDefs = [
@@ -3218,6 +2944,11 @@ function Account({ history, plan, setPlan, showToast }) {
 
   return (
     <div style={styles.page}>
+      {accountMsg && (
+        <div style={{ position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)", background: "rgba(30,30,50,0.97)", border: "1px solid rgba(255,255,255,0.15)", color: "white", padding: "12px 24px", borderRadius: 14, fontSize: 14, fontWeight: 600, zIndex: 99999, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", whiteSpace: "nowrap" }}>
+          {accountMsg}
+        </div>
+      )}
       <div style={styles.pageHeader}>
         <div>
           <div style={{ fontSize: 12, opacity: 0.4, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Account</div>
@@ -3245,7 +2976,7 @@ function Account({ history, plan, setPlan, showToast }) {
             const accentColor = p.color;
             const accentBg = p.id === "premium" ? "rgba(245,158,11,0.08)" : p.id === "pro" ? "rgba(59,130,246,0.08)" : "rgba(255,255,255,0.03)";
             return (
-              <button key={p.id} onClick={() => setPlan(p.id)} aria-pressed={isActive} style={{ padding: "24px 22px", background: isActive ? accentBg : "rgba(255,255,255,0.03)", border: isActive ? `1.5px solid ${accentColor}` : "1px solid rgba(255,255,255,0.08)", cursor: "pointer", position: "relative", transition: "all 0.25s", borderRadius: 16, boxShadow: isActive ? `0 0 24px ${accentColor}22` : "none", textAlign: "left", fontFamily: "inherit", color: "inherit", width: "100%" }}
+              <div key={p.id} onClick={() => setPlan(p.id)} style={{ padding: "24px 22px", background: isActive ? accentBg : "rgba(255,255,255,0.03)", border: isActive ? `1.5px solid ${accentColor}` : "1px solid rgba(255,255,255,0.08)", cursor: "pointer", position: "relative", transition: "all 0.25s", borderRadius: 16, boxShadow: isActive ? `0 0 24px ${accentColor}22` : "none" }}
                 onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}}
                 onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}}
               >
@@ -3256,7 +2987,8 @@ function Account({ history, plan, setPlan, showToast }) {
                   <div style={{ position: "absolute", top: 14, right: 14, width: 20, height: 20, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#000" }}>✓</div>
                 )}
                 <span style={planBadgeStyle(p.id)}>{p.label}</span>
-                <div style={{ marginBottom: 18 }} />
+                <div style={{ fontSize: 26, fontWeight: 900, margin: "12px 0 2px", letterSpacing: "-0.03em", color: isActive ? accentColor : "white" }}>{p.price}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 18 }}>{p.priceNote}</div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {p.features.map((f, i) => (
@@ -3282,7 +3014,7 @@ function Account({ history, plan, setPlan, showToast }) {
                   </button>
                 )}
                 {isActive && <div style={{ marginTop: 18, fontSize: 13, color: accentColor, fontWeight: 700 }}>✓ Piano attivo</div>}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -3325,18 +3057,6 @@ function Account({ history, plan, setPlan, showToast }) {
 
 //#endregion
 
-//region abbonamenti
-// eslint-disable-next-line no-unused-vars
-const handleSubscribe = async (priceId) => {
-  const res = await fetch("http://localhost:8000/create-checkout-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ price_id: priceId }),
-  });
-  const data = await res.json();
-  window.location.href = data.url;  // reindirizza a Stripe Checkout
-};
-//endregion
 
 //#region SETTINGS
 
@@ -3349,13 +3069,18 @@ function Toggle({ defaultOn = false }) {
   );
 }
 
-function Settings({ plan, setPage, showToast }) {
+function Settings({ plan, setPage }) {
+  const [settingsMsg, setSettingsMsg] = useState("");
   const [resetConfirm, setResetConfirm] = useState(false);
+  function showMsg(msg, duration = 2800) {
+    setSettingsMsg(msg);
+    setTimeout(() => setSettingsMsg(""), duration);
+  }
   function handleCambiaPassword() {
-    showToast("🔑 Cambio password — funzionalità in arrivo.");
+    showMsg("🔑 Cambio password — funzionalità in arrivo.");
   }
   function handleAttiva2FA() {
-    showToast("🛡️ Autenticazione 2FA — funzionalità in arrivo.");
+    showMsg("🛡️ Autenticazione 2FA — funzionalità in arrivo.");
   }
   function handleReset() {
     if (!resetConfirm) {
@@ -3363,11 +3088,16 @@ function Settings({ plan, setPage, showToast }) {
       setTimeout(() => setResetConfirm(false), 4000);
     } else {
       setResetConfirm(false);
-      showToast("🗑️ Account resettato — tutti i dati locali eliminati.", "success");
+      showMsg("🗑️ Account resettato — tutti i dati locali eliminati.");
     }
   }
   return (
     <div style={styles.page}>
+      {settingsMsg && (
+        <div style={{ position: "fixed", bottom: 32, left: "50%", transform: "translateX(-50%)", background: "rgba(30,30,50,0.97)", border: "1px solid rgba(255,255,255,0.15)", color: "white", padding: "12px 24px", borderRadius: 14, fontSize: 14, fontWeight: 600, zIndex: 99999, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", whiteSpace: "nowrap" }}>
+          {settingsMsg}
+        </div>
+      )}
       <div style={styles.pageHeader}>
         <h2 style={styles.pageTitle}>Impostazioni</h2>
       </div>
@@ -3461,7 +3191,7 @@ function Background({ page }) {
 //#endregion
 
 //#region TOPBAR
-function TopBar({ page, setPage, currentUser, onLogout }) {
+function TopBar({ page, setPage }) {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -3484,26 +3214,24 @@ function TopBar({ page, setPage, currentUser, onLogout }) {
   const NavItem = ({ id, label }) => {
     const isActive = page === id;
     return (
-      <button
+      <div
         onClick={() => setPage(id)}
-        aria-current={isActive ? "page" : undefined}
         style={{
           display: "flex", alignItems: "center",
           padding: "6px 13px", cursor: "pointer", position: "relative",
           borderRadius: 8,
-          color: isActive ? "#f8fafc" : "rgba(248,250,252,0.55)",
+          color: isActive ? "#f8fafc" : "rgba(248,250,252,0.45)",
           fontWeight: isActive ? 600 : 400,
           fontSize: 13, whiteSpace: "nowrap",
           background: isActive ? "rgba(37,99,235,0.12)" : "transparent",
           border: isActive ? "1px solid rgba(37,99,235,0.25)" : "1px solid transparent",
           transition: "all .2s ease",
-          fontFamily: "inherit",
         }}
         onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = "rgba(248,250,252,0.8)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}}
-        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = "rgba(248,250,252,0.55)"; e.currentTarget.style.background = "transparent"; }}}
+        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = "rgba(248,250,252,0.45)"; e.currentTarget.style.background = "transparent"; }}}
       >
         {label}
-      </button>
+      </div>
     );
   };
 
@@ -3517,7 +3245,7 @@ function TopBar({ page, setPage, currentUser, onLogout }) {
         background: "rgba(8,12,32,0.82)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
-        <button onClick={() => setPage("home")} aria-label="Torna alla home" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0, background: "none", border: "none", padding: 0 }}>
+        <div onClick={() => setPage("home")} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
           <div style={{
             width: 30, height: 30, borderRadius: 8,
             background: "linear-gradient(135deg,#2563eb,#7c3aed)",
@@ -3530,7 +3258,7 @@ function TopBar({ page, setPage, currentUser, onLogout }) {
             background: "linear-gradient(90deg,#60a5fa,#a78bfa)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
           }}>WealthFuture</span>
-        </button>
+        </div>
 
         {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -3539,30 +3267,22 @@ function TopBar({ page, setPage, currentUser, onLogout }) {
         )}
 
         {isMobile && (
-          <button
+          <div
             onClick={() => setMobileMenu(!mobileMenu)}
-            aria-expanded={mobileMenu}
-            aria-label={mobileMenu ? "Chiudi menu" : "Apri menu"}
-            aria-controls="mobile-drawer"
-            style={{ cursor: "pointer", padding: "8px", userSelect: "none", display: "flex", flexDirection: "column", gap: 5, borderRadius: 8, background: mobileMenu ? "rgba(255,255,255,0.08)" : "transparent", transition: "background 0.2s", border: "none" }}
+            style={{ cursor: "pointer", padding: "8px", userSelect: "none", display: "flex", flexDirection: "column", gap: 5, borderRadius: 8, background: mobileMenu ? "rgba(255,255,255,0.08)" : "transparent", transition: "background 0.2s" }}
           >
             <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", transition: "transform 0.25s, opacity 0.25s", transform: mobileMenu ? "translateY(6.5px) rotate(45deg)" : "none" }} />
             <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", opacity: mobileMenu ? 0 : 1, transition: "opacity 0.2s" }} />
             <div style={{ width: 20, height: 1.5, borderRadius: 2, background: "rgba(255,255,255,0.75)", transition: "transform 0.25s, opacity 0.25s", transform: mobileMenu ? "translateY(-6.5px) rotate(-45deg)" : "none" }} />
-          </button>
+          </div>
         )}
       </div>
 
       {/* Overlay */}
-      <div role="presentation" onClick={() => setMobileMenu(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", zIndex: 9998, opacity: mobileMenu ? 1 : 0, visibility: mobileMenu ? "visible" : "hidden", transition: "opacity .3s ease, visibility .3s ease" }} />
+      <div onClick={() => setMobileMenu(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", zIndex: 9998, opacity: mobileMenu ? 1 : 0, visibility: mobileMenu ? "visible" : "hidden", transition: "opacity .3s ease, visibility .3s ease" }} />
 
       {/* Drawer */}
-      <div
-        id="mobile-drawer"
-        role="navigation"
-        aria-label="Menu principale"
-        aria-hidden={!mobileMenu}
-        style={{
+      <div style={{
         position: "fixed", top: 0,
         right: mobileMenu ? 0 : -300,
         width: 270, height: "100vh",
@@ -3573,56 +3293,33 @@ function TopBar({ page, setPage, currentUser, onLogout }) {
         opacity: mobileMenu ? 1 : 0,
         transform: mobileMenu ? "translateX(0)" : "translateX(24px)",
         transition: "right .35s cubic-bezier(.4,0,.2,1), opacity .3s ease, transform .3s ease",
-        display: "flex", flexDirection: "column",
         paddingTop: 72,
-        overflowY: "auto",
       }}>
         <div style={{ padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 8 }}>
-          <div style={{ fontSize: 10, opacity: 0.45, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 4 }}>Navigazione</div>
+          <div style={{ fontSize: 10, opacity: 0.35, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 4 }}>Navigazione</div>
           <div style={{ fontWeight: 800, fontSize: 17, color: "white" }}>WealthFuture</div>
-          {currentUser && (
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.50)", marginTop: 4 }}>
-              {currentUser.nome} {currentUser.cognome}
-            </div>
-          )}
         </div>
 
-        <div style={{ flex: 1 }}>
-          {menuItems.map(([id, label], index) => (
-            <button
-              key={id}
-              onClick={() => { setPage(id); setMobileMenu(false); }}
-              aria-current={page === id ? "page" : undefined}
-              style={{
-                display: "block", width: "100%", textAlign: "left",
-                padding: "13px 20px", margin: "3px 10px", cursor: "pointer",
-                borderRadius: 10,
-                color: page === id ? "#f8fafc" : "rgba(248,250,252,0.65)",
-                fontWeight: page === id ? 600 : 400,
-                fontSize: 14,
-                background: page === id ? "rgba(37,99,235,0.12)" : "transparent",
-                border: page === id ? "1px solid rgba(37,99,235,0.22)" : "1px solid transparent",
-                transition: `all .25s ease ${index * 0.04}s`,
-                fontFamily: "inherit",
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {currentUser && (
-          <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-            <button
-              onClick={() => { onLogout(); setMobileMenu(false); }}
-              style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "rgba(248,100,100,0.9)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
-            >
-              Esci
-            </button>
+        {menuItems.map(([id, label], index) => (
+          <div
+            key={id}
+            onClick={() => { setPage(id); setMobileMenu(false); }}
+            style={{
+              padding: "13px 20px", margin: "3px 10px", cursor: "pointer",
+              borderRadius: 10,
+              color: page === id ? "#f8fafc" : "rgba(248,250,252,0.55)",
+              fontWeight: page === id ? 600 : 400,
+              fontSize: 14,
+              background: page === id ? "rgba(37,99,235,0.12)" : "transparent",
+              border: page === id ? "1px solid rgba(37,99,235,0.22)" : "1px solid transparent",
+              transition: `all .25s ease ${index * 0.04}s`,
+            }}
+          >
+            {label}
           </div>
-        )}
+        ))}
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "24px 0 32px" }}>
+        <div style={{ position: "absolute", bottom: 36, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
           <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#2563eb,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontSize: 16, fontWeight: 900, color: "white" }}>W</span>
           </div>
