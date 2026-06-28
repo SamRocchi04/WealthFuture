@@ -1,4 +1,17 @@
 import { useEffect, useState } from "react";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  updateProfile,
+} from "firebase/auth";
+import {
+  doc, getDoc, setDoc, updateDoc,
+  collection, addDoc, getDocs,
+  query, orderBy, deleteDoc,
+} from "firebase/firestore";
+import { auth, db } from "./firebase";
 
 if (typeof document !== "undefined") {
   let meta = document.querySelector('meta[name="viewport"]');
@@ -121,21 +134,10 @@ const T = {
 
 //#region APP
 
-// ✅ Hash SHA-256 tramite Web Crypto API (nativo nel browser, nessuna dipendenza)
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
 export default function App() {
-  // ✅ Gli utenti sono mantenuti solo in memoria (non in localStorage).
-  // Le password vengono salvate come hash SHA-256 e non in chiaro.
-  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
   const [logged, setLogged] = useState(false);
-  const [, setCurrentUser] = useState(null);
   const [page, setPage] = useState("home");
   const [authPage, setAuthPage] = useState(null);
   const [history, setHistory] = useState([]);
@@ -145,37 +147,174 @@ export default function App() {
   const openModal = (item) => { setSelectedNews(item); setTimeout(() => setModalVisible(true), 10); };
   const closeModal = () => { setModalVisible(false); setTimeout(() => setSelectedNews(null), 300); };
 
+  // ── Ascolta stato autenticazione e carica dati utente da Firestore ──
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        setLogged(true);
+        await loadUserData(user.uid);
+      } else {
+        setCurrentUser(null);
+        setLogged(false);
+        setHistory([]);
+        setPlan("free");
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleRegister({ nome, cognome, email, password }) {
-    const emailNorm = email.trim().toLowerCase();
-    if (users.find(u => u.email === emailNorm)) {
-      return { ok: false, error: "Questa email è associata ad un altro account." };
+  // ── Carica profilo + storico simulazioni da Firestore ──
+  async function loadUserData(uid) {
+    try {
+      const profileRef = doc(db, "users", uid);
+      const profileSnap = await getDoc(profileRef);
+      if (profileSnap.exists()) {
+        const data = profileSnap.data();
+        if (data.plan) setPlan(data.plan);
+      }
+
+      const histRef = collection(db, "users", uid, "simulations");
+      const q = query(histRef, orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      const sims = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setHistory(sims);
+    } catch (err) {
+      console.error("Errore caricamento dati utente:", err);
     }
-    // ✅ Hash SHA-256 della password — non viene mai salvata in chiaro
-    const pwHash = await hashPassword(password);
-    const newUser = { nome, cognome, email: emailNorm, pwHash };
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
-    setLogged(true);
-    setPage("home");
-    return { ok: true };
   }
 
+  // ── Registrazione ──
+  async function handleRegister({ nome, cognome, email, password }) {
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      await updateProfile(cred.user, { displayName: `${nome} ${cognome}` });
+      await setDoc(doc(db, "users", cred.user.uid), {
+        nome,
+        cognome,
+        email: email.trim().toLowerCase(),
+        plan: "free",
+        createdAt: new Date().toISOString(),
+      });
+      setCurrentUser(cred.user);
+      setLogged(true);
+      setPage("home");
+      return { ok: true };
+    } catch (err) {
+      const msg = err.code === "auth/email-already-in-use"
+        ? "Questa email è associata ad un altro account."
+        : err.message;
+      return { ok: false, error: msg };
+    }
+  }
+
+  // ── Login ──
   async function handleLogin({ email, password }) {
-    const emailNorm = email.trim().toLowerCase();
-    const found = users.find(u => u.email === emailNorm);
-    if (!found) {
-      return { ok: false, error: "Non esiste un account associato a questa email." };
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+      setCurrentUser(cred.user);
+      setLogged(true);
+      setPage("home");
+      return { ok: true };
+    } catch (err) {
+      const msg =
+        err.code === "auth/user-not-found" ? "Non esiste un account associato a questa email." :
+        err.code === "auth/wrong-password"  ? "Password errata." :
+        err.message;
+      return { ok: false, error: msg };
     }
-    // ✅ Confronta l'hash SHA-256 — la password originale non viene mai salvata
-    const pwHash = await hashPassword(password);
-    if (found.pwHash !== pwHash) {
-      return { ok: false, error: "Password errata." };
-    }
-    setCurrentUser(found);
-    setLogged(true);
+  }
+
+  // ── Logout ──
+  async function handleLogout() {
+    await signOut(auth);
+    setLogged(false);
+    setCurrentUser(null);
+    setHistory([]);
+    setPlan("free");
     setPage("home");
-    return { ok: true };
+  }
+
+  // ── Aggiungi simulazione su Firestore ──
+  async function addSimulation(sim) {
+    if (!currentUser) return;
+    try {
+      const ref = await addDoc(
+        collection(db, "users", currentUser.uid, "simulations"),
+        { ...sim, createdAt: new Date().toISOString() }
+      );
+      setHistory(prev => [{ id: ref.id, ...sim, createdAt: new Date().toISOString() }, ...prev]);
+    } catch (err) {
+      console.error("Errore salvataggio simulazione:", err);
+    }
+  }
+
+  // ── Elimina simulazione da Firestore ──
+  async function deleteSimulation(simId) {
+    if (!currentUser) return;
+    try {
+      await deleteDoc(doc(db, "users", currentUser.uid, "simulations", simId));
+      setHistory(prev => prev.filter(s => s.id !== simId));
+    } catch (err) {
+      console.error("Errore eliminazione simulazione:", err);
+    }
+  }
+
+  // ── Aggiorna piano su Firestore ──
+  async function handleSetPlan(newPlan) {
+    setPlan(newPlan);
+    if (!currentUser) return;
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid), { plan: newPlan });
+    } catch (err) {
+      console.error("Errore aggiornamento piano:", err);
+    }
+  }
+
+  // ── Loading screen ──
+  if (loading) {
+    return (
+      <div style={{
+        height: "100vh",
+        background: "#080c20",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 24,
+        fontFamily: "'Inter', -apple-system, sans-serif",
+      }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: 14,
+          background: "linear-gradient(135deg,#2563eb,#7c3aed)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 0 40px rgba(37,99,235,0.35)",
+        }}>
+          <span style={{ fontSize: 26, fontWeight: 900, color: "white" }}>W</span>
+        </div>
+        <span style={{
+          fontWeight: 800, fontSize: 18,
+          background: "linear-gradient(90deg,#60a5fa,#a78bfa)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          letterSpacing: "-0.02em",
+        }}>
+          WealthFuture
+        </span>
+        <div style={{ position: "relative", width: 36, height: 36 }}>
+          <style>{`@keyframes wf-spin { to { transform: rotate(360deg); } }`}</style>
+          <div style={{
+            width: 36, height: 36, borderRadius: "50%",
+            border: "3px solid rgba(255,255,255,0.08)",
+            borderTop: "3px solid #2563eb",
+            animation: "wf-spin 0.85s linear infinite",
+          }} />
+        </div>
+        <span style={{ fontSize: 13, color: "rgba(248,250,252,0.35)", marginTop: -8 }}>
+          Caricamento in corso…
+        </span>
+      </div>
+    );
   }
 
   if (!logged) {
@@ -233,17 +372,17 @@ export default function App() {
         )}
         {page === "scenario" && (
           <PageTransition key="scenario">
-            <Scenario history={history} setHistory={setHistory} plan={plan} setPage={setPage} />
+            <Scenario history={history} setHistory={addSimulation} plan={plan} setPage={setPage} />
           </PageTransition>
         )}
         {page === "history" && (
           <PageTransition key="history">
-            <History history={history} setHistory={setHistory} plan={plan} />
+            <History history={history} setHistory={deleteSimulation} plan={plan} />
           </PageTransition>
         )}
         {page === "account" && (
           <PageTransition key="account">
-            <Account history={history} plan={plan} setPlan={setPlan} />
+            <Account history={history} plan={plan} setPlan={handleSetPlan} />
           </PageTransition>
         )}
         {page === "settings" && (
@@ -1824,7 +1963,7 @@ function Scenario({ history, setHistory, plan, setPage }) {
     };
 
     setResult(res);
-    setHistory(prev => [res, ...prev]);
+    setHistory(res);
   }
 
   if (limitReached && !result) {
@@ -2777,7 +2916,7 @@ function History({ history, setHistory, plan }) {
                     {open ? "−" : "+"}
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setHistory((prev) => prev.filter((s) => s.id !== h.id)); if (openId === h.id) setOpenId(null); }}
+                    onClick={(e) => { e.stopPropagation(); setHistory(h.id); if (openId === h.id) setOpenId(null); }}
                     style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "rgba(239,68,68,0.85)", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "background 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.18)"}
                     onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.08)"}
