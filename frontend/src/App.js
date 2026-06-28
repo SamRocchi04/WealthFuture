@@ -225,15 +225,6 @@ export default function App() {
       return { ok: false, error: msg };
     }
   }
-
-  // ── Logout ──
-  async function handleLogout() {
-    await signOut(auth);
-    setLogged(false);
-    setCurrentUser(null);
-    setHistory([]);
-    setPlan("free");
-    setPage("home");
   }
 
   // ── Aggiungi simulazione su Firestore ──
