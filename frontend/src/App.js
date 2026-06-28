@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react";
-import ReactGA from "react-ga4";
-
-ReactGA.initialize("G-XXXXXXXXXX");
 
 if (typeof document !== "undefined") {
   let meta = document.querySelector('meta[name="viewport"]');
@@ -141,10 +138,6 @@ export default function App() {
   const [, setCurrentUser] = useState(null);
   const [page, setPage] = useState("home");
   const [authPage, setAuthPage] = useState(null);
-
-  useEffect(() => {
-    ReactGA.send({ hitType: "pageview", page: "/" + page, title: page });
-  }, [page]);
   const [history, setHistory] = useState([]);
   const [plan, setPlan] = useState("free");
   const [selectedNews, setSelectedNews] = useState(null);
