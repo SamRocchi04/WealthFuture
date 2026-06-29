@@ -225,7 +225,7 @@ export default function App() {
       return { ok: false, error: msg };
     }
   }
-  }
+  
 
   // ── Aggiungi simulazione su Firestore ──
   async function addSimulation(sim) {
