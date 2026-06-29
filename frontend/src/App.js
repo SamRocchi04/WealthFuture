@@ -1899,22 +1899,26 @@ function Scenario({ history, setHistory, plan, setPage }) {
       : 0;
 
     // ── 7. ANNI AL FIRE ───────────────────────────────────────────
-    // Tutto in termini REALI (potere d'acquisto odierno)
-    // Rendimento reale portafoglio: ~4% (6% nominale - 2% inflazione, conservativo)
-    // Stipendio cresce solo in termini reali (già deflazionato nel growth)
-    // Spese reali: costanti in termini reali (expNow già al potere d'acquisto oggi)
-    const REAL_RETURN = 0.04;
-    const targetFIRE = expNow * 12 * 25;
+    // Formula standard: FIRE Number = spese annuali × 25 (regola del 4% di Bengen)
+    // Calcolo in termini NOMINALI per coerenza con expensesAtYear
+    // Rendimento nominale portafoglio: 6% (storico mercato azionario diversificato)
+    // Stipendio cresce in nominale: growth (reale) + inflazione
+    const NOMINAL_RETURN = 0.06;
+    // Target FIRE basato sulle spese base × 25 (regola del 4% di Bengen)
+    // Usiamo le spese FUTURE inflazionate all'anno di pensionamento stimato (65 anni)
+    const yearsToFIRE_est = Math.max(10, 65 - age); // stima conservativa
+    const futureExpenses = expenses * 12 * Math.pow(1 + INFLATION, yearsToFIRE_est);
+    const targetFIRE = futureExpenses * 25; // FIRE number in termini nominali futuri
     let anniFIRE = null;
     if (monthlySurplus > 0) {
       let cap = savings;
       let sal2 = salary;
       let anni = 0;
       while (cap < targetFIRE && anni < 100) {
-        sal2 = sal2 * (1 + growth); // growth è già reale
-        const exp2 = expensesAtYear(anni, expenses) / Math.pow(1 + INFLATION, anni); // spese reali
+        sal2 = sal2 * (1 + growth + INFLATION);          // stipendio nominale cresce
+        const exp2 = expensesAtYear(anni, expenses);      // spese nominali: base + mutuo + auto + inflazione
         const surplusAnno = Math.max(sal2 - exp2, 0) * 12;
-        cap = cap * (1 + REAL_RETURN) + surplusAnno;
+        cap = cap * (1 + NOMINAL_RETURN) + surplusAnno;
         anni++;
       }
       anniFIRE = cap >= targetFIRE ? anni : null;
